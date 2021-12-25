@@ -1,0 +1,14 @@
+/.gradle
+/.idea
+/out
+/build
+*.iml
+*.ipr
+*.iws
+mediaLibrary
+downloads
+userConfig
+cache.map
+migrations
+.gradle
+remote_install

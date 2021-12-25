@@ -1,0 +1,75 @@
+package io.sebi.api
+
+import dz.jtsgen.annotations.TypeScript
+import io.ktor.application.*
+import io.ktor.response.*
+import io.ktor.routing.*
+import io.sebi.InMemoryAppender
+import io.sebi.downloader.DownloadManager
+import io.sebi.downloader.DownloadTaskDTO
+import io.sebi.duplicatecalculator.DuplicateCalculator
+import io.sebi.library.MediaLibrary
+import io.sebi.library.MediaLibraryEntry
+import io.sebi.network.NetworkManager
+import io.sebi.storage.MetadataStorage
+import io.sebi.tagging.Tagger
+import io.sebi.urldecoder.UrlDecoder
+import kotlinx.serialization.Serializable
+import org.slf4j.LoggerFactory
+
+private val logger = LoggerFactory.getLogger("Api")
+
+val hashingInProgress = mutableListOf<MediaLibraryEntry>()
+
+
+@OptIn(ExperimentalStdlibApi::class)
+fun Route.api(
+    urlDecoder: UrlDecoder,
+    mediaLibrary: MediaLibrary,
+    duplicateCalculator: DuplicateCalculator,
+    downloadManager: DownloadManager,
+    networkManager: NetworkManager,
+    tagger: Tagger,
+    metadataStorage: MetadataStorage
+) {
+
+    route("api") {
+        get("log") {
+            call.respond(InMemoryAppender.getSerializableRepresentation())
+        }
+        route("mediaLibrary") {
+            mediaLibraryApi(mediaLibrary, duplicateCalculator, tagger, downloadManager, metadataStorage)
+        }
+
+        downloaderApi(downloadManager, urlDecoder, mediaLibrary::addCompletedDownload)
+        searcherApi(networkManager, tagger)
+
+        route("autotags") {
+            get("/popular") {
+                val popular = mediaLibrary.entries.map {
+                    it.withAutoTags(tagger).autoTags
+                }.flatten().groupingBy { it }.eachCount().toList().sortedByDescending { it.second }.toList()
+                call.respond(popular)
+            }
+        }
+        userConfigReadWriteEndpoint("autotags")
+        userConfigReadWriteEndpoint("queries")
+    }
+}
+
+
+@TypeScript
+@Serializable
+data class MetadatedDownloadQueueEntry(val queueEntry: DownloadTaskDTO, val title: String)
+
+@TypeScript
+@Serializable
+data class SearchRequest(val term: String, val offset: Int = 0)
+
+@TypeScript
+@Serializable
+data class UrlRequest(val url: String)
+
+@TypeScript
+@Serializable
+data class DuplicateResponse(val entry: MediaLibraryEntry, val possibleDuplicate: MediaLibraryEntry, val distance: Int)

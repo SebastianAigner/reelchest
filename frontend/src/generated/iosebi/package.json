@@ -1,0 +1,12 @@
+{
+  "name": "IoSebi",
+  "version": "0.0.1",
+  "description": "unknown",
+  "main": "",
+  "author": "unknown",
+  "authorUrl": "unknown",
+  "license": "unknown",
+  "typings": "io-sebi.d.ts",
+  "dependencies": {},
+  "scripts": {}
+}
