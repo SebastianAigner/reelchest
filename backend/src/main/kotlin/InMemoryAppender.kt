@@ -21,8 +21,6 @@ class InMemoryAppender : AppenderBase<ILoggingEvent>() {
             list.remove()
         }
     }
-
-
 }
 
 @TypeScript

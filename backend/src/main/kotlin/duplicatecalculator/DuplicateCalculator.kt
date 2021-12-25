@@ -1,7 +1,5 @@
 package io.sebi.duplicatecalculator
 
-import io.ktor.application.*
-import io.ktor.response.*
 import io.sebi.library.MediaLibrary
 import io.sebi.library.MediaLibraryEntry
 import io.sebi.phash.DHash
@@ -53,12 +51,12 @@ class DuplicateCalculator(val mediaLibrary: MediaLibrary) {
         // we find the global minimum: which of the other library entries has the lowest cumulative distance?
 
         val mostLikelyDuplicate = restLibrary.minByOrNull { (entry, dhashes) ->
-            handful.sumBy {
+            handful.sumOf {
                 dhashes.getMinimalDistance(it)
             }
         }!!
 
-        val cumulativeDistance = handful.sumBy {
+        val cumulativeDistance = handful.sumOf {
             mostLikelyDuplicate.second.getMinimalDistance(it) // todo: we can probably save some calulations here, but this should be relatively cheap.
         }
         return EntryWithDistance(mostLikelyDuplicate.first, cumulativeDistance)

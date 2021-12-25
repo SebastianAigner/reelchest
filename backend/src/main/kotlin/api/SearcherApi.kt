@@ -4,12 +4,10 @@ import io.ktor.application.*
 import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
-import io.sebi.network.NetworkManager
 import io.sebi.search.SearchResult
 import io.sebi.search.SearcherFactory
-import io.sebi.tagging.Tagger
 
-fun Route.searcherApi(networkManager: NetworkManager, tagger: Tagger) {
+fun Route.searcherApi() {
     route("search") {
         //initialize route
         for (s in SearcherFactory.instantiateSearchers()) {

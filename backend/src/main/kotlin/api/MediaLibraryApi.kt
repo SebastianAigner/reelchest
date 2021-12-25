@@ -49,8 +49,7 @@ fun Route.mediaLibraryApi(
     route("hashing") {
         get("unhashed") {
             val entry =
-                mediaLibrary.entries.filter { it.getDHashes() == null && it !in hashingInProgress }
-                    .first()
+                mediaLibrary.entries.first { it.getDHashes() == null && it !in hashingInProgress }
             hashingInProgress += entry
             call.respond(entry)
         }

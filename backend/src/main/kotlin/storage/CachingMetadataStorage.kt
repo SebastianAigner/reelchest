@@ -2,7 +2,7 @@ package io.sebi.storage
 
 import io.sebi.library.MediaLibraryEntry
 
-class CachingMetadataStorage(val delegate: MetadataStorage) : MetadataStorage {
+class CachingMetadataStorage(private val delegate: MetadataStorage) : MetadataStorage {
     val map = mutableMapOf<String, MetadataResult>()
     override fun storeMetadata(id: String, metadata: MediaLibraryEntry) {
         map[id] = MetadataResult.Just(metadata)

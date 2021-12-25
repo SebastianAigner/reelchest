@@ -42,7 +42,7 @@ fun Route.api(
         }
 
         downloaderApi(downloadManager, urlDecoder, mediaLibrary::addCompletedDownload)
-        searcherApi(networkManager, tagger)
+        searcherApi()
 
         route("autotags") {
             get("/popular") {

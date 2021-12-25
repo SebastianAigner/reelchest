@@ -72,7 +72,7 @@ class DownloadManager(
             return it.progress
         }
 
-        workers.map { it.currentTask }.filterNotNull().firstOrNull { it.originUrl.shaHashed() == id }?.let {
+        workers.mapNotNull { it.currentTask }.firstOrNull { it.originUrl.shaHashed() == id }?.let {
             return it.progress
         }
 
@@ -92,8 +92,7 @@ class DownloadManager(
 
         val abortConditions = listOf(
             queuedDownloads.any { it.originUrl == d.originUrl } to "duplicate download job",
-            workers.map { it.currentTask }.filterNotNull()
-                .any { it.originUrl == d.originUrl } to "download job in progress",
+            workers.mapNotNull { it.currentTask }.any { it.originUrl == d.originUrl } to "download job in progress",
             (metadataStorage.retrieveMetadata(d.originUrl.shaHashed()) != MetadataResult.None) to "URL already in metadata storage"
         )
 

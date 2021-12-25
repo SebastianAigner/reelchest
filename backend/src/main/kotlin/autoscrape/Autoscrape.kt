@@ -43,7 +43,7 @@ private suspend fun scrape(
     queries.drop(1).forEach {
         logger.info("Triggered search for $it")
 
-        val results = SearcherFactory.byEndpointName(searcher, networkManager).search(it)
+        val results = SearcherFactory.byEndpointName(searcher).search(it)
         // TODO: This approach just checks the three freshest results. If new unloaded results arrive at a faster pace,
         //  it would make sense to adjust this checking approach.
         val unloadedResults = results.take(3).filterNot { searchResult ->

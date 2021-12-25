@@ -2,7 +2,7 @@ package io.sebi.ui.shared
 
 import kotlinx.html.*
 
-private fun FlowOrInteractiveOrPhrasingContent.FastHref(loc: String) {
+private fun FlowOrInteractiveOrPhrasingContent.fastHref(loc: String) {
     a("/$loc") { +loc }
     +" "
 }
@@ -24,7 +24,7 @@ fun HTML.commonLayout(title: String, head: (HEAD.() -> Unit)? = null, body: BODY
 }
 
 fun BODY.topMenu() {
-    FastHref("add")
-    FastHref("downloads")
-    FastHref("upload")
+    fastHref("add")
+    fastHref("downloads")
+    fastHref("upload")
 }

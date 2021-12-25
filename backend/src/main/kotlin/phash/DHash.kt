@@ -4,8 +4,9 @@ import java.awt.image.BufferedImage
 
 // Implemented after https://www.hackerfactor.com/blog/?/archives/529-Kind-of-Like-That.html
 
+@JvmInline
 @OptIn(ExperimentalUnsignedTypes::class)
-inline class DHash(val raw: ULong) {
+value class DHash(val raw: ULong) {
     fun distanceTo(other: DHash): Int {
         return (raw xor other.raw).countOneBits()
     }

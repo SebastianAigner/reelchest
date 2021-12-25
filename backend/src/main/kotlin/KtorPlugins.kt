@@ -44,5 +44,4 @@ fun Application.installPlugins() {
         anyHost()
     }
 
-
 }

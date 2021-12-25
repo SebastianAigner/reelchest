@@ -7,7 +7,6 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.sebi.api.SearchRequest
 import io.sebi.network.NetworkManager
-import io.sebi.tagging.Tagger
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -29,7 +28,7 @@ private val internalClient = HttpClient(Apache) {
     }
 }
 
-abstract class SearcherFactory(val networkManager: NetworkManager, val tagger: Tagger) {
+abstract class SearcherFactory(val networkManager: NetworkManager) {
     companion object {
         fun instantiateSearchers(): List<Searcher> {
             val arr = Json.decodeFromString<JsonArray>(File("userConfig/searchers.json").readText())
@@ -51,7 +50,7 @@ abstract class SearcherFactory(val networkManager: NetworkManager, val tagger: T
             }
         }
 
-        fun byEndpointName(s: String, networkManager: NetworkManager): Searcher {
+        fun byEndpointName(s: String): Searcher {
             return instantiateSearchers().first { it.endpointName == s }
         }
     }
