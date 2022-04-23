@@ -20,7 +20,7 @@ class Downloader(val networkManager: NetworkManager) {
         absoluteProgressCallback: ((Pair<Long, Long?>) -> Unit)? = null,
         progressCallback: (Double) -> Unit,
     ) = coroutineScope {
-        networkManager.getRawClient(noReallyItsOkay = true).get(url).body<HttpStatement>().execute {
+        networkManager.getRawClient(noReallyItsOkay = true).prepareGet(url).execute {
             val chan = it.body<ByteReadChannel>()
             var ctr = 0L
             val updateRoutine = launch {
