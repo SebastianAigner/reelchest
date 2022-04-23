@@ -2,7 +2,7 @@ package io.sebi.tagging
 
 import java.io.File
 
-object AvtoTagger : Tagger {
+object AvtoTagger : Tagger { // todo ew
 
     fun getUserRulesFiles(): Collection<File> {
         return File("userConfig").listFiles { f ->

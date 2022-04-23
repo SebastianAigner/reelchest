@@ -35,10 +35,7 @@ data class MetadataResponse(val title: String, val tags: List<String>)
 data class DecryptResponse(val urls: List<String>, val type: DecryptedMediaType)
 
 enum class DecryptedMediaType {
-    SINGLE_FILE,
-    M3U8,
-    DASH,
-    NONE
+    SINGLE_FILE, M3U8, DASH, NONE
 }
 
 private val internalClient = HttpClient(Apache) {
@@ -60,33 +57,35 @@ class UrlDecoderImpl(val networkManager: NetworkManager) : UrlDecoder {
     val configurations = arr.map { Json.decodeFromJsonElement<UrlDecoderConfiguration>(it) }
 
     override suspend fun decodeUrl(url: String): DecryptResponse? {
-        for (decoder in configurations) {
+        return configurations.firstNotNullOfOrNull config@{ decoder ->
             logger.info("Trying $decoder")
-            val resultingUrl = internalClient.post(decoder.endpoint + "/decrypt") {
+            val req = internalClient.post(decoder.endpoint + "/decrypt") {
                 contentType(ContentType.Application.Json)
                 setBody(DecryptRequest(url))
             }
-                .body<DecryptResponse>()
-            if (resultingUrl.urls.isNotEmpty()) return resultingUrl
+
+            return if (req.status.isSuccess()) {
+                val resultingUrl = req.body<DecryptResponse>()
+                if (resultingUrl.urls.isNotEmpty()) resultingUrl else null
+            } else null
         }
-        return null
     }
 
     override suspend fun getMetadata(url: String): MetadataResponse? {
-        for (decoder in configurations) {
-            try {
+        return configurations.firstNotNullOfOrNull { decoder ->
                 val metadata = internalClient.post(decoder.endpoint + "/metadata") {
                     contentType(ContentType.Application.Json)
                     setBody(DecryptRequest(url))
                 }
-                    .body<MetadataResponse>()
-                return metadata
-            } catch (e: NotFoundException) {
-                // nothing found
-                logger.info("$decoder didn't find.")
-            }
+
+                return if(metadata.status.isSuccess()) {
+                    metadata.body<MetadataResponse>()
+                } else {
+                    // nothing found
+                    logger.info("$decoder didn't find.")
+                    null
+                }
         }
-        return null
     }
 }
 
@@ -126,8 +125,7 @@ object DashPostProcessor : PostProcessor() {
 
 fun postProcessAudioAndVideo(vid: DASHVideo, aud: DASHAudio): MP4File {
     val fileName = UUID.randomUUID().toString()
-    ProcessBuilder(
-        "ffmpeg",
+    ProcessBuilder("ffmpeg",
         "-y",
         "-i",
         vid.f.name,
@@ -135,11 +133,7 @@ fun postProcessAudioAndVideo(vid: DASHVideo, aud: DASHAudio): MP4File {
         aud.f.name,
         "-c",
         "copy",
-        "$fileName.mp4"
-    ).directory(vid.f.parentFile)
-        .inheritIO()
-        .start()
-        .waitFor()
+        "$fileName.mp4").directory(vid.f.parentFile).inheritIO().start().waitFor()
     return MP4File(File(vid.f.parent, "$fileName.mp4"))
 }
 
@@ -160,40 +154,25 @@ fun postProcessTransportStream(l: List<TSFile>): TSFile {
 
 fun postProcessTsToMp4(ts: TSFile): MP4File {
     val fileName = UUID.randomUUID().toString()
-    ProcessBuilder(
-        "ffmpeg",
-        "-y",
-        "-i",
-        ts.f.name,
-        "-c:v",
-        "copy",
-        "$fileName.mp4"
-    ).directory(ts.f.parentFile)
-        .inheritIO()
-        .start()
-        .waitFor()
+    ProcessBuilder("ffmpeg", "-y", "-i", ts.f.name, "-c:v", "copy", "$fileName.mp4").directory(ts.f.parentFile)
+        .inheritIO().start().waitFor()
     return MP4File(File(ts.f.parent, "$fileName.mp4"))
 }
 
 private val logger = LoggerFactory.getLogger("URL Decoder")
 fun UrlDecoder.makeDownloadTask(originUrl: String, onComplete: suspend (CompletedDownloadTask) -> Unit): DownloadTask {
     val l = LazyDecoder(originUrl)
-    return DownloadTask(
-        originUrl,
-        {
-            l.decode(this)
-        },
-        { files ->
-            val postProcessor = when (l.mediaType) {
-                DecryptedMediaType.SINGLE_FILE -> SingleFileOrErrorProcessor::postProcess
-                DecryptedMediaType.M3U8 -> TransportStreamPostProcessor::postProcess
-                DecryptedMediaType.DASH -> DashPostProcessor::postProcess
-                else -> error("No postprocessor for ${l.mediaType}")
-            }
-            postProcessor(files)
-        },
-        onComplete
-    )
+    return DownloadTask(originUrl, {
+        l.decode(this)
+    }, { files ->
+        val postProcessor = when (l.mediaType) {
+            DecryptedMediaType.SINGLE_FILE -> SingleFileOrErrorProcessor::postProcess
+            DecryptedMediaType.M3U8 -> TransportStreamPostProcessor::postProcess
+            DecryptedMediaType.DASH -> DashPostProcessor::postProcess
+            else -> error("No postprocessor for ${l.mediaType}")
+        }
+        postProcessor(files)
+    }, onComplete)
 }
 
 class LazyDecoder(val originUrl: String) {

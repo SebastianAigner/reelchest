@@ -35,7 +35,7 @@ fun Application.installPlugins() {
         }
     }
 
-    install(io.ktor.server.websocket.WebSockets) {
+    install(WebSockets) {
         pingPeriod = Duration.ofSeconds(15)
         timeout = Duration.ofSeconds(15)
         maxFrameSize = Long.MAX_VALUE
