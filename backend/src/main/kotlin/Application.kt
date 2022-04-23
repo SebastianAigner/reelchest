@@ -8,7 +8,6 @@ import io.sebi.autoscrape.setupAutoscraper
 import io.sebi.downloader.DownloadManager
 import io.sebi.duplicatecalculator.DuplicateCalculator
 import io.sebi.library.MediaLibrary
-import io.sebi.migrations.MigrationManager
 import io.sebi.network.NetworkManager
 import io.sebi.phash.ensureDHashes
 import io.sebi.setup.cleanupDownloadDirectory
@@ -28,6 +27,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
+import java.io.File
 import java.util.concurrent.TimeUnit
 
 fun main(args: Array<String>) {
@@ -50,8 +50,6 @@ fun setup(
     logger.info("Temporary directory is " + System.getProperty("java.io.tmpdir"))
     logger.info("Working directory is " + System.getProperty("user.dir"))
 
-    MigrationManager(metadataStorage, mediaLibrary, networkManager).runAllMigrations()
-
     setupShutdownHooks(downloadManager)
     setupAutoscraper(mediaLibrary, downloadManager, networkManager, tagger, urlDecoder)
 
@@ -62,6 +60,9 @@ fun setup(
 @Suppress("unused") // Referenced in application.conf
 @kotlin.jvm.JvmOverloads
 fun Application.module(testing: Boolean = false) {
+    File("userConfig").mkdir()
+    File("mediaLibrary").mkdir()
+
     cleanupDownloadDirectory()
 
     val networkManager = NetworkManager()

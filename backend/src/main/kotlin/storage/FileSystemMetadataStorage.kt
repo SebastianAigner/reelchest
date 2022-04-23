@@ -31,7 +31,7 @@ class FileSystemMetadataStorage : MetadataStorage {
     }
 
     override fun listAllMetadata(): List<MediaLibraryEntry> {
-        val mediaLibraryDirectory = File("./mediaLibrary/")
+        val mediaLibraryDirectory = File("./mediaLibrary/") // todo ew
         return mediaLibraryDirectory.list().mapNotNull { id ->
             (retrieveMetadata(id) as? MetadataResult.Just)?.entry
         }

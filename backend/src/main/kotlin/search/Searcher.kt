@@ -31,7 +31,7 @@ private val internalClient = HttpClient(Apache) {
 abstract class SearcherFactory(val networkManager: NetworkManager) {
     companion object {
         fun instantiateSearchers(): List<Searcher> {
-            val arr = Json.decodeFromString<JsonArray>(File("userConfig/searchers.json").readText())
+            val arr = Json.decodeFromString<JsonArray>(File("userConfig/searchers.json").apply { createNewFile() }.readText().ifEmpty { "[]" })
             val configurations = arr.map { Json.decodeFromJsonElement<SearcherConfiguration>(it) }
 
             return configurations.map { configuration ->

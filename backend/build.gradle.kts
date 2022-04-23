@@ -7,9 +7,9 @@ val jtsgen_Version: String by project
 
 plugins {
     application
-    kotlin("jvm") version "1.6.10"
-    kotlin("plugin.serialization") version "1.6.10"
-    kotlin("kapt") version "1.6.0"
+    kotlin("jvm") version "1.6.21"
+    kotlin("plugin.serialization") version "1.6.21"
+    kotlin("kapt") version "1.6.21"
 }
 
 group = "io.sebi"
@@ -27,39 +27,33 @@ repositories {
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version")
-    implementation("io.ktor:ktor-server-netty:$ktor_version")
     implementation("ch.qos.logback:logback-classic:$logback_version")
+    implementation("io.ktor:ktor-server-netty:$ktor_version")
     implementation("io.ktor:ktor-server-core:$ktor_version")
-    implementation("io.ktor:ktor-html-builder:$ktor_version")
     implementation("io.ktor:ktor-server-host-common:$ktor_version")
+    testImplementation("io.ktor:ktor-server-tests:$ktor_version")
+    implementation("io.ktor:ktor-html-builder:$ktor_version")
     implementation("io.ktor:ktor-websockets:$ktor_version")
+    implementation("io.ktor:ktor-serialization:$ktor_version")
+
     implementation("io.ktor:ktor-client-core:$ktor_version")
     implementation("io.ktor:ktor-client-core-jvm:$ktor_version")
     implementation("io.ktor:ktor-client-apache:$ktor_version")
     implementation("io.ktor:ktor-client-serialization:$ktor_version")
-    testImplementation("io.ktor:ktor-server-tests:$ktor_version")
-    implementation("org.jsoup:jsoup:1.13.1")
     implementation("io.ktor:ktor-client-cio:$ktor_version")
-    implementation("io.ktor:ktor-serialization:$ktor_version")
     implementation("io.ktor:ktor-client-cio-jvm:$ktor_version")
 
+    implementation("org.jsoup:jsoup:1.13.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version")
-
-//    implementation("io.ktor:ktor-client-okhttp:$ktor_version")
-//    implementation("com.squareup.okhttp3:okhttp:4.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serialization_json_version") // JVM dependency
     implementation("org.quartz-scheduler:quartz:2.3.2")
     implementation("org.reflections:reflections:0.9.12")
     compileOnly("com.github.dzuvic:jtsgen-annotations:${jtsgen_Version}")
     compileOnly("com.github.dzuvic:jtsgen-processor:${jtsgen_Version}")
     kapt("com.github.dzuvic:jtsgen-processor:${jtsgen_Version}")
-
     implementation("io.minio:minio:8.3.3")
-
-    implementation("com.github.pgreze:kotlin-process:1.3.1-fork")
-
+    implementation("com.github.pgreze:kotlin-process:1.3.1")
     implementation("com.michael-bull.kotlin-retry:kotlin-retry:1.0.9")
-
 }
 
 tasks.getByName<Copy>("processResources") {

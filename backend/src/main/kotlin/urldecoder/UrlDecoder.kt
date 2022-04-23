@@ -52,7 +52,9 @@ data class DecryptRequest(val url: String)
 data class UrlDecoderConfiguration(val endpoint: String)
 
 class UrlDecoderImpl(val networkManager: NetworkManager) : UrlDecoder {
-    val arr = Json.decodeFromString<JsonArray>(File("userConfig/decoders.json").readText())
+    val textFile = File("userConfig/decoders.json").apply { createNewFile() }
+
+    val arr = Json.decodeFromString<JsonArray>(textFile.readText().ifEmpty { "[]" }) // todo ew
     val configurations = arr.map { Json.decodeFromJsonElement<UrlDecoderConfiguration>(it) }
 
     override suspend fun decodeUrl(url: String): DecryptResponse? {
