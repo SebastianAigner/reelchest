@@ -4,11 +4,12 @@ import io.ktor.server.application.*
 import io.ktor.server.plugins.*
 import io.ktor.websocket.*
 import io.ktor.server.request.*
-import io.ktor.shared.serialization.kotlinx.*
+import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.plugins.callloging.CallLogging
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.cors.CORS
 import io.ktor.server.plugins.partialcontent.PartialContent
+import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.websocket.*
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
@@ -28,7 +29,7 @@ fun Application.installPlugins() {
     install(PartialContent)
 
     install(StatusPages) {
-        exception<Throwable> { cause ->
+        exception<Throwable> { call, cause ->
             logger.error(cause.stackTraceToString())
             throw cause
         }

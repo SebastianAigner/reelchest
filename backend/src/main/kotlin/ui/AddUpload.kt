@@ -1,5 +1,6 @@
 package io.sebi.ui
 
+import io.ktor.http.content.*
 import io.ktor.server.application.*
 import io.ktor.server.html.*
 import io.ktor.server.http.content.*

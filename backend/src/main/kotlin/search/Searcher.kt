@@ -3,9 +3,11 @@ package io.sebi.search
 import io.ktor.client.*
 import io.ktor.client.call.body
 import io.ktor.client.engine.apache.*
+import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.json.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.*
 import io.sebi.api.SearchRequest
 import io.sebi.network.NetworkManager
 import kotlinx.serialization.Serializable
@@ -24,8 +26,8 @@ abstract class Searcher {
 }
 
 private val internalClient = HttpClient(Apache) {
-    install(JsonFeature) {
-
+    install(ContentNegotiation) {
+        json()
     }
 }
 
@@ -42,9 +44,9 @@ abstract class SearcherFactory(val networkManager: NetworkManager) {
                     override suspend fun search(query: String, pagination: Int): List<SearchResult> {
                         val sr = internalClient.post(configuration.endpoint) {
                             contentType(ContentType.Application.Json)
-                            body = SearchRequest(query, pagination)
+                            setBody(SearchRequest(query, pagination))
                         }
-                            .body<List>()
+                            .body<List<SearchResult>>()
                         return sr
                     }
 

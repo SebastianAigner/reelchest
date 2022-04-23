@@ -6,7 +6,7 @@ import com.github.michaelbull.retry.policy.limitAttempts
 import com.github.michaelbull.retry.policy.plus
 import com.github.michaelbull.retry.retry
 import io.ktor.client.plugins.*
-import io.ktor.util.*
+import io.ktor.util.logging.*
 import io.sebi.network.NetworkManager
 import kotlinx.coroutines.CancellationException
 import org.slf4j.LoggerFactory

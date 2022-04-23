@@ -2,9 +2,9 @@ package io.sebi.urldecoder
 
 import io.ktor.client.*
 import io.ktor.client.call.body
-import io.ktor.client.call.body
 import io.ktor.client.engine.apache.*
-import io.ktor.client.plugins.json.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.serialization.kotlinx.json.*
 import io.ktor.client.request.*
 import io.ktor.server.plugins.*
 import io.ktor.http.*
@@ -42,8 +42,8 @@ enum class DecryptedMediaType {
 }
 
 private val internalClient = HttpClient(Apache) {
-    install(JsonFeature) {
-
+    install(ContentNegotiation) {
+        json()
     }
 }
 
@@ -64,7 +64,7 @@ class UrlDecoderImpl(val networkManager: NetworkManager) : UrlDecoder {
             logger.info("Trying $decoder")
             val resultingUrl = internalClient.post(decoder.endpoint + "/decrypt") {
                 contentType(ContentType.Application.Json)
-                body = DecryptRequest(url)
+                setBody(DecryptRequest(url))
             }
                 .body<DecryptResponse>()
             if (resultingUrl.urls.isNotEmpty()) return resultingUrl
@@ -77,7 +77,7 @@ class UrlDecoderImpl(val networkManager: NetworkManager) : UrlDecoder {
             try {
                 val metadata = internalClient.post(decoder.endpoint + "/metadata") {
                     contentType(ContentType.Application.Json)
-                    body = DecryptRequest(url)
+                    setBody(DecryptRequest(url))
                 }
                     .body<MetadataResponse>()
                 return metadata
