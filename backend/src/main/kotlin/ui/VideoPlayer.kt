@@ -1,11 +1,11 @@
 package io.sebi.ui
 
-import io.ktor.application.*
+import io.ktor.server.application.*
 import io.ktor.client.content.*
 import io.ktor.http.*
-import io.ktor.response.*
-import io.ktor.routing.Route
-import io.ktor.routing.get
+import io.ktor.server.response.*
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.get
 import io.sebi.library.MediaLibrary
 
 fun Route.videoPlayer(mediaLibrary: MediaLibrary) {

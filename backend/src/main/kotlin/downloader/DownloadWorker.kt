@@ -5,7 +5,7 @@ import com.github.michaelbull.retry.policy.constantDelay
 import com.github.michaelbull.retry.policy.limitAttempts
 import com.github.michaelbull.retry.policy.plus
 import com.github.michaelbull.retry.retry
-import io.ktor.client.features.*
+import io.ktor.client.plugins.*
 import io.ktor.util.*
 import io.sebi.network.NetworkManager
 import kotlinx.coroutines.CancellationException
@@ -19,7 +19,7 @@ class DownloadWorker(
     val provideDownload: suspend () -> DownloadTask,
     val id: Int = Random.nextInt(),
     val onComplete: suspend (CompletedDownloadTask) -> Unit,
-    val onError: (DownloadTask, Exception) -> Unit
+    val onError: (DownloadTask, Exception) -> Unit,
 ) {
     val logger = LoggerFactory.getLogger("Download Worker $id")
     var currentTask: DownloadTask? = null // currentTask is for introspecting the worker.

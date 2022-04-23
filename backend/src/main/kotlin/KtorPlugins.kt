@@ -1,10 +1,15 @@
 package io.sebi
 
-import io.ktor.application.*
-import io.ktor.features.*
-import io.ktor.http.cio.websocket.*
-import io.ktor.request.*
-import io.ktor.serialization.*
+import io.ktor.server.application.*
+import io.ktor.server.plugins.*
+import io.ktor.websocket.*
+import io.ktor.server.request.*
+import io.ktor.shared.serialization.kotlinx.*
+import io.ktor.server.plugins.callloging.CallLogging
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.cors.CORS
+import io.ktor.server.plugins.partialcontent.PartialContent
+import io.ktor.server.websocket.*
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import java.time.Duration
@@ -29,7 +34,7 @@ fun Application.installPlugins() {
         }
     }
 
-    install(io.ktor.websocket.WebSockets) {
+    install(io.ktor.server.websocket.WebSockets) {
         pingPeriod = Duration.ofSeconds(15)
         timeout = Duration.ofSeconds(15)
         maxFrameSize = Long.MAX_VALUE

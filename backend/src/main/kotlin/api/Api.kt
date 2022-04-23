@@ -1,9 +1,9 @@
 package io.sebi.api
 
 import dz.jtsgen.annotations.TypeScript
-import io.ktor.application.*
-import io.ktor.response.*
-import io.ktor.routing.*
+import io.ktor.server.application.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import io.sebi.InMemoryAppender
 import io.sebi.downloader.DownloadManager
 import io.sebi.downloader.DownloadTaskDTO
@@ -30,7 +30,7 @@ fun Route.api(
     downloadManager: DownloadManager,
     networkManager: NetworkManager,
     tagger: Tagger,
-    metadataStorage: MetadataStorage
+    metadataStorage: MetadataStorage,
 ) {
 
     route("api") {

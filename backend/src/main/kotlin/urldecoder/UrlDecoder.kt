@@ -1,10 +1,12 @@
 package io.sebi.urldecoder
 
 import io.ktor.client.*
+import io.ktor.client.call.body
+import io.ktor.client.call.body
 import io.ktor.client.engine.apache.*
-import io.ktor.client.features.json.*
+import io.ktor.client.plugins.json.*
 import io.ktor.client.request.*
-import io.ktor.features.*
+import io.ktor.server.plugins.*
 import io.ktor.http.*
 import io.sebi.downloader.CompletedDownloadTask
 import io.sebi.downloader.DownloadTask
@@ -60,10 +62,11 @@ class UrlDecoderImpl(val networkManager: NetworkManager) : UrlDecoder {
     override suspend fun decodeUrl(url: String): DecryptResponse? {
         for (decoder in configurations) {
             logger.info("Trying $decoder")
-            val resultingUrl = internalClient.post<DecryptResponse>(decoder.endpoint + "/decrypt") {
+            val resultingUrl = internalClient.post(decoder.endpoint + "/decrypt") {
                 contentType(ContentType.Application.Json)
                 body = DecryptRequest(url)
             }
+                .body<DecryptResponse>()
             if (resultingUrl.urls.isNotEmpty()) return resultingUrl
         }
         return null
@@ -72,10 +75,11 @@ class UrlDecoderImpl(val networkManager: NetworkManager) : UrlDecoder {
     override suspend fun getMetadata(url: String): MetadataResponse? {
         for (decoder in configurations) {
             try {
-                val metadata = internalClient.post<MetadataResponse>(decoder.endpoint + "/metadata") {
+                val metadata = internalClient.post(decoder.endpoint + "/metadata") {
                     contentType(ContentType.Application.Json)
                     body = DecryptRequest(url)
                 }
+                    .body<MetadataResponse>()
                 return metadata
             } catch (e: NotFoundException) {
                 // nothing found

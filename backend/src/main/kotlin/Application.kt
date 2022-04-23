@@ -1,8 +1,8 @@
 package io.sebi
 
-import io.ktor.application.*
-import io.ktor.http.content.*
-import io.ktor.routing.*
+import io.ktor.server.application.*
+import io.ktor.server.http.content.*
+import io.ktor.server.routing.*
 import io.sebi.api.api
 import io.sebi.autoscrape.setupAutoscraper
 import io.sebi.downloader.DownloadManager
@@ -40,7 +40,7 @@ fun setup(
     downloadManager: DownloadManager,
     networkManager: NetworkManager,
     tagger: Tagger,
-    urlDecoder: UrlDecoder
+    urlDecoder: UrlDecoder,
 ) {
     val logger = LoggerFactory.getLogger("Setup")
     System.getenv("DLMGR_TMP_DIR")?.let {

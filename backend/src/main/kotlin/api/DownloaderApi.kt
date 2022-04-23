@@ -1,10 +1,10 @@
 package io.sebi.api
 
-import io.ktor.application.*
+import io.ktor.server.application.*
 import io.ktor.http.*
-import io.ktor.request.*
-import io.ktor.response.*
-import io.ktor.routing.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import io.sebi.downloader.*
 import io.sebi.urldecoder.UrlDecoder
 import io.sebi.urldecoder.makeDownloadTask
@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory
 fun Route.downloaderApi(
     downloadManager: DownloadManager,
     urlDecoder: UrlDecoder,
-    onCompleteDownload: suspend (CompletedDownloadTask) -> Unit
+    onCompleteDownload: suspend (CompletedDownloadTask) -> Unit,
 ) {
     val logger = LoggerFactory.getLogger("Downloader API Routes")
     post("download") {

@@ -23,31 +23,39 @@ repositories {
     mavenLocal()
     mavenCentral()
     maven { url = uri("https://kotlin.bintray.com/ktor") }
+    maven {
+        url = uri("https://maven.pkg.jetbrains.space/public/p/ktor/eap")
+        name = "ktor-eap"
+    }
 }
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version")
     implementation("ch.qos.logback:logback-classic:$logback_version")
-    implementation("io.ktor:ktor-server-netty:$ktor_version")
-    implementation("io.ktor:ktor-server-core:$ktor_version")
-    implementation("io.ktor:ktor-server-host-common:$ktor_version")
-    testImplementation("io.ktor:ktor-server-tests:$ktor_version")
-    implementation("io.ktor:ktor-html-builder:$ktor_version")
-    implementation("io.ktor:ktor-websockets:$ktor_version")
-    implementation("io.ktor:ktor-serialization:$ktor_version")
-
-    implementation("io.ktor:ktor-client-core:$ktor_version")
-    implementation("io.ktor:ktor-client-core-jvm:$ktor_version")
-    implementation("io.ktor:ktor-client-apache:$ktor_version")
-    implementation("io.ktor:ktor-client-serialization:$ktor_version")
-    implementation("io.ktor:ktor-client-cio:$ktor_version")
-    implementation("io.ktor:ktor-client-cio-jvm:$ktor_version")
+    implementation("io.ktor:ktor-server-netty-jvm:2.0.0-rc-1")
+    implementation("io.ktor:ktor-server-core-jvm:2.0.0-rc-1")
+    implementation("io.ktor:ktor-server-host-common-jvm:2.0.0-rc-1")
 
     implementation("org.jsoup:jsoup:1.13.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serialization_json_version") // JVM dependency
     implementation("org.quartz-scheduler:quartz:2.3.2")
     implementation("org.reflections:reflections:0.9.12")
+    implementation("io.ktor:ktor-server-html-builder-jvm:2.0.0-rc-1")
+    implementation("io.ktor:ktor-server-websockets-jvm:2.0.0-rc-1")
+    implementation("io.ktor:ktor-server-content-negotiation-jvm:2.0.0-rc-1")
+    implementation("io.ktor:ktor-client-apache-jvm:2.0.0-rc-1")
+    implementation("io.ktor:ktor-server-status-pages:2.0.0-rc-1")
+    implementation("io.ktor:ktor-server-cors:2.0.0-rc-1")
+    implementation("io.ktor:ktor-server-partial-content:2.0.0-rc-1")
+    implementation("io.ktor:ktor-server-call-logging:2.0.0-rc-1")
+    implementation("io.ktor:ktor-server-content-negotiation:2.0.0-rc-1")
+    implementation("io.ktor:ktor-client-core-jvm:2.0.0-rc-1")
+    implementation("io.ktor:ktor-client-core-jvm:2.0.0-rc-1")
+    implementation("io.ktor:ktor-client-serialization-jvm:2.0.0-rc-1")
+    implementation("io.ktor:ktor-client-cio-jvm:2.0.0-rc-1")
+    implementation("io.ktor:ktor-client-cio-jvm:2.0.0-rc-1")
+    testImplementation("io.ktor:ktor-server-tests-jvm:2.0.0-rc-1")
     compileOnly("com.github.dzuvic:jtsgen-annotations:${jtsgen_Version}")
     compileOnly("com.github.dzuvic:jtsgen-processor:${jtsgen_Version}")
     kapt("com.github.dzuvic:jtsgen-processor:${jtsgen_Version}")

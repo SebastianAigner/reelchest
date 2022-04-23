@@ -1,8 +1,9 @@
 package io.sebi.network
 
 import io.ktor.client.*
+import io.ktor.client.call.body
 import io.ktor.client.engine.apache.*
-import io.ktor.client.features.*
+import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import org.slf4j.LoggerFactory
@@ -40,14 +41,14 @@ class NetworkManager {
 
     suspend fun getFreshPage(url: String, contentType: String = "text/html"): String {
         GlobalRequestTokenProvider.requestTokenChannel.receive()
-        val res = client.head<HttpResponse>(url)
+        val res = client.head(url).body<HttpResponse>()
         val actualCT = res.headers["Content-Type"]
         if (actualCT?.contains(contentType) == false) {
             logger.warn("An origin page was requested, but the response type was not $contentType (it was $actualCT). Probably direct download, skipping.")
             // we're probably downloading an artifact directly.
             return ""
         }
-        val realRes = client.get<String>(url)
+        val realRes = client.get(url).body<String>()
         cachemap[url] = realRes
         return realRes
     }

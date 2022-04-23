@@ -1,6 +1,7 @@
 package io.sebi.downloader
 
 import io.ktor.client.call.*
+import io.ktor.client.call.body
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -17,9 +18,9 @@ class Downloader(val networkManager: NetworkManager) {
         url: String,
         file: File = File("temp.jpg"),
         absoluteProgressCallback: ((Pair<Long, Long?>) -> Unit)? = null,
-        progressCallback: (Double) -> Unit
+        progressCallback: (Double) -> Unit,
     ) = coroutineScope {
-        networkManager.getRawClient(noReallyItsOkay = true).get<HttpStatement>(url).execute {
+        networkManager.getRawClient(noReallyItsOkay = true).get(url).body<HttpStatement>().execute {
             val chan = it.receive<ByteReadChannel>()
             var ctr = 0L
             val updateRoutine = launch {

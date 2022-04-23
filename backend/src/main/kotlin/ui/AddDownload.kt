@@ -1,10 +1,10 @@
 package io.sebi.ui
 
-import io.ktor.application.*
-import io.ktor.html.*
-import io.ktor.response.*
-import io.ktor.routing.Route
-import io.ktor.routing.get
+import io.ktor.server.application.*
+import io.ktor.server.html.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.get
 import io.sebi.downloader.CompletedDownloadTask
 import io.sebi.downloader.DownloadManager
 import io.sebi.ui.shared.commonLayout
@@ -18,7 +18,7 @@ import kotlinx.html.input
 fun Route.addDownload(
     downloadManager: DownloadManager,
     urlDecoder: UrlDecoder,
-    onCompleteDownload: suspend (CompletedDownloadTask) -> Unit
+    onCompleteDownload: suspend (CompletedDownloadTask) -> Unit,
 ) {
     get("/add") {
         call.respondHtml {
