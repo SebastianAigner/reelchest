@@ -7,3 +7,13 @@ Find duplicate videos in your library based on perceptual hashing, organize your
 and integrate with external search and video host adapters.
 
 ![](screenshot.png)
+
+## Setting up for development
+
+### Backend development
+Start the backend with the Gradle `run`, either by executing it from the IDE or via `./gradlew run`.
+
+### Frontend development
+For frontend development, run `yarn dev` in the `frontend` directory to enable the Vite dev server. Access the frontend on port `3000`.
+
+Requests to endpoints under `/api/` are automatically proxied to the backend running on port `8080`.
