@@ -66,7 +66,7 @@ dependencies {
 
 tasks.getByName<Copy>("processResources") {
     dependsOn(":frontend:build")
-    from("../frontend/build/") {
+    from("../frontend/dist") {
         into("frontend")
     }
 }
