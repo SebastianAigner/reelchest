@@ -1,5 +1,6 @@
 package io.sebi
 
+import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.*
 import io.ktor.websocket.*
@@ -48,6 +49,7 @@ fun Application.installPlugins() {
 
     install(CORS) {
         anyHost()
+        allowHeader(HttpHeaders.ContentType)
     }
 
 }
