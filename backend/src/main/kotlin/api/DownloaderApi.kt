@@ -81,5 +81,11 @@ fun Route.downloaderApi(
             downloadManager.problematicDownloads.removeAll { it.originUrl == text }
             call.respond(HttpStatusCode.OK)
         }
+        post("retry") {
+            val text = call.receive<UrlRequest>().url
+            downloadManager.problematicDownloads.removeAll { it.originUrl == text }
+            downloadManager.enqueueTask(urlDecoder.makeDownloadTask(text, onCompleteDownload))
+            call.respond(HttpStatusCode.OK)
+        }
     }
 }

@@ -61,6 +61,13 @@ export function Downloads() {
                                 url: item.originUrl
                             })
                         }}>Delete</StyledButton>
+                        <StyledButton onClick={() => {
+                            return axios.post("/api/problematic/retry", {
+                                url: item.originUrl
+                            })
+                        }}>
+                            Retry
+                        </StyledButton>
                     </li>
                 )
             }
