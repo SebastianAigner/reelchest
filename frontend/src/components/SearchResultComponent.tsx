@@ -27,11 +27,10 @@ export function SearchResultComponent(result: SearchResult) {
         }
         fetchData()
     }, [])
-    const isStarred = false;
     return <div key={result.url} className={"box-border"}>
         <a href={`/decrypt?url=${result.url}`} target={"_blank"}>
             <LazyLoadImage
-                className={`object-cover rounded-md h-48 w-full ${existsAlready == SearchResultState.IN_LIBRARY || existsAlready == SearchResultState.JUST_ADDED ? "opacity-25" : ""} ${isStarred ? "border-2 border-blue-400" : ""}`}
+                className={`object-cover rounded-md h-48 w-full ${existsAlready == SearchResultState.IN_LIBRARY || existsAlready == SearchResultState.JUST_ADDED ? "opacity-25" : ""}`}
                 src={result.thumbUrl}/>
         </a>
         <a href={`/decrypt?url=${result.url}`} target={"_blank"}>{result.title}</a>

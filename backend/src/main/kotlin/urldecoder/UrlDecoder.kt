@@ -1,14 +1,13 @@
 package io.sebi.urldecoder
 
 import io.ktor.client.*
-import io.ktor.client.call.body
+import io.ktor.client.call.*
 import io.ktor.client.engine.apache.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.serialization.kotlinx.json.*
 import io.ktor.client.request.*
-import io.ktor.server.plugins.*
 import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.*
 import io.sebi.downloader.CompletedDownloadTask
 import io.sebi.downloader.DownloadTask
 import io.sebi.network.NetworkManager
@@ -41,7 +40,8 @@ enum class DecryptedMediaType {
 
 private val internalClient = HttpClient(Apache) {
     install(HttpTimeout) {
-        connectTimeoutMillis
+        socketTimeoutMillis = 20_000
+        requestTimeoutMillis = 60_000
     }
     install(ContentNegotiation) {
         json()

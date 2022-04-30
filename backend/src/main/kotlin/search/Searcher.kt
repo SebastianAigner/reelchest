@@ -1,10 +1,10 @@
 package io.sebi.search
 
 import io.ktor.client.*
-import io.ktor.client.call.body
+import io.ktor.client.call.*
 import io.ktor.client.engine.apache.*
+import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.json.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
@@ -28,6 +28,10 @@ abstract class Searcher {
 private val internalClient = HttpClient(Apache) {
     install(ContentNegotiation) {
         json()
+    }
+    install(HttpTimeout) {
+        requestTimeoutMillis = 60_000
+        socketTimeoutMillis = 30_000
     }
 }
 
