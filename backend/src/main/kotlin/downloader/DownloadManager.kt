@@ -107,12 +107,13 @@ class DownloadManager(
 
     private fun persistQueue() {
         logger.info("Persisting queue..")
-        val dtos = mutableListOf<DownloadTaskDTO>()
-        queuedDownloads.toList().mapTo(dtos) {
-            DownloadTaskDTO.from(it)
-        }
-        problematicDownloads.toList().mapTo(dtos) {
-            DownloadTaskDTO.from(it)
+        val dtos = buildList {
+            for (queued in queuedDownloads.toList()) {
+                add(DownloadTaskDTO.from(queued))
+            }
+            for (problematic in problematicDownloads.toList()) {
+                add(DownloadTaskDTO.from(problematic))
+            }
         }
         File("userConfig/queue.json").writeText(
             Json.encodeToString(dtos)
