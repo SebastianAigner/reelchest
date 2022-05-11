@@ -13,10 +13,7 @@ import io.sebi.phash.ensureDHashes
 import io.sebi.setup.cleanupDownloadDirectory
 import io.sebi.setup.removeFilesScheduledForDeletion
 import io.sebi.shutdown.setupShutdownHooks
-import io.sebi.storage.CachingMetadataStorage
-import io.sebi.storage.FileSystemMetadataStorage
-import io.sebi.storage.FileSystemVideoStorage
-import io.sebi.storage.MetadataStorage
+import io.sebi.storage.*
 import io.sebi.tagging.CachingTagger
 import io.sebi.tagging.Tagger
 import io.sebi.ui.*
@@ -58,8 +55,8 @@ fun setup(
 
 
 @Suppress("unused") // Referenced in application.conf
-@kotlin.jvm.JvmOverloads
-fun Application.module(testing: Boolean = false) {
+@JvmOverloads
+fun Application.module() {
     File("userConfig").mkdir()
     File("mediaLibrary").mkdir()
 
@@ -68,7 +65,20 @@ fun Application.module(testing: Boolean = false) {
     val networkManager = NetworkManager()
     val urlDecoder: UrlDecoder = UrlDecoderImpl(networkManager)
     val videoStorage = FileSystemVideoStorage()
-    val metadataStorage = CachingMetadataStorage(FileSystemMetadataStorage())
+
+    val sqliteStorage = SqliteMetadataStorage()
+    val fileSystemMetadataStorage = FileSystemMetadataStorage()
+
+    SqliteMetadataImporter.import(fileSystemMetadataStorage, sqliteStorage)
+
+    val metadataStorage =
+        MultiplexingMetadataStorage(
+            listOf(
+                CachingMetadataStorage(fileSystemMetadataStorage),
+                sqliteStorage,
+            ),
+            listOf("Caching[Filesystem]", "SQLite")
+        )
     removeFilesScheduledForDeletion(metadataStorage, videoStorage)
     val mediaLibrary = MediaLibrary(urlDecoder, networkManager, videoStorage, metadataStorage)
     val downloadManager =

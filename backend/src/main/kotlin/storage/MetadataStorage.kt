@@ -13,7 +13,7 @@ sealed class MetadataResult {
         override fun just(): MediaLibraryEntry? = null
     }
 
-    class Just(val entry: MediaLibraryEntry) : MetadataResult() {
+    data class Just(val entry: MediaLibraryEntry) : MetadataResult() {
         override fun just(): MediaLibraryEntry = entry
     }
 }

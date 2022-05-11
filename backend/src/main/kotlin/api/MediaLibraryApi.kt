@@ -1,7 +1,7 @@
 package io.sebi.api
 
-import io.ktor.server.application.*
 import io.ktor.http.*
+import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -10,7 +10,6 @@ import io.sebi.downloader.DownloadManager
 import io.sebi.duplicatecalculator.DuplicateCalculator
 import io.sebi.library.MediaLibrary
 import io.sebi.library.MediaLibraryEntry
-import io.sebi.phash.DHash
 import io.sebi.phash.getMinimalDistance
 import io.sebi.storage.MetadataStorage
 import io.sebi.tagging.Tagger
@@ -94,7 +93,7 @@ fun Route.mediaLibraryApi(
 
     get("{id}/possibleDuplicates") {
         val id = call.parameters["id"]!!
-        val entry = mediaLibrary.findById(id)!!
+        val entry = mediaLibrary.findById(id) ?: return@get call.respond(HttpStatusCode.NotFound)
         val restLibrary = mediaLibrary.entries
             .filterNot { it.id == id }
             .mapNotNull { curr ->
@@ -103,16 +102,13 @@ fun Route.mediaLibraryApi(
             }
         // we randomly pick a handful of hashes from our candidate.
         val entryHashes = entry.getDHashes()
-        val handful = buildList<DHash> {
-            repeat(100) {
-                add(entryHashes!!.random())
-            }
-        }
+        val handful = entryHashes?.shuffled()?.take(100).orEmpty()
         // we find the global minimum: which of the other library entries has the lowest cumulative distance?
         val mostLikelyDuplicate = restLibrary.minByOrNull { (_, dhashes) ->
             handful.sumOf { dhashes.getMinimalDistance(it) }
         }
-        call.respond(mostLikelyDuplicate!!.first)
+        if (mostLikelyDuplicate != null) call.respond(mostLikelyDuplicate.first)
+        else call.respond(HttpStatusCode.NotFound)
     }
     get("{id}/randomThumb") {
         val id = call.parameters["id"]!!
@@ -120,7 +116,7 @@ fun Route.mediaLibraryApi(
             mediaLibrary
                 .findById(id)
                 ?.getThumbnails()
-                ?.random()
+                ?.randomOrNull()
                 ?: return@get call.respond(HttpStatusCode.NotFound)
         call.respondFile(entry)
     }

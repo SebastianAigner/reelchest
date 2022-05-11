@@ -5,11 +5,22 @@ val coroutines_version: String by project
 val serialization_json_version: String by project
 val jtsgen_Version: String by project
 
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("app.cash.sqldelight:gradle-plugin:2.0.0-alpha02")
+    }
+}
+
 plugins {
     application
     kotlin("jvm") version "1.6.21"
     kotlin("plugin.serialization") version "1.6.21"
     kotlin("kapt") version "1.6.21"
+    id("app.cash.sqldelight") version "2.0.0-alpha02"
 }
 
 group = "io.sebi"
@@ -62,6 +73,10 @@ dependencies {
     implementation("io.minio:minio:8.3.3")
     implementation("com.github.pgreze:kotlin-process:1.3.1")
     implementation("com.michael-bull.kotlin-retry:kotlin-retry:1.0.9")
+
+    implementation("org.xerial:sqlite-jdbc:3.36.0.3")
+
+    implementation("app.cash.sqldelight:sqlite-driver:2.0.0-alpha02")
 }
 
 tasks.getByName<Copy>("processResources") {
@@ -88,6 +103,14 @@ tasks.withType(JavaExec::class.java) {
     // ^ this is an ugly hack to preserve the previous behavior of the `run` tasks,
     // i.e. expecting mediaLibrary & co. folders in the root of the project.
     // ideally this can be ditched once config management is improved.
+}
+
+sqldelight {
+    database("MediaDatabase") { // This will be the name of the generated database class.
+        packageName = "io.sebi.database"
+        dialect = "app.cash.sqldelight:sqlite-3-25-dialect:2.0.0-alpha02"
+        module("app.cash.sqldelight:sqlite-json-module:2.0.0-alpha02")
+    }
 }
 
 kapt {
