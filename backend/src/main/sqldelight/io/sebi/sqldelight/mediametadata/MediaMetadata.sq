@@ -1,0 +1,44 @@
+CREATE TABLE media_library_entries (
+    unique_id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    origin_url TEXT NOT NULL,
+    hits INTEGER NOT NULL DEFAULT 0,
+    marked_for_deletion INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE media_library_tombstones(
+    unique_id TEXT PRIMARY KEY
+);
+
+getTombstoneForId:
+SELECT * FROM media_library_tombstones WHERE unique_id = ?;
+
+createTombstoneForId:
+INSERT INTO media_library_tombstones (unique_id) VALUES (?);
+
+selectAll:
+SELECT * FROM media_library_entries;
+
+selectAllWithTags:
+SELECT *, CASE WHEN t.name ISNULL THEN json_array() ELSE json_group_array(t.name) END AS tags
+FROM media_library_entries
+         LEFT JOIN tags_for_library_entries tfle ON media_library_entries.unique_id = tfle.library_entry_uuid
+         LEFT JOIN tags t ON t.id = tfle.tag_id
+GROUP BY media_library_entries.unique_id;
+
+deleteById {
+    DELETE FROM media_library_entries WHERE unique_id = :unique_id;
+    INSERT INTO media_library_tombstones (unique_id) VALUES (:unique_id);
+    -- TODO: This leaves orphan tags, consider cascading deletion?
+}
+
+selectById:
+SELECT *, CASE WHEN t.name ISNULL THEN json_array() ELSE json_group_array(t.name) END AS tags
+FROM media_library_entries
+         LEFT JOIN tags_for_library_entries tfle ON media_library_entries.unique_id = tfle.library_entry_uuid
+         LEFT JOIN tags t ON t.id = tfle.tag_id
+WHERE unique_id = ?
+GROUP BY media_library_entries.unique_id;
+
+insertOrReplaceEntry:
+INSERT OR REPLACE INTO media_library_entries(unique_id, title, origin_url, hits, marked_for_deletion) VALUES (?, ?, ?, ?, ?);
