@@ -1,16 +1,14 @@
 package io.sebi
 
 import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.plugins.*
-import io.ktor.websocket.*
-import io.ktor.server.request.*
 import io.ktor.serialization.kotlinx.json.*
-import io.ktor.server.plugins.callloging.CallLogging
-import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.server.plugins.cors.CORS
-import io.ktor.server.plugins.partialcontent.PartialContent
+import io.ktor.server.application.*
+import io.ktor.server.plugins.callloging.*
+import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.plugins.cors.*
+import io.ktor.server.plugins.partialcontent.*
 import io.ktor.server.plugins.statuspages.*
+import io.ktor.server.request.*
 import io.ktor.server.websocket.*
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level

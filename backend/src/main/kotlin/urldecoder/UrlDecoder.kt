@@ -77,18 +77,18 @@ class UrlDecoderImpl(val networkManager: NetworkManager) : UrlDecoder {
 
     override suspend fun getMetadata(url: String): MetadataResponse? {
         return configurations.firstNotNullOfOrNull { decoder ->
-                val metadata = internalClient.post(decoder.endpoint + "/metadata") {
-                    contentType(ContentType.Application.Json)
-                    setBody(DecryptRequest(url))
-                }
+            val metadata = internalClient.post(decoder.endpoint + "/metadata") {
+                contentType(ContentType.Application.Json)
+                setBody(DecryptRequest(url))
+            }
 
-                return if(metadata.status.isSuccess()) {
-                    metadata.body<MetadataResponse>()
-                } else {
-                    // nothing found
-                    logger.info("$decoder didn't find.")
-                    null
-                }
+            return if (metadata.status.isSuccess()) {
+                metadata.body<MetadataResponse>()
+            } else {
+                // nothing found
+                logger.info("$decoder didn't find.")
+                null
+            }
         }
     }
 }
@@ -129,7 +129,8 @@ object DashPostProcessor : PostProcessor() {
 
 fun postProcessAudioAndVideo(vid: DASHVideo, aud: DASHAudio): MP4File {
     val fileName = UUID.randomUUID().toString()
-    ProcessBuilder("ffmpeg",
+    ProcessBuilder(
+        "ffmpeg",
         "-y",
         "-i",
         vid.f.name,
@@ -137,7 +138,8 @@ fun postProcessAudioAndVideo(vid: DASHVideo, aud: DASHAudio): MP4File {
         aud.f.name,
         "-c",
         "copy",
-        "$fileName.mp4").directory(vid.f.parentFile).inheritIO().start().waitFor()
+        "$fileName.mp4"
+    ).directory(vid.f.parentFile).inheritIO().start().waitFor()
     return MP4File(File(vid.f.parent, "$fileName.mp4"))
 }
 
