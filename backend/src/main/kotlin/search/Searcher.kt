@@ -49,8 +49,7 @@ abstract class SearcherFactory(val networkManager: NetworkManager) {
                         val sr = internalClient.post(configuration.endpoint) {
                             contentType(ContentType.Application.Json)
                             setBody(SearchRequest(query, pagination))
-                        }
-                            .body<List<SearchResult>>()
+                        }.body<List<SearchResult>>()
                         return sr
                     }
 
