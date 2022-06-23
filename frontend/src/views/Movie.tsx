@@ -57,11 +57,18 @@ export function Movie() {
             }
         }
         }/>
-        <button onClick={() =>
-            mutateEntry({markedForDeletion: !entry?.mediaLibraryEntry.markedForDeletion})
-        }>{entry?.mediaLibraryEntry.markedForDeletion ? "Unmark " : "Mark "} for deletion
-        </button>
-        <h3>Tags</h3>
+
+        <h3 className={"text-2xl"}>Operations</h3>
+        <ul>
+            <li>
+                <button onClick={() =>
+                    mutateEntry({markedForDeletion: !entry?.mediaLibraryEntry.markedForDeletion})
+                }>{entry?.mediaLibraryEntry.markedForDeletion ? "Unmark " : "Mark "} for deletion
+                </button>
+            </li>
+            <li><a href={`vlc://${window.location.host}/api/video/${id}`}>Open in VLC</a></li>
+        </ul>
+        <h3 className={"text-2xl"}>Tags</h3>
         <ul>
             {entry.mediaLibraryEntry.tags.map((tag) => {
                     return <li key={tag}>
@@ -87,7 +94,7 @@ export function Movie() {
                 return INPUT_ACTION.CLEAR
             }}/>
         </p>
-        <h3>Autotags</h3>
+        <h3 className={"text-2xl"}>Autotags</h3>
         {entry.autoTags.map((tag) => {
             return <li key={tag}>
                 <p className={"bg-green-500 text-white font-semibold rounded-lg shadow-md focus:outline-none p-2 inline-block"}>
@@ -95,7 +102,7 @@ export function Movie() {
                 </p>
             </li>
         })}
-        <h3>Possible duplicate</h3>
+        <h3 className={"text-2xl"}>Duplicate detection</h3>
         {data &&
             <>
                 <p>{data.id}</p>

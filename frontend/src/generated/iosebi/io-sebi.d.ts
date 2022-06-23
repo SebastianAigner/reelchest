@@ -3,58 +3,30 @@
 
 
 declare namespace IoSebi {
-    export interface ProblematicTaskDTO extends WithOriginUrl {
-        Companion: io.sebi.downloader.ProblematicTaskDTO.Companion;
-        originUrl: string;
-        error: string;
-    }
+  export interface LogEntry {
+    Companion: io.sebi.LogEntry.Companion;
+    formattedMessage: string;
+  }
 
-    export interface WithOriginUrl {
-        originUrl: string;
-    }
-
-    export interface DownloadTaskDTO extends WithOriginUrl {
-        Companion: io.sebi.downloader.DownloadTaskDTO.Companion;
-        originUrl: string;
-        progress: number;
-    }
-
-    export interface MetadatedDownloadQueueEntry {
-        Companion: io.sebi.api.MetadatedDownloadQueueEntry.Companion;
-        queueEntry: DownloadTaskDTO;
-        title: string;
-    }
-
-    export interface UrlRequest {
-        Companion: io.sebi.api.UrlRequest.Companion;
-        url: string;
-    }
-
-    export interface SearchRequest {
-        Companion: io.sebi.api.SearchRequest.Companion;
-        offset: number;
-        term: string;
-    }
-
-    export interface File {
-        parent: string;
-        parentFile: any;
-        hidden: boolean;
-        freeSpace: number;
-        pathSeparatorChar: string;
-        totalSpace: number;
-        usableSpace: number;
-        separator: string;
-        canonicalFile: any;
-        directory: boolean;
-        path: string;
-        absoluteFile: any;
-        file: boolean;
-        pathSeparator: string;
-        absolute: boolean;
-        name: string;
-        canonicalPath: string;
-        separatorChar: string;
+  export interface File {
+    parent: string;
+    parentFile: any;
+    hidden: boolean;
+    freeSpace: number;
+    pathSeparatorChar: string;
+    totalSpace: number;
+    usableSpace: number;
+    separator: string;
+    canonicalFile: any;
+    directory: boolean;
+    path: string;
+    absoluteFile: any;
+    file: boolean;
+    pathSeparator: string;
+    absolute: boolean;
+    name: string;
+    canonicalPath: string;
+    separatorChar: string;
     absolutePath: string;
   }
 
@@ -85,9 +57,37 @@ declare namespace IoSebi {
     distance: number;
   }
 
-  export interface LogEntry {
-    Companion: io.sebi.LogEntry.Companion;
-    formattedMessage: string;
+  export interface ProblematicTaskDTO extends WithOriginUrl {
+    Companion: io.sebi.downloader.ProblematicTaskDTO.Companion;
+    originUrl: string;
+    error: string;
+  }
+
+  export interface WithOriginUrl {
+    originUrl: string;
+  }
+
+  export interface DownloadTaskDTO extends WithOriginUrl {
+    Companion: io.sebi.downloader.DownloadTaskDTO.Companion;
+    originUrl: string;
+    progress: number;
+  }
+
+  export interface MetadatedDownloadQueueEntry {
+    Companion: io.sebi.api.MetadatedDownloadQueueEntry.Companion;
+    queueEntry: DownloadTaskDTO;
+    title: string;
+  }
+
+  export interface UrlRequest {
+    Companion: io.sebi.api.UrlRequest.Companion;
+    url: string;
+  }
+
+  export interface SearchRequest {
+    Companion: io.sebi.api.SearchRequest.Companion;
+    offset: number;
+    term: string;
   }
 
   export namespace io {
