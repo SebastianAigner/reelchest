@@ -26,6 +26,7 @@ import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.minutes
 
 fun main(args: Array<String>) {
     io.ktor.server.netty.EngineMain.main(args)
@@ -87,7 +88,7 @@ fun Application.module() {
     val tagger = CachingTagger()
 
     launch(Dispatchers.IO) {
-        delay(60 * 30 * 1000)
+        delay(45.minutes)
         ensureDHashes(mediaLibrary)
     }
 
@@ -96,7 +97,7 @@ fun Application.module() {
     }
 
     launch(Dispatchers.Default) {
-        delay(60 * 30 * 1000)
+        delay(50.minutes)
         duplicateCalculator.calculateDuplicates()
     }
 
