@@ -24,7 +24,7 @@ export function MediaLibraryCard({item}: { item: MediaLibraryEntry }) {
             src={`/api/video/${item.id}`} controls={true}/>
     }
     return <div key={"player-or-picture-card" + item.id}
-                className={"border-2 rounded-xl  p-3 shadow"}
+                className={`border-2 ${item.markedForDeletion ? "border-red-500" : ""} rounded-xl p-3 shadow`}
                 style={{"height": "fit-content"}}
     >
         {playerOrPicture}

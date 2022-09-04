@@ -4,8 +4,9 @@ import io.sebi.library.MediaLibrary
 import io.sebi.library.MediaLibraryEntry
 import io.sebi.phash.DHash
 import io.sebi.phash.getMinimalDistance
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.yield
 import org.slf4j.LoggerFactory
-import kotlin.streams.toList
 import kotlin.time.ExperimentalTime
 
 data class EntryWithDistance(val entry: MediaLibraryEntry, val distance: Int)
@@ -16,12 +17,12 @@ class DuplicateCalculator(val mediaLibrary: MediaLibrary) {
     var duplicatesMap: Map<MediaLibraryEntry, EntryWithDistance>? = null
 
     @OptIn(ExperimentalTime::class)
-    fun calculateDuplicates() {
+    suspend fun calculateDuplicates() {
         val x = kotlin.time.TimeSource.Monotonic.markNow()
         logger.info("Starting duplicates calculation...")
 
         val calculated = mediaLibrary.entries.toList().parallelStream().map {
-            it to (calculateDuplicateForEntry(it)
+            it to (runBlocking { calculateDuplicateForEntry(it) } // todo: highly questionable hacky code
                 ?: return@map null)
         }.toList().filterNotNull().toMap()
 
@@ -31,10 +32,11 @@ class DuplicateCalculator(val mediaLibrary: MediaLibrary) {
 
 
     @OptIn(ExperimentalStdlibApi::class)
-    fun calculateDuplicateForEntry(entry: MediaLibraryEntry): EntryWithDistance? {
+    suspend fun calculateDuplicateForEntry(entry: MediaLibraryEntry): EntryWithDistance? {
         val restLibrary = mediaLibrary.entries
             .filterNot { it.id == entry.id }
             .mapNotNull { curr ->
+                yield() // todo: temporary fix; let's see if this helps with videos not loading properly while duplicate calculation is running
                 curr.getDHashes()
                     ?.let { dhash ->
                         return@mapNotNull curr to dhash
