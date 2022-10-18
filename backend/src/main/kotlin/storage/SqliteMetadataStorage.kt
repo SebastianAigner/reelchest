@@ -7,9 +7,13 @@ import io.sebi.sqldelight.mediametadata.SelectAllWithTags
 import io.sebi.sqldelight.mediametadata.SelectById
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import org.slf4j.LoggerFactory
 import org.sqlite.SQLiteConfig
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTimedValue
 
 class SqliteMetadataStorage : MetadataStorage {
+    val logger = LoggerFactory.getLogger("Sqlite Metadata Storage")
     val sqliteConfig = SQLiteConfig().apply {
         enforceForeignKeys(true)
     }
@@ -59,11 +63,18 @@ class SqliteMetadataStorage : MetadataStorage {
         database.mediaMetadataQueries.deleteById(id)
     }
 
+    @OptIn(ExperimentalTime::class)
     override fun listAllMetadata(): List<MediaLibraryEntry> {
-        val mediaMetadata = database.mediaMetadataQueries.selectAllWithTags().executeAsList()
-        return mediaMetadata.map {
-            it.toMediaLibraryEntry()
+        val (mediaMetadata, time) = measureTimedValue {
+            database.mediaMetadataQueries.selectAllWithTags().executeAsList()
         }
+        val (entries, entriesTime) = measureTimedValue {
+            mediaMetadata.map {
+                it.toMediaLibraryEntry()
+            }
+        }
+        logger.info("Selected all metadata in $time, converted to entries in $entriesTime (total ${time + entriesTime})")
+        return entries
     }
 
     fun SelectAllWithTags.toMediaLibraryEntry(): MediaLibraryEntry {
