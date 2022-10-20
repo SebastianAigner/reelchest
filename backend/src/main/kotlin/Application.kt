@@ -68,18 +68,11 @@ fun Application.module() {
     val videoStorage = FileSystemVideoStorage()
 
     val sqliteStorage = SqliteMetadataStorage()
-    val fileSystemMetadataStorage = FileSystemMetadataStorage()
+//    val fileSystemMetadataStorage = FileSystemMetadataStorage()
 
-    SqliteMetadataImporter.import(fileSystemMetadataStorage, sqliteStorage)
+//    SqliteMetadataImporter.import(fileSystemMetadataStorage, sqliteStorage)
 
-    val metadataStorage =
-        MultiplexingMetadataStorage(
-            listOf(
-                CachingMetadataStorage(fileSystemMetadataStorage),
-                sqliteStorage,
-            ),
-            listOf("Caching[Filesystem]", "SQLite")
-        )
+    val metadataStorage = sqliteStorage
     removeFilesScheduledForDeletion(metadataStorage, videoStorage)
     val mediaLibrary = MediaLibrary(urlDecoder, networkManager, videoStorage, metadataStorage)
     val downloadManager =

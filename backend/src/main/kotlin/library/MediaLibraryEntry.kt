@@ -23,7 +23,10 @@ data class MediaLibraryEntry(
     val id: String = uid ?: originUrl.shaHashed()
 
     val file: File? by lazy { File("./mediaLibrary/${id}/${id}.mp4") }
-    val creationDate by lazy { file?.creationTime?.toMillis() }
+    val creationDate by lazy {
+        if (file?.exists() == false) null
+        else file?.creationTime?.toMillis()
+    }
 
     fun withoutPage(): MediaLibraryEntry {
         return this.copy(originPage = null)

@@ -11,15 +11,15 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("app.cash.sqldelight:gradle-plugin:2.0.0-alpha02")
+        classpath("app.cash.sqldelight:gradle-plugin:_")
     }
 }
 
 plugins {
     application
-    kotlin("jvm") version "1.7.0"
-    kotlin("plugin.serialization") version "1.6.21"
-    kotlin("kapt") version "1.6.21"
+    kotlin("jvm")
+    kotlin("plugin.serialization")
+    kotlin("kapt")
     id("app.cash.sqldelight") version "2.0.0-alpha02"
 }
 
@@ -41,42 +41,42 @@ repositories {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version")
-    implementation("ch.qos.logback:logback-classic:$logback_version")
-    implementation("io.ktor:ktor-server-netty-jvm:$ktor_version")
-    implementation("io.ktor:ktor-server-core-jvm:$ktor_version")
-    implementation("io.ktor:ktor-server-host-common-jvm:$ktor_version")
+    implementation(Kotlin.stdlib.jdk8)
+    implementation("ch.qos.logback:logback-classic:_")
+    implementation("io.ktor:ktor-server-netty-jvm:_")
+    implementation("io.ktor:ktor-server-core-jvm:_")
+    implementation("io.ktor:ktor-server-host-common-jvm:_")
 
-    implementation("org.jsoup:jsoup:1.13.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serialization_json_version") // JVM dependency
-    implementation("org.quartz-scheduler:quartz:2.3.2")
-    implementation("org.reflections:reflections:0.9.12")
-    implementation("io.ktor:ktor-server-html-builder-jvm:$ktor_version")
-    implementation("io.ktor:ktor-server-websockets-jvm:$ktor_version")
-    implementation("io.ktor:ktor-server-content-negotiation-jvm:$ktor_version")
-    implementation("io.ktor:ktor-client-apache-jvm:$ktor_version")
-    implementation("io.ktor:ktor-server-status-pages:$ktor_version")
-    implementation("io.ktor:ktor-server-cors:$ktor_version")
-    implementation("io.ktor:ktor-server-partial-content:$ktor_version")
-    implementation("io.ktor:ktor-server-call-logging:$ktor_version")
-    implementation("io.ktor:ktor-server-content-negotiation:$ktor_version")
-    implementation("io.ktor:ktor-client-core-jvm:$ktor_version")
-    implementation("io.ktor:ktor-client-serialization-jvm:$ktor_version")
-    implementation("io.ktor:ktor-client-cio-jvm:$ktor_version")
-    implementation("io.ktor:ktor-client-content-negotiation:$ktor_version")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor_version")
-    testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
-    compileOnly("com.github.dzuvic:jtsgen-annotations:${jtsgen_Version}")
-    compileOnly("com.github.dzuvic:jtsgen-processor:${jtsgen_Version}")
-    kapt("com.github.dzuvic:jtsgen-processor:${jtsgen_Version}")
-    implementation("io.minio:minio:8.3.3")
-    implementation("com.github.pgreze:kotlin-process:1.3.1")
-    implementation("com.michael-bull.kotlin-retry:kotlin-retry:1.0.9")
+    implementation("org.jsoup:jsoup:_")
+    implementation(KotlinX.coroutines.core)
+    implementation(KotlinX.serialization.json) // JVM dependency
+    implementation("org.quartz-scheduler:quartz:_")
+    implementation("org.reflections:reflections:_")
+    implementation("io.ktor:ktor-server-html-builder-jvm:_")
+    implementation("io.ktor:ktor-server-websockets-jvm:_")
+    implementation("io.ktor:ktor-server-content-negotiation-jvm:_")
+    implementation("io.ktor:ktor-client-apache-jvm:_")
+    implementation(Ktor.server.statusPages)
+    implementation(Ktor.server.cors)
+    implementation(Ktor.server.partialContent)
+    implementation(Ktor.server.callLogging)
+    implementation(Ktor.server.contentNegotiation)
+    implementation("io.ktor:ktor-client-core-jvm:_")
+    implementation("io.ktor:ktor-client-serialization-jvm:_")
+    implementation("io.ktor:ktor-client-cio-jvm:_")
+    implementation(Ktor.client.contentNegotiation)
+    implementation(Ktor.plugins.serialization.kotlinx.json)
+    testImplementation("io.ktor:ktor-server-tests-jvm:_")
+    compileOnly("com.github.dzuvic:jtsgen-annotations:_")
+    compileOnly("com.github.dzuvic:jtsgen-processor:_")
+    kapt("com.github.dzuvic:jtsgen-processor:_")
+    implementation("io.minio:minio:_")
+    implementation("com.github.pgreze:kotlin-process:_")
+    implementation("com.michael-bull.kotlin-retry:kotlin-retry:_")
 
-    implementation("org.xerial:sqlite-jdbc:3.36.0.3")
+    implementation("org.xerial:sqlite-jdbc:_")
 
-    implementation("app.cash.sqldelight:sqlite-driver:2.0.0-alpha02")
+    implementation("app.cash.sqldelight:sqlite-driver:_")
 }
 
 tasks.getByName<Copy>("processResources") {
@@ -108,8 +108,8 @@ tasks.withType(JavaExec::class.java) {
 sqldelight {
     database("MediaDatabase") { // This will be the name of the generated database class.
         packageName = "io.sebi.database"
-        dialect = "app.cash.sqldelight:sqlite-3-25-dialect:2.0.0-alpha02"
-        module("app.cash.sqldelight:sqlite-json-module:2.0.0-alpha02")
+        dialect("app.cash.sqldelight:sqlite-3-25-dialect:_")
+        module("app.cash.sqldelight:sqlite-json-module:_")
     }
 }
 

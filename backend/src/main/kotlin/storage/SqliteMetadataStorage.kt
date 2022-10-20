@@ -19,7 +19,7 @@ class SqliteMetadataStorage : MetadataStorage {
     }
     val driver = JdbcSqliteDriver("jdbc:sqlite:mediaLibrary/db.sqlite", sqliteConfig.toProperties()).also { driver ->
         fun getVersion(): Int {
-            return driver.executeQuery(null, "PRAGMA user_version;", { it.getLong(0)!!.toInt() }, 0, null)
+            return driver.executeQuery(null, "PRAGMA user_version;", { it.getLong(0)!!.toInt() }, 0, null).value
         }
 
         fun setVersion(version: Int) {
