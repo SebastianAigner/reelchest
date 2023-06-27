@@ -33,7 +33,6 @@ application {
 repositories {
     mavenLocal()
     mavenCentral()
-    maven { url = uri("https://kotlin.bintray.com/ktor") }
     maven {
         url = uri("https://maven.pkg.jetbrains.space/public/p/ktor/eap")
         name = "ktor-eap"
@@ -106,10 +105,12 @@ tasks.withType(JavaExec::class.java) {
 }
 
 sqldelight {
-    database("MediaDatabase") { // This will be the name of the generated database class.
-        packageName = "io.sebi.database"
-        dialect("app.cash.sqldelight:sqlite-3-25-dialect:_")
-        module("app.cash.sqldelight:sqlite-json-module:_")
+    databases {
+        create("MediaDatabase") {
+            packageName.set("io.sebi.database")
+            dialect("app.cash.sqldelight:sqlite-3-25-dialect:_")
+            module("app.cash.sqldelight:sqlite-json-module:_")
+        }
     }
 }
 

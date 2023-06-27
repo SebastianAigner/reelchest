@@ -19,7 +19,9 @@ class SqliteMetadataStorage : MetadataStorage {
     }
     val driver = JdbcSqliteDriver("jdbc:sqlite:mediaLibrary/db.sqlite", sqliteConfig.toProperties()).also { driver ->
         fun getVersion(): Int {
-            return driver.executeQuery(null, "PRAGMA user_version;", { it.getLong(0)!!.toInt() }, 0, null).value
+            return driver.executeQuery(null, "PRAGMA user_version;", {
+                app.cash.sqldelight.db.QueryResult.Value(it.getLong(0)!!.toInt())
+            }, 0, null).value
         }
 
         fun setVersion(version: Int) {
@@ -78,23 +80,27 @@ class SqliteMetadataStorage : MetadataStorage {
     }
 
     fun SelectAllWithTags.toMediaLibraryEntry(): MediaLibraryEntry {
-        return MediaLibraryEntry(title,
+        return MediaLibraryEntry(
+            title,
             origin_url,
             Json.decodeFromString(tags),
             null,
             unique_id,
             hits.toInt(),
-            marked_for_deletion.asSqlBoolean())
+            marked_for_deletion.asSqlBoolean()
+        )
     }
 
     fun SelectById.toMediaLibraryEntry(): MediaLibraryEntry {
-        return MediaLibraryEntry(title,
+        return MediaLibraryEntry(
+            title,
             origin_url,
             Json.decodeFromString(tags),
             null,
             unique_id,
             hits.toInt(),
-            marked_for_deletion.asSqlBoolean())
+            marked_for_deletion.asSqlBoolean()
+        )
     }
 
     fun Long.asSqlBoolean(): Boolean {
