@@ -32,39 +32,8 @@ fun Route.downloaderApi(
             DownloadManager.DownloadType.QUEUED, DownloadManager.DownloadType.CURRENT
         )
 
-        val nameRequests = tasks.map { dltask ->
-            val deferredTitle = async {
-                try {
-                    urlDecoder.getMetadata(dltask.originUrl)?.title
-                } catch (e: Throwable) {
-                    logger.error(e.stackTraceToString())
-                    null
-                }
-            }
-            dltask to deferredTitle
-        }
-
-        val tasksToNames = tasks.associateWith {
-            it.originUrl
-        }.toMutableMap()
-
-        withTimeoutOrNull(10000) {
-            val remaining = nameRequests.toMutableList()
-            repeat(nameRequests.size) {
-                val selected = select<Pair<DownloadTask, String?>> {
-                    for (req in remaining) {
-                        req.second.onAwait { req.first to it }
-                    }
-                }
-                selected.second?.let {
-                    tasksToNames[selected.first] = it
-                    remaining.removeIf { it.first == selected.first }
-                }
-            }
-        }
-
-        val res = tasksToNames.map { (task, name) ->
-            MetadatedDownloadQueueEntry(queueEntry = DownloadTaskDTO.from(task), title = name)
+        val res = tasks.map {
+            MetadatedDownloadQueueEntry(queueEntry = DownloadTaskDTO.from(it), title = it.originUrl)
         }
 
         call.respond(res)
