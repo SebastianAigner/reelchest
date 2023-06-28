@@ -56,7 +56,6 @@ fun setup(
 
 
 @Suppress("unused") // Referenced in application.conf
-@JvmOverloads
 fun Application.module() {
     File("userConfig").mkdir()
     File("mediaLibrary").mkdir()
@@ -67,12 +66,7 @@ fun Application.module() {
     val urlDecoder: UrlDecoder = UrlDecoderImpl(networkManager)
     val videoStorage = FileSystemVideoStorage()
 
-    val sqliteStorage = SqliteMetadataStorage()
-//    val fileSystemMetadataStorage = FileSystemMetadataStorage()
-
-//    SqliteMetadataImporter.import(fileSystemMetadataStorage, sqliteStorage)
-
-    val metadataStorage = sqliteStorage
+    val metadataStorage: MetadataStorage = SqliteMetadataStorage()
     removeFilesScheduledForDeletion(metadataStorage, videoStorage)
     val mediaLibrary = MediaLibrary(urlDecoder, networkManager, videoStorage, metadataStorage)
     val downloadManager =
@@ -118,17 +112,8 @@ fun Application.module() {
 }
 
 fun Routing.setupStaticPaths() {
-    // Static feature. Try to access `/static/ktor_logo.svg`
-    static("/static") {
-        resources("static")
-    }
-
-    static("/") {
-        resources("frontend")
-        defaultResource("frontend/index.html")
-    }
-
-    defaultResource("frontend/index.html")
+    staticResources("/static", "static")
+    staticResources("/", "frontend")
 }
 
 private fun generateThumbnails(mediaLibrary: MediaLibrary) {
