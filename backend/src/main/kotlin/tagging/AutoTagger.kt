@@ -2,7 +2,7 @@ package io.sebi.tagging
 
 import java.io.File
 
-object AutoTagger : Tagger { // todo ew
+object AutoTagger : Tagger {
 
     fun getUserRulesFiles(): Collection<File> {
         return File("userConfig").listFiles { f ->
@@ -45,12 +45,12 @@ object AutoTagger : Tagger { // todo ew
 
     override fun tag(name: String, tags: Set<String>): Set<String> {
         val name = name.lowercase()
-        return buildList {
+        return buildSet {
             for (rule in optimizedRules) {
                 if (name.contains(rule.from) || tags.contains(rule.from)) {
                     addAll(rule.to)
                 }
             }
-        }.toSet()
+        }
     }
 }
