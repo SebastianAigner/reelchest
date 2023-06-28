@@ -6,7 +6,7 @@ import kotlin.time.measureTimedValue
 
 class CachingTagger : Tagger {
     val logger = LoggerFactory.getLogger("Caching Tagger")
-    val delegate = AvtoTagger
+    val delegate = AutoTagger
     val cache = mutableMapOf<NameAndTagsContainer, Set<String>>()
 
     data class NameAndTagsContainer(val name: String, val tags: Set<String>)
