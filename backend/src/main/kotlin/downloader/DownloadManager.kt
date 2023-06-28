@@ -1,6 +1,8 @@
 package io.sebi.downloader
 
 
+import io.ktor.events.*
+import io.ktor.server.application.*
 import io.sebi.datastructures.SuspendingQueue
 import io.sebi.datastructures.shaHashed
 import io.sebi.network.NetworkManager
@@ -9,7 +11,6 @@ import io.sebi.storage.MetadataStorage
 import io.sebi.urldecoder.UrlDecoder
 import io.sebi.urldecoder.makeDownloadTask
 import kotlinx.coroutines.*
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
@@ -19,7 +20,8 @@ class DownloadManager(
     val metadataStorage: MetadataStorage,
     val urlDecoder: UrlDecoder,
     val networkManager: NetworkManager,
-    val defaultOnComplete: suspend (CompletedDownloadTask) -> Unit
+    val defaultOnComplete: suspend (CompletedDownloadTask) -> Unit,
+    val serverEvents: Events
 ) {
     val scope = CoroutineScope(context = Dispatchers.Default)
     val logger = LoggerFactory.getLogger("Download Manager")
@@ -30,8 +32,7 @@ class DownloadManager(
         }
 
     enum class DownloadType {
-        QUEUED,
-        CURRENT,
+        QUEUED, CURRENT,
     }
 
     @OptIn(ExperimentalStdlibApi::class)
@@ -57,6 +58,15 @@ class DownloadManager(
     init {
         scope.launch(Dispatchers.IO) {
             startWorkers()
+        }
+        setupShutdownHook()
+    }
+
+    private fun setupShutdownHook() {
+        serverEvents.subscribe(ApplicationStopped) {
+            runBlocking {
+                shutdown()
+            }
         }
     }
 
@@ -90,11 +100,9 @@ class DownloadManager(
             return
         }
 
-        val abortConditions = listOf(
-            queuedDownloads.any { it.originUrl == d.originUrl } to "duplicate download job",
+        val abortConditions = listOf(queuedDownloads.any { it.originUrl == d.originUrl } to "duplicate download job",
             workers.mapNotNull { it.currentTask }.any { it.originUrl == d.originUrl } to "download job in progress",
-            (metadataStorage.retrieveMetadata(d.originUrl.shaHashed()) != MetadataResult.None) to "URL already in metadata storage"
-        )
+            (metadataStorage.retrieveMetadata(d.originUrl.shaHashed()) != MetadataResult.None) to "URL already in metadata storage")
 
         abortConditions.firstOrNull { it.first }?.let {
             logger.info("Attempting to add ${it.second}, not adding to queue.")
@@ -123,11 +131,9 @@ class DownloadManager(
     fun restoreQueue() {
         val list =
             Json.runCatching { decodeFromString<List<DownloadTaskDTO>>(File("userConfig/queue.json").readText()).distinctBy { it.originUrl } }
-        list
-            .onFailure {
+        list.onFailure {
                 logger.error("Queue restore failed. $it")
-            }
-            .onSuccess {
+        }.onSuccess {
                 it.reversed().forEach {
                     enqueueTask(urlDecoder.makeDownloadTask(it.originUrl, defaultOnComplete))
                 }
@@ -138,22 +144,16 @@ class DownloadManager(
     val workers = mutableListOf<DownloadWorker>()
     fun CoroutineScope.startWorkers(n: Int = 1) {
         repeat(n) {
-            val newWorker = DownloadWorker(
-                networkManager = networkManager,
-                provideDownload = {
-                    queuedDownloads.remove()
-                },
-                id = it,
-                onComplete = {
-                    finishedDownloads.add(it)
-                },
-                onError = { task, error ->
-                    // eof, connection reset or other stuff.
-                    logger.error("Worker $it failed with $error, adding to problematic tasks.")
-                    logger.error(error.stackTraceToString())
-                    problematicDownloads.add(ProblematicTask(task.originUrl, error))
-                }
-            )
+            val newWorker = DownloadWorker(networkManager = networkManager, provideDownload = {
+                queuedDownloads.remove()
+            }, id = it, onComplete = {
+                finishedDownloads.add(it)
+            }, onError = { task, error ->
+                // eof, connection reset or other stuff.
+                logger.error("Worker $it failed with $error, adding to problematic tasks.")
+                logger.error(error.stackTraceToString())
+                problematicDownloads.add(ProblematicTask(task.originUrl, error))
+            })
             launch { newWorker.run() }
             workers += newWorker
         }

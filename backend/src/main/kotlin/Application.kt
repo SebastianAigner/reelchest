@@ -12,8 +12,9 @@ import io.sebi.network.NetworkManager
 import io.sebi.phash.ensureDHashes
 import io.sebi.setup.cleanupDownloadDirectory
 import io.sebi.setup.removeFilesScheduledForDeletion
-import io.sebi.shutdown.setupShutdownHooks
-import io.sebi.storage.*
+import io.sebi.storage.FileSystemVideoStorage
+import io.sebi.storage.MetadataStorage
+import io.sebi.storage.SqliteMetadataStorage
 import io.sebi.tagging.CachingTagger
 import io.sebi.tagging.Tagger
 import io.sebi.ui.*
@@ -48,7 +49,6 @@ fun setup(
     logger.info("Temporary directory is " + System.getProperty("java.io.tmpdir"))
     logger.info("Working directory is " + System.getProperty("user.dir"))
 
-    setupShutdownHooks(downloadManager)
     setupAutoscraper(mediaLibrary, downloadManager, networkManager, tagger, urlDecoder)
 
     downloadManager.restoreQueue()
@@ -76,7 +76,13 @@ fun Application.module() {
     removeFilesScheduledForDeletion(metadataStorage, videoStorage)
     val mediaLibrary = MediaLibrary(urlDecoder, networkManager, videoStorage, metadataStorage)
     val downloadManager =
-        DownloadManager(metadataStorage, urlDecoder, networkManager, mediaLibrary::addCompletedDownload)
+        DownloadManager(
+            metadataStorage,
+            urlDecoder,
+            networkManager,
+            mediaLibrary::addCompletedDownload,
+            environment.monitor
+        )
     val duplicateCalculator = DuplicateCalculator(mediaLibrary)
     val tagger = CachingTagger()
 
