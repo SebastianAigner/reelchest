@@ -42,7 +42,7 @@ data class ProblematicTaskDTO(
 ) : WithOriginUrl {
     companion object {
         fun from(problematicTask: ProblematicTask): ProblematicTaskDTO {
-            return ProblematicTaskDTO(problematicTask.originUrl, problematicTask.error.toString())
+            return ProblematicTaskDTO(problematicTask.originUrl, problematicTask.error.stackTraceToString())
         }
     }
 }
