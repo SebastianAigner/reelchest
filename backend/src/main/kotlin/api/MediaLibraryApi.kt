@@ -76,6 +76,43 @@ fun Route.mediaLibraryApi(
             metadataStorage.retrieveMetadata(id).just()?.addHitAndPersist(metadataStorage)
             call.respond(HttpStatusCode.OK)
         }
+        get("thumbnails") {
+            val id = call.parameters["id"]!!
+            val entry = mediaLibrary.findById(id)!!
+            val out = entry.file!!.parentFile.list()!!.filter { it.startsWith("thumb") }.sorted()
+            call.respond(out)
+        }
+        get("possibleDuplicates") {
+            val id = call.parameters["id"]!!
+            val entry = mediaLibrary.findById(id) ?: return@get call.respond(HttpStatusCode.NotFound)
+            val restLibrary = mediaLibrary.entries
+                .filterNot { it.id == id }
+                .mapNotNull { curr ->
+                    val dhash = curr.getDHashes() ?: return@mapNotNull null
+                    yield()
+                    curr to dhash
+                }
+            // we randomly pick a handful of hashes from our candidate.
+            val entryHashes = entry.getDHashes()
+            val handful = entryHashes?.shuffled()?.take(100).orEmpty()
+            // we find the global minimum: which of the other library entries has the lowest cumulative distance?
+            val mostLikelyDuplicate = restLibrary.minByOrNull { (_, dhashes) ->
+                yield()
+                handful.sumOf { dhashes.getMinimalDistance(it) }
+            }
+            if (mostLikelyDuplicate != null) call.respond(mostLikelyDuplicate.first)
+            else call.respond(HttpStatusCode.NotFound)
+        }
+        get("randomThumb") {
+            val id = call.parameters["id"]!!
+            val entry =
+                mediaLibrary
+                    .findById(id)
+                    ?.getThumbnails()
+                    ?.randomOrNull()
+                    ?: return@get call.respond(HttpStatusCode.NotFound)
+            call.respondFile(entry)
+        }
         post {
             val newEntry = call.receive<MediaLibraryEntry>()
             val existingEntry = mediaLibrary.findById(newEntry.id)!!
@@ -83,45 +120,6 @@ fun Route.mediaLibraryApi(
             newEntry.persist(metadataStorage)
             call.respond(HttpStatusCode.OK)
         }
-    }
-
-    get("{id}/thumbnails") {
-        val id = call.parameters["id"]!!
-        val entry = mediaLibrary.findById(id)!!
-        val out = entry.file!!.parentFile.list()!!.filter { it.startsWith("thumb") }.sorted()
-        call.respond(out)
-    }
-
-    get("{id}/possibleDuplicates") {
-        val id = call.parameters["id"]!!
-        val entry = mediaLibrary.findById(id) ?: return@get call.respond(HttpStatusCode.NotFound)
-        val restLibrary = mediaLibrary.entries
-            .filterNot { it.id == id }
-            .mapNotNull { curr ->
-                val dhash = curr.getDHashes() ?: return@mapNotNull null
-                yield()
-                curr to dhash
-            }
-        // we randomly pick a handful of hashes from our candidate.
-        val entryHashes = entry.getDHashes()
-        val handful = entryHashes?.shuffled()?.take(100).orEmpty()
-        // we find the global minimum: which of the other library entries has the lowest cumulative distance?
-        val mostLikelyDuplicate = restLibrary.minByOrNull { (_, dhashes) ->
-            yield()
-            handful.sumOf { dhashes.getMinimalDistance(it) }
-        }
-        if (mostLikelyDuplicate != null) call.respond(mostLikelyDuplicate.first)
-        else call.respond(HttpStatusCode.NotFound)
-    }
-    get("{id}/randomThumb") {
-        val id = call.parameters["id"]!!
-        val entry =
-            mediaLibrary
-                .findById(id)
-                ?.getThumbnails()
-                ?.randomOrNull()
-                ?: return@get call.respond(HttpStatusCode.NotFound)
-        call.respondFile(entry)
     }
     post("isUrlInLibraryOrProgress") {
         val url = call.receive<UrlRequest>().url
