@@ -21,6 +21,7 @@ plugins {
     kotlin("plugin.serialization")
     kotlin("kapt")
     id("app.cash.sqldelight") version "2.0.0-alpha02"
+    id("io.ktor.plugin") version "2.3.1"
 }
 
 group = "io.sebi"
@@ -42,30 +43,30 @@ repositories {
 dependencies {
     implementation(Kotlin.stdlib.jdk8)
     implementation("ch.qos.logback:logback-classic:_")
-    implementation("io.ktor:ktor-server-netty-jvm:_")
-    implementation("io.ktor:ktor-server-core-jvm:_")
-    implementation("io.ktor:ktor-server-host-common-jvm:_")
+    implementation("io.ktor:ktor-server-netty")
+    implementation("io.ktor:ktor-server-core")
+    implementation("io.ktor:ktor-server-host-common")
 
     implementation("org.jsoup:jsoup:_")
     implementation(KotlinX.coroutines.core)
     implementation(KotlinX.serialization.json) // JVM dependency
     implementation("org.quartz-scheduler:quartz:_")
     implementation("org.reflections:reflections:_")
-    implementation("io.ktor:ktor-server-html-builder-jvm:_")
-    implementation("io.ktor:ktor-server-websockets-jvm:_")
-    implementation("io.ktor:ktor-server-content-negotiation-jvm:_")
-    implementation("io.ktor:ktor-client-apache-jvm:_")
+    implementation("io.ktor:ktor-server-html-builder")
+    implementation("io.ktor:ktor-server-websockets")
+    implementation("io.ktor:ktor-server-content-negotiation")
+    implementation("io.ktor:ktor-client-apache")
     implementation(Ktor.server.statusPages)
     implementation(Ktor.server.cors)
     implementation(Ktor.server.partialContent)
     implementation(Ktor.server.callLogging)
     implementation(Ktor.server.contentNegotiation)
-    implementation("io.ktor:ktor-client-core-jvm:_")
-    implementation("io.ktor:ktor-client-serialization-jvm:_")
-    implementation("io.ktor:ktor-client-cio-jvm:_")
+    implementation("io.ktor:ktor-client-core")
+    implementation("io.ktor:ktor-client-serialization")
+    implementation("io.ktor:ktor-client-cio")
     implementation(Ktor.client.contentNegotiation)
     implementation(Ktor.plugins.serialization.kotlinx.json)
-    testImplementation("io.ktor:ktor-server-tests-jvm:_")
+    testImplementation("io.ktor:ktor-server-tests")
     compileOnly("com.github.dzuvic:jtsgen-annotations:_")
     compileOnly("com.github.dzuvic:jtsgen-processor:_")
     kapt("com.github.dzuvic:jtsgen-processor:_")
