@@ -5,7 +5,6 @@ import java.awt.image.BufferedImage
 // Implemented after https://www.hackerfactor.com/blog/?/archives/529-Kind-of-Like-That.html
 
 @JvmInline
-@OptIn(ExperimentalUnsignedTypes::class)
 value class DHash(val raw: ULong) {
     fun distanceTo(other: DHash): Int {
         return (raw xor other.raw).countOneBits()
@@ -16,7 +15,6 @@ value class DHash(val raw: ULong) {
     }
 
     companion object {
-        @OptIn(ExperimentalUnsignedTypes::class)
         fun fromImage(img: BufferedImage): DHash {
             val scl = BufferedImage(9, 8, BufferedImage.TYPE_BYTE_GRAY)
             scl.graphics.drawImage(img, 0, 0, scl.width, scl.height, 0, 0, img.width, img.height, null)
