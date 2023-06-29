@@ -29,7 +29,7 @@ data class MediaLibraryEntry(
     }
 
     fun withoutPage(): MediaLibraryEntry {
-        return this.copy(originPage = null)
+        return if (originPage != null) this.copy(originPage = null) else this
     }
 
     fun withAutoTags(tagger: Tagger): AutoTaggedMediaLibraryEntry {
