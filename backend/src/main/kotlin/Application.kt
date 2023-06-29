@@ -1,6 +1,9 @@
 package io.sebi
 
+import io.ktor.client.*
+import io.ktor.client.request.*
 import io.ktor.server.application.*
+import io.ktor.server.engine.*
 import io.ktor.server.http.content.*
 import io.ktor.server.routing.*
 import io.sebi.api.api
@@ -20,10 +23,7 @@ import io.sebi.tagging.Tagger
 import io.sebi.ui.*
 import io.sebi.urldecoder.UrlDecoder
 import io.sebi.urldecoder.UrlDecoderImpl
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -108,6 +108,18 @@ fun Application.module() {
         progressList(downloadManager)
         videoPlayer(mediaLibrary)
         setupStaticPaths()
+    }
+
+    warmApi(environment as ApplicationEngineEnvironment, this)
+}
+
+fun warmApi(env: ApplicationEngineEnvironment, scope: CoroutineScope) {
+    env.monitor.subscribe(ServerReady) {
+        val conns = env.connectors.first()
+        val url = "http://${conns.host}:${conns.port}/api/mediaLibrary"
+        scope.launch {
+            HttpClient().get(url)
+        }
     }
 }
 
