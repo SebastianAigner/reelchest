@@ -13,6 +13,7 @@ import io.sebi.library.MediaLibraryEntry
 import io.sebi.phash.getMinimalDistance
 import io.sebi.storage.MetadataStorage
 import io.sebi.tagging.Tagger
+import kotlinx.coroutines.yield
 import java.io.File
 
 @OptIn(ExperimentalStdlibApi::class)
@@ -98,6 +99,7 @@ fun Route.mediaLibraryApi(
             .filterNot { it.id == id }
             .mapNotNull { curr ->
                 val dhash = curr.getDHashes() ?: return@mapNotNull null
+                yield()
                 curr to dhash
             }
         // we randomly pick a handful of hashes from our candidate.
@@ -105,6 +107,7 @@ fun Route.mediaLibraryApi(
         val handful = entryHashes?.shuffled()?.take(100).orEmpty()
         // we find the global minimum: which of the other library entries has the lowest cumulative distance?
         val mostLikelyDuplicate = restLibrary.minByOrNull { (_, dhashes) ->
+            yield()
             handful.sumOf { dhashes.getMinimalDistance(it) }
         }
         if (mostLikelyDuplicate != null) call.respond(mostLikelyDuplicate.first)
