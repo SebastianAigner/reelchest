@@ -54,4 +54,4 @@ jobs:
           mv artifact/backend-all.jar backend-all.jar
           commit=`git rev-list HEAD --count`
           hash=`git rev-parse HEAD`
-          gh release create 1.$commit twemoji-amazing.css --target $hash -t "backend 1.$commit"
+          gh release create 1.$commit backend-all.jar --target $hash -t "backend 1.$commit"
