@@ -5,7 +5,8 @@ import io.sebi.database.MediaDatabase
 import io.sebi.library.MediaLibraryEntry
 import io.sebi.sqldelight.mediametadata.SelectAllWithTags
 import io.sebi.sqldelight.mediametadata.SelectById
-import kotlinx.serialization.decodeFromString
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import org.sqlite.SQLiteConfig
@@ -37,28 +38,55 @@ class SqliteMetadataStorage : MetadataStorage {
     // TODO: This should also not live in apply block, holy moly
     val database = MediaDatabase(driver)
 
+    var readers = 0
+    val mutex = Mutex()
+    val roomEmpty = Mutex()
 
-    override fun storeMetadata(id: String, metadata: MediaLibraryEntry) {
-        database.mediaMetadataQueries.insertOrReplaceEntry(
-            id,
-            metadata.name,
-            metadata.originUrl,
-            metadata.hits.toLong(),
-            if (metadata.markedForDeletion) 1 else 0
-        )
-        metadata.tags.forEach {
-            database.tagsQueries.addTag(it) // TODO: This does a lot of `ON CONFLICT DO NOTHING`. Maybe there's a nicer way?
-            database.tagsQueries.addTagForLibraryEntryByName(id, it)
+    override suspend fun storeMetadata(id: String, metadata: MediaLibraryEntry) {
+        roomEmpty.withLock {
+            database.mediaMetadataQueries.insertOrReplaceEntry(
+                id,
+                metadata.name,
+                metadata.originUrl,
+                metadata.hits.toLong(),
+                if (metadata.markedForDeletion) 1 else 0
+            )
+            metadata.tags.forEach {
+                database.tagsQueries.addTag(it) // TODO: This does a lot of `ON CONFLICT DO NOTHING`. Maybe there's a nicer way?
+                database.tagsQueries.addTagForLibraryEntryByName(id, it)
+            }
         }
     }
 
-    override fun retrieveMetadata(id: String): MetadataResult {
-        val metadataForId = database.mediaMetadataQueries.selectById(id).executeAsOneOrNull()
-        if (metadataForId != null) return MetadataResult.Just(metadataForId.toMediaLibraryEntry())
+    // https://github.com/Kotlin/kotlinx.coroutines/issues/94
+    // https://greenteapress.com/semaphores/LittleBookOfSemaphores.pdf Ch 4.2
+    private suspend inline fun <T> withReaderLock(criticalSection: () -> T): T {
+        mutex.withLock {
+            readers++
+            if (readers == 1)
+                roomEmpty.lock()
+        }
+        try {
+            return criticalSection()
+        } finally {
+            mutex.withLock {
+                readers--
+                if (readers == 0) {
+                    roomEmpty.unlock()
+                }
+            }
+        }
+    }
 
-        val tombstoneForId = database.mediaMetadataQueries.getTombstoneForId(id).executeAsOneOrNull()
-        if (tombstoneForId != null) return MetadataResult.Tombstone
-        return MetadataResult.None
+    override suspend fun retrieveMetadata(id: String): MetadataResult {
+        withReaderLock {
+            val metadataForId = database.mediaMetadataQueries.selectById(id).executeAsOneOrNull()
+            if (metadataForId != null) return MetadataResult.Just(metadataForId.toMediaLibraryEntry())
+
+            val tombstoneForId = database.mediaMetadataQueries.getTombstoneForId(id).executeAsOneOrNull()
+            if (tombstoneForId != null) return MetadataResult.Tombstone
+            return MetadataResult.None
+        }
     }
 
     override fun deleteMetadata(id: String) {
@@ -66,7 +94,7 @@ class SqliteMetadataStorage : MetadataStorage {
     }
 
     @OptIn(ExperimentalTime::class)
-    override fun listAllMetadata(): List<MediaLibraryEntry> {
+    override suspend fun listAllMetadata(): List<MediaLibraryEntry> {
         val (mediaMetadata, time) = measureTimedValue {
             database.mediaMetadataQueries.selectAllWithTags().executeAsList()
         }

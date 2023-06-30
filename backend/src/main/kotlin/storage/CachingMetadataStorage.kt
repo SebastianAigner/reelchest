@@ -4,12 +4,12 @@ import io.sebi.library.MediaLibraryEntry
 
 class CachingMetadataStorage(private val delegate: MetadataStorage) : MetadataStorage {
     val map = mutableMapOf<String, MetadataResult>()
-    override fun storeMetadata(id: String, metadata: MediaLibraryEntry) {
+    override suspend fun storeMetadata(id: String, metadata: MediaLibraryEntry) {
         map[id] = MetadataResult.Just(metadata.copy(uid = metadata.id))
         delegate.storeMetadata(id, metadata)
     }
 
-    override fun retrieveMetadata(id: String): MetadataResult {
+    override suspend fun retrieveMetadata(id: String): MetadataResult {
         val cacheHit = map[id]
         if (cacheHit != null) return cacheHit
 
@@ -23,7 +23,7 @@ class CachingMetadataStorage(private val delegate: MetadataStorage) : MetadataSt
         delegate.deleteMetadata(id)
     }
 
-    override fun listAllMetadata(): List<MediaLibraryEntry> {
+    override suspend fun listAllMetadata(): List<MediaLibraryEntry> {
         if (map.isNotEmpty()) return getAllRealEntries()
 
         val delegatedResult = delegate.listAllMetadata()

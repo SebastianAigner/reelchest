@@ -19,8 +19,8 @@ sealed class MetadataResult {
 }
 
 interface MetadataStorage {
-    fun storeMetadata(id: String, metadata: MediaLibraryEntry)
-    fun retrieveMetadata(id: String): MetadataResult
+    suspend fun storeMetadata(id: String, metadata: MediaLibraryEntry)
+    suspend fun retrieveMetadata(id: String): MetadataResult
     fun deleteMetadata(id: String)
-    fun listAllMetadata(): List<MediaLibraryEntry>
+    suspend fun listAllMetadata(): List<MediaLibraryEntry>
 }

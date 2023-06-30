@@ -8,13 +8,13 @@ import kotlin.time.measureTimedValue
 class MultiplexingMetadataStorage(val metadataStorages: List<MetadataStorage>, val storageNames: List<String>) :
     MetadataStorage {
     val logger = LoggerFactory.getLogger("Multiplexing Metadata Storage")
-    override fun storeMetadata(id: String, metadata: MediaLibraryEntry) {
+    override suspend fun storeMetadata(id: String, metadata: MediaLibraryEntry) {
         for (m in metadataStorages) {
             m.storeMetadata(id, metadata)
         }
     }
 
-    override fun retrieveMetadata(id: String): MetadataResult {
+    override suspend fun retrieveMetadata(id: String): MetadataResult {
         val metadatas = metadataStorages.map { it.retrieveMetadata(id) }
         val single = metadatas.distinct().singleOrNull()
         return single ?: error("Mismatching metadata between multiplexed storages: ${metadatas.zip(storageNames)}")
@@ -25,7 +25,7 @@ class MultiplexingMetadataStorage(val metadataStorages: List<MetadataStorage>, v
     }
 
     @OptIn(ExperimentalTime::class)
-    override fun listAllMetadata(): List<MediaLibraryEntry> {
+    override suspend fun listAllMetadata(): List<MediaLibraryEntry> {
         val allMetadatas = metadataStorages.zip(storageNames).map { (individualStorage, individualStorageName) ->
             val (entries, time) = measureTimedValue {
                 individualStorage.listAllMetadata()
