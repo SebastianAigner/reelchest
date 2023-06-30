@@ -4,7 +4,10 @@ import io.sebi.library.MediaLibrary
 import io.sebi.library.MediaLibraryEntry
 import io.sebi.phash.DHash
 import io.sebi.phash.getMinimalDistance
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import org.slf4j.LoggerFactory
 import kotlin.time.ExperimentalTime
 
@@ -20,10 +23,12 @@ class DuplicateCalculator(val mediaLibrary: MediaLibrary) {
         val x = kotlin.time.TimeSource.Monotonic.markNow()
         logger.info("Starting duplicates calculation...")
 
+        val dispatcher = Dispatchers.Default
+
         val calculated =
             coroutineScope {
                 mediaLibrary.entries.toList().map {
-                    async(Dispatchers.Default) {
+                    async(dispatcher) {
                         val duplicateForEntry = calculateDuplicateForEntry(it)
                         it to (duplicateForEntry ?: return@async null)
                     }
@@ -37,22 +42,29 @@ class DuplicateCalculator(val mediaLibrary: MediaLibrary) {
         logger.info("Finished duplicates calculation in ${x.elapsedNow()}")
     }
 
+    @OptIn(ExperimentalUnsignedTypes::class)
+    val mediaLibWithHashes: Sequence<Pair<MediaLibraryEntry, ULongArray>> by lazy {
+        mediaLibrary.entries.mapNotNull { curr ->
+            curr.getDHashes()
+                ?.let { dhash ->
+                    return@mapNotNull curr to dhash
+                }
+            null
+        }.asSequence()
+    }
 
-    @OptIn(ExperimentalStdlibApi::class, ExperimentalUnsignedTypes::class)
-    suspend fun calculateDuplicateForEntry(entry: MediaLibraryEntry): EntryWithDistance? {
-        val restLibrary = mediaLibrary.entries
+    @OptIn(ExperimentalUnsignedTypes::class)
+    private fun getRestLibrary(entry: MediaLibraryEntry): Sequence<Pair<MediaLibraryEntry, ULongArray>> {
+        return mediaLibWithHashes
             .filterNot {
-                yield()
-                it.id == entry.id
+                it.first.id == entry.id
             }
-            .mapNotNull { curr ->
-                yield() // todo: temporary fix; let's see if this helps with videos not loading properly while duplicate calculation is running
-                curr.getDHashes()
-                    ?.let { dhash ->
-                        return@mapNotNull curr to dhash
-                    }
-                null
-            }
+    }
+
+
+    @OptIn(ExperimentalUnsignedTypes::class)
+    fun calculateDuplicateForEntry(entry: MediaLibraryEntry): EntryWithDistance? {
+        val restLibrary = getRestLibrary(entry)
         // we randomly pick a handful of hashes from our candidate.
         val entryHashes = entry.getDHashes() ?: return null
         val handful = ULongArray(100) { entryHashes.random() }
