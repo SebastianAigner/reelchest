@@ -38,7 +38,7 @@ class DuplicateCalculator(val mediaLibrary: MediaLibrary) {
     }
 
 
-    @OptIn(ExperimentalStdlibApi::class)
+    @OptIn(ExperimentalStdlibApi::class, ExperimentalUnsignedTypes::class)
     suspend fun calculateDuplicateForEntry(entry: MediaLibraryEntry): EntryWithDistance? {
         val restLibrary = mediaLibrary.entries
             .filterNot {
@@ -55,21 +55,17 @@ class DuplicateCalculator(val mediaLibrary: MediaLibrary) {
             }
         // we randomly pick a handful of hashes from our candidate.
         val entryHashes = entry.getDHashes() ?: return null
-        val handful = buildList<DHash> {
-            repeat(100) {
-                add(entryHashes.random())
-            }
-        }
+        val handful = ULongArray(100) { entryHashes.random() }
         // we find the global minimum: which of the other library entries has the lowest cumulative distance?
 
         val mostLikelyDuplicate = restLibrary.minByOrNull { (entry, dhashes) ->
             handful.sumOf {
-                dhashes.getMinimalDistance(it)
+                getMinimalDistance(dhashes, DHash(it))
             }
         }!!
 
         val cumulativeDistance = handful.sumOf {
-            mostLikelyDuplicate.second.getMinimalDistance(it) // todo: we can probably save some calulations here, but this should be relatively cheap.
+            getMinimalDistance(mostLikelyDuplicate.second, DHash(it))
         }
         return EntryWithDistance(mostLikelyDuplicate.first, cumulativeDistance)
     }

@@ -32,9 +32,9 @@ value class DHash(val raw: ULong) {
     }
 }
 
-fun List<DHash>.getMinimalDistance(target: DHash): Int {
-    val thatHash = this.minByOrNull {
-        target.distanceTo(it)
+fun getMinimalDistance(rawDHashes: ULongArray, target: DHash): Int {
+    val thatHash = rawDHashes.minByOrNull {
+        target.distanceTo(DHash(it))
     } ?: error("Could not get minimal distance! Whose fault is this?!")
-    return thatHash.distanceTo(target)
+    return DHash(thatHash).distanceTo(target)
 }

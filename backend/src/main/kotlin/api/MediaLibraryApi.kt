@@ -10,13 +10,14 @@ import io.sebi.downloader.DownloadManager
 import io.sebi.duplicatecalculator.DuplicateCalculator
 import io.sebi.library.MediaLibrary
 import io.sebi.library.MediaLibraryEntry
+import io.sebi.phash.DHash
 import io.sebi.phash.getMinimalDistance
 import io.sebi.storage.MetadataStorage
 import io.sebi.tagging.Tagger
 import kotlinx.coroutines.yield
 import java.io.File
 
-@OptIn(ExperimentalStdlibApi::class)
+@OptIn(ExperimentalStdlibApi::class, ExperimentalUnsignedTypes::class)
 fun Route.mediaLibraryApi(
     mediaLibrary: MediaLibrary,
     duplicateCalculator: DuplicateCalculator,
@@ -98,7 +99,7 @@ fun Route.mediaLibraryApi(
             // we find the global minimum: which of the other library entries has the lowest cumulative distance?
             val mostLikelyDuplicate = restLibrary.minByOrNull { (_, dhashes) ->
                 yield()
-                handful.sumOf { dhashes.getMinimalDistance(it) }
+                handful.sumOf { getMinimalDistance(dhashes, DHash(it)) }
             }
             if (mostLikelyDuplicate != null) call.respond(mostLikelyDuplicate.first)
             else call.respond(HttpStatusCode.NotFound)

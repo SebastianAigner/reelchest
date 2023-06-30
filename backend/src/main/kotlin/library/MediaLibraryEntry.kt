@@ -2,7 +2,6 @@ package io.sebi.library
 
 import io.sebi.creationTime
 import io.sebi.datastructures.shaHashed
-import io.sebi.phash.DHash
 import io.sebi.phash.readULongs
 import io.sebi.storage.MetadataStorage
 import io.sebi.tagging.Tagger
@@ -43,15 +42,17 @@ data class MediaLibraryEntry(
             ?.filter { it.name.startsWith("thumb") }
     }
 
+    @OptIn(ExperimentalUnsignedTypes::class)
     @Transient
-    private var _dhashes: List<DHash>? = null
+    private var _dhashes: ULongArray? = null
 
-    fun getDHashes(): List<DHash>? {
+    @OptIn(ExperimentalUnsignedTypes::class)
+    fun getDHashes(): ULongArray? {
         if (_dhashes != null) return _dhashes
 
         val hashFile = File(file!!.parent, "dhashes.bin")
         if (!hashFile.exists()) return null
-        val dhashes = hashFile.readULongs().map { DHash(it) }
+        val dhashes = hashFile.readULongs()
         return if (dhashes.count() > 10) {
             _dhashes = dhashes
             dhashes
