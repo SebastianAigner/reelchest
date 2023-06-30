@@ -15,6 +15,10 @@ import io.sebi.phash.getMinimalDistance
 import io.sebi.storage.MetadataStorage
 import io.sebi.tagging.Tagger
 import kotlinx.coroutines.yield
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.put
 import java.io.DataOutputStream
 import java.io.File
 
@@ -54,6 +58,15 @@ fun Route.mediaLibraryApi(
                 mediaLibrary.entries.first { it.getDHashes() == null && it !in hashingInProgress }
             hashingInProgress += entry
             call.respond(entry)
+        }
+        get("/all") {
+            val res = mediaLibrary.entries.map {
+                buildJsonObject {
+                    put("id", it.id)
+                    put("hashes", Json.encodeToJsonElement(it.getDHashes()))
+                }
+            }
+            call.respond(res)
         }
         post("/hash/{id}") {
             val id = call.parameters["id"]!!

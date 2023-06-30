@@ -62,12 +62,12 @@ data class MediaLibraryEntry(
         }
     }
 
-    fun addHitAndPersist(metadataStorage: MetadataStorage) {
+    suspend fun addHitAndPersist(metadataStorage: MetadataStorage) {
         hits++
         persist(metadataStorage)
     }
 
-    fun persist(metadataStorage: MetadataStorage) {
+    suspend fun persist(metadataStorage: MetadataStorage) {
         metadataStorage.storeMetadata(id, this)
     }
 }

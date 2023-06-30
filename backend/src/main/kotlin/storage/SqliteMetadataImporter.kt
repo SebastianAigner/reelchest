@@ -4,7 +4,7 @@ import org.slf4j.LoggerFactory
 
 object SqliteMetadataImporter {
     val logger = LoggerFactory.getLogger("Metadata Importer")
-    fun import(source: MetadataStorage, target: MetadataStorage) {
+    suspend fun import(source: MetadataStorage, target: MetadataStorage) {
         val sourceEntries = source.listAllMetadata()
         val targetEntries = target.listAllMetadata()
         val idsInTarget = targetEntries.map { it.id }

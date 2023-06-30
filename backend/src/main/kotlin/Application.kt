@@ -67,7 +67,7 @@ fun Application.module() {
     val videoStorage = FileSystemVideoStorage()
 
     val metadataStorage: MetadataStorage = SqliteMetadataStorage()
-    removeFilesScheduledForDeletion(metadataStorage, videoStorage)
+    runBlocking { removeFilesScheduledForDeletion(metadataStorage, videoStorage) }
     val mediaLibrary = MediaLibrary(urlDecoder, networkManager, videoStorage, metadataStorage)
     val downloadManager =
         DownloadManager(

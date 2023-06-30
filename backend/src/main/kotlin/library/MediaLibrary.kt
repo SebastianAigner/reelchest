@@ -10,6 +10,7 @@ import io.sebi.urldecoder.UrlDecoder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -24,18 +25,18 @@ class MediaLibrary(
     private val videoStorage: VideoStorage,
     private val metadataStorage: MetadataStorage
 ) {
-    val entries get() = metadataStorage.listAllMetadata()
+    val entries get() = runBlocking { metadataStorage.listAllMetadata() }
     val logger = LoggerFactory.getLogger("Media Library")
 
-    fun findById(id: String): MediaLibraryEntry? {
+    suspend fun findById(id: String): MediaLibraryEntry? {
         return metadataStorage.retrieveMetadata(id).just()
     }
 
-    fun existsOrTombstone(id: String): Boolean {
+    suspend fun existsOrTombstone(id: String): Boolean {
         return findById(id) != null || File("./mediaLibrary/${id}").exists() // Smells like Null Object Pattern
     }
 
-    fun addUpload(f: File, name: String) {
+    suspend fun addUpload(f: File, name: String) {
         logger.info("Adding upload $name!")
         val uid = Random.nextLong().toString().shaHashed()
         videoStorage.storeVideo(uid, f.toPath())

@@ -13,7 +13,7 @@ fun cleanupDownloadDirectory() {
     }
 }
 
-fun removeFilesScheduledForDeletion(metadataStorage: MetadataStorage, videoStorage: VideoStorage) {
+suspend fun removeFilesScheduledForDeletion(metadataStorage: MetadataStorage, videoStorage: VideoStorage) {
     metadataStorage.listAllMetadata().filter(MediaLibraryEntry::markedForDeletion).forEach {
         videoStorage.deleteVideo(it.id)
         metadataStorage.deleteMetadata(it.id)
