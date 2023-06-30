@@ -15,6 +15,7 @@ import io.sebi.phash.getMinimalDistance
 import io.sebi.storage.MetadataStorage
 import io.sebi.tagging.Tagger
 import kotlinx.coroutines.yield
+import java.io.DataOutputStream
 import java.io.File
 
 @OptIn(ExperimentalStdlibApi::class, ExperimentalUnsignedTypes::class)
@@ -71,6 +72,29 @@ fun Route.mediaLibraryApi(
                 HttpStatusCode.NotFound
             )
             call.respond(if (auto) individual.withAutoTags(tagger) else individual)
+        }
+        get("hash.{format}") {
+            val id = call.parameters["id"]!!
+            val format = call.parameters["format"]!!
+            val dhashes = metadataStorage.retrieveMetadata(id).just()?.getDHashes() ?: return@get call.respond(
+                HttpStatusCode.NotFound
+            )
+            when (format) {
+                "json" -> {
+                    call.respond(dhashes)
+                }
+
+                "bin" -> {
+                    // create a new dataoutputstream to put the ULongs
+                    call.respondOutputStream {
+                        val dos = DataOutputStream(this)
+                        for (hash in dhashes) {
+                            dos.writeLong(hash.toLong())
+                        }
+                    }
+                }
+            }
+            call.respond(HttpStatusCode.BadRequest)
         }
         get("hit") {
             val id = call.parameters["id"]!!
