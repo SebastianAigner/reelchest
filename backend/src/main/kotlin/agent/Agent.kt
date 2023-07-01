@@ -9,9 +9,9 @@ import io.ktor.serialization.kotlinx.json.*
 import io.sebi.library.MediaLibraryEntry
 import io.sebi.phash.DHash
 import io.sebi.phash.getMinimalDistance
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import java.util.concurrent.ConcurrentHashMap
@@ -30,12 +30,16 @@ fun main(args: Array<String>) {
             .map { async { IdToHashes(it, getHashesForId(it)) } }
             .awaitAll()
 
-        val allResults = ids.map { elem ->
-            val hashes = getHashesForId(elem)
-            val dup = calculateDuplicate(IdToHashes(elem, hashes), all)
-            println("$elem -> ${dup.id} (${dup.distance})")
-            DuplicateResult(elem, dup.id, dup.distance)
-        }
+        val allResults = channelFlow<DuplicateResult> {
+            ids.map { elem ->
+                launch(Dispatchers.Default) {
+                    val hashes = getHashesForId(elem)
+                    val dup = calculateDuplicate(IdToHashes(elem, hashes), all)
+                    println("$elem -> ${dup.id} (${dup.distance})")
+                    send(DuplicateResult(elem, dup.id, dup.distance))
+                }
+            }
+        }.toList()
         println(allResults.sortedBy { it.distance }.joinToString("\n"))
     }
 }
@@ -45,7 +49,7 @@ data class DuplicateResult(val fromId: String, val toId: String, val distance: I
 @OptIn(ExperimentalUnsignedTypes::class)
 val hashForId = ConcurrentHashMap<String, ULongArray>()
 
-val sem = Semaphore(32)
+val sem = Semaphore(64)
 
 @OptIn(ExperimentalUnsignedTypes::class)
 suspend fun getHashesForId(id: String): ULongArray {
