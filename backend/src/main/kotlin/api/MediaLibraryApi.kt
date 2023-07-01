@@ -65,6 +65,7 @@ fun Route.mediaLibraryApi(
                     put("id", it.id)
                     put("hashes", Json.encodeToJsonElement(it.getDHashes()))
                 }
+                yield()
             }
             call.respond(res)
         }

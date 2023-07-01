@@ -102,7 +102,7 @@ class DownloadManager(
 
         val abortConditions = listOf(queuedDownloads.any { it.originUrl == d.originUrl } to "duplicate download job",
             workers.mapNotNull { it.currentTask }.any { it.originUrl == d.originUrl } to "download job in progress",
-            (metadataStorage.retrieveMetadata(d.originUrl.shaHashed()) != MetadataResult.None) to "URL already in metadata storage")
+            (runBlocking { metadataStorage.retrieveMetadata(d.originUrl.shaHashed()) } != MetadataResult.None) to "URL already in metadata storage")
 
         abortConditions.firstOrNull { it.first }?.let {
             logger.info("Attempting to add ${it.second}, not adding to queue.")
