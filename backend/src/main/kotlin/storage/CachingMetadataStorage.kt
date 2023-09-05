@@ -1,6 +1,7 @@
 package io.sebi.storage
 
 import io.sebi.library.MediaLibraryEntry
+import io.sebi.sqldelight.mediametadata.Duplicates
 
 class CachingMetadataStorage(private val delegate: MetadataStorage) : MetadataStorage {
     val map = mutableMapOf<String, MetadataResult>()
@@ -32,6 +33,14 @@ class CachingMetadataStorage(private val delegate: MetadataStorage) : MetadataSt
         }
 
         return getAllRealEntries()
+    }
+
+    override fun addDuplicate(id: String, dup: String, dist: Int) {
+        return delegate.addDuplicate(id, dup, dist)
+    }
+
+    override fun getDuplicate(id: String): Duplicates? {
+        return delegate.getDuplicate(id)
     }
 
     private fun getAllRealEntries(): List<MediaLibraryEntry> {

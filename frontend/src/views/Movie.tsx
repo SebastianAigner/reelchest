@@ -9,6 +9,7 @@ import {mutate} from "swr";
 import EdiText from "react-editext";
 import {INPUT_ACTION, SimpleInputField} from "../components/SimpleInputField";
 import {AutoTaggedMediaLibraryEntry} from "../models/AutoTaggedMediaLibraryEntry";
+import DuplicatesDTO = IoSebi.DuplicatesDTO;
 
 interface Identifiable {
     id: string
@@ -17,6 +18,16 @@ interface Identifiable {
 // type Partial<T> = {
 //     [P in keyof T]?: T[P];
 // }
+
+function useStoredDuplicates(id) {
+    const endpoint = `/api/mediaLibrary/${id}/duplicates`
+    const {data, error} = useSWR<DuplicatesDTO>(endpoint, fetcher)
+    return {
+        entry: data,
+        isLoading: !error && !data,
+        isError: error,
+    }
+}
 
 function useMediaLibraryEntry(id) {
     const endpoint = `/api/mediaLibrary/${id}?auto`
@@ -43,6 +54,7 @@ export function Movie() {
     const [clicked, setClicked] = useState(false);
     const {entry, isLoading, isError, mutateEntry} = useMediaLibraryEntry(id)
     const {data, error} = useSWR<MediaLibraryEntry>(`/api/mediaLibrary/${id}/possibleDuplicates`, fetcher)
+    const {entry: storedDuplicates, isError: storedDuplicatesError} = useStoredDuplicates(id)
     if (!entry) return <>
         <p>loading...</p>
     </>
@@ -108,6 +120,14 @@ export function Movie() {
                 <p>{data.id}</p>
                 <p>{data.name}</p>
                 <p><Link to={`/movie/${data.id}`}>Link here.</Link></p>
+            </>
+        }
+        <h3 className={"text-2xl"}>Persisted duplicate detection</h3>
+        {
+            storedDuplicates &&
+            <>
+                <p>{storedDuplicates.dup_id}</p>
+                <p>{storedDuplicates.distance}</p>
             </>
         }
     </>

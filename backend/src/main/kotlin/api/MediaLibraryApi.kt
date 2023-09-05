@@ -1,5 +1,6 @@
 package io.sebi.api
 
+import dz.jtsgen.annotations.TypeScript
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
@@ -12,15 +13,29 @@ import io.sebi.library.MediaLibrary
 import io.sebi.library.MediaLibraryEntry
 import io.sebi.phash.DHash
 import io.sebi.phash.getMinimalDistance
+import io.sebi.sqldelight.mediametadata.Duplicates
 import io.sebi.storage.MetadataStorage
 import io.sebi.tagging.Tagger
 import kotlinx.coroutines.yield
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.put
 import java.io.DataOutputStream
 import java.io.File
+
+@TypeScript
+@Serializable
+data class DuplicatesDTO(
+    val src_id: String,
+    val dup_id: String,
+    val distance: Long,
+)
+
+fun DuplicatesDTO.Companion.from(d: Duplicates): DuplicatesDTO {
+    return DuplicatesDTO(d.src_id, d.dup_id, d.distance)
+}
 
 @OptIn(ExperimentalStdlibApi::class, ExperimentalUnsignedTypes::class)
 fun Route.mediaLibraryApi(
@@ -40,6 +55,17 @@ fun Route.mediaLibraryApi(
         call.respond(mediaLib)
     }
     route("duplicates") {
+        get("{id}") {
+            val id = call.parameters["id"]!!
+            val x = metadataStorage.getDuplicate(id) ?: return@get call.respond(HttpStatusCode.NotFound)
+            call.respond(DuplicatesDTO.from(x))
+        }
+        post("{id}") {
+            val id = call.parameters["id"]!!
+            val ddto = call.receive<DuplicatesDTO>()
+            metadataStorage.addDuplicate(ddto.src_id, ddto.dup_id, ddto.distance.toInt())
+            call.respond(HttpStatusCode.OK)
+        }
         get {
             val dups = duplicateCalculator.duplicatesMap ?: error("No duplicates map.")
             val lst = dups
@@ -61,11 +87,11 @@ fun Route.mediaLibraryApi(
         }
         get("/all") {
             val res = mediaLibrary.entries.map {
+                yield()
                 buildJsonObject {
                     put("id", it.id)
                     put("hashes", Json.encodeToJsonElement(it.getDHashes()))
                 }
-                yield()
             }
             call.respond(res)
         }

@@ -2,21 +2,30 @@ package io.sebi.agent
 
 import io.ktor.client.*
 import io.ktor.client.call.*
+import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
+import io.sebi.api.DuplicatesDTO
 import io.sebi.library.MediaLibraryEntry
 import io.sebi.phash.DHash
 import io.sebi.phash.getMinimalDistance
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import java.util.concurrent.ConcurrentHashMap
 
-val client = HttpClient() { install(ContentNegotiation) { json() } }
+val client = HttpClient() {
+    install(ContentNegotiation) { json() }
+    install(HttpTimeout) {
+        requestTimeoutMillis = 15_000
+    }
+}
 
 // Remote agent that can calculate duplicates remotely
 @OptIn(ExperimentalUnsignedTypes::class)
@@ -26,7 +35,7 @@ fun main(args: Array<String>) {
         val ids = client.get("http://${args[0]}:8080/api/mediaLibrary")
             .body<List<MediaLibraryEntry>>().map { it.id }
 
-        val all: List<IdToHashes> = ids
+        val allHashes: List<IdToHashes> = ids
             .map { async { IdToHashes(it, getHashesForId(it)) } }
             .awaitAll()
 
@@ -34,12 +43,23 @@ fun main(args: Array<String>) {
             ids.map { elem ->
                 launch(Dispatchers.Default) {
                     val hashes = getHashesForId(elem)
-                    val dup = calculateDuplicate(IdToHashes(elem, hashes), all)
+                    val dup = calculateDuplicate(IdToHashes(elem, hashes), allHashes)
+
                     println("$elem -> ${dup.id} (${dup.distance})")
                     send(DuplicateResult(elem, dup.id, dup.distance))
                 }
             }
-        }.toList()
+        }
+            .filter {
+                it.toId != "SOURCE_HAD_NO_HASHES"
+            }
+            .onEach {
+                client.post("http://${args[0]}:8080/api/mediaLibrary/duplicates/${it.fromId}") {
+                    contentType(ContentType.Application.Json)
+                    setBody(DuplicatesDTO(it.fromId, it.toId, it.distance.toLong()))
+                }
+            }
+            .toList()
         println(allResults.sortedBy { it.distance }.joinToString("\n"))
     }
 }
@@ -49,7 +69,7 @@ data class DuplicateResult(val fromId: String, val toId: String, val distance: I
 @OptIn(ExperimentalUnsignedTypes::class)
 val hashForId = ConcurrentHashMap<String, ULongArray>()
 
-val sem = Semaphore(64)
+val sem = Semaphore(4)
 
 @OptIn(ExperimentalUnsignedTypes::class)
 suspend fun getHashesForId(id: String): ULongArray {

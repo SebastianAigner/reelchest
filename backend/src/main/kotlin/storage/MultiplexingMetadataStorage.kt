@@ -1,6 +1,7 @@
 package io.sebi.storage
 
 import io.sebi.library.MediaLibraryEntry
+import io.sebi.sqldelight.mediametadata.Duplicates
 import org.slf4j.LoggerFactory
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTimedValue
@@ -36,6 +37,14 @@ class MultiplexingMetadataStorage(val metadataStorages: List<MetadataStorage>, v
         val sizes = allMetadatas.map { it.size }
         require(allEqual(sizes)) { "All metadata storages should be in sync (${sizes.zip(storageNames)})." }
         return allMetadatas.first()
+    }
+
+    override fun addDuplicate(id: String, dup: String, dist: Int) {
+        TODO("Not yet implemented")
+    }
+
+    override fun getDuplicate(id: String): Duplicates? {
+        TODO("Not yet implemented")
     }
 }
 

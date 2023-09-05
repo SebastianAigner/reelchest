@@ -1,6 +1,7 @@
 package io.sebi.storage
 
 import io.sebi.library.MediaLibraryEntry
+import io.sebi.sqldelight.mediametadata.Duplicates
 
 sealed class MetadataResult {
     abstract fun just(): MediaLibraryEntry?
@@ -23,4 +24,6 @@ interface MetadataStorage {
     suspend fun retrieveMetadata(id: String): MetadataResult
     fun deleteMetadata(id: String)
     suspend fun listAllMetadata(): List<MediaLibraryEntry>
+    fun addDuplicate(id: String, dup: String, dist: Int)
+    fun getDuplicate(id: String): Duplicates?
 }

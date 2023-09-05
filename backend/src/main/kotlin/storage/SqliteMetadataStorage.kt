@@ -3,6 +3,7 @@ package io.sebi.storage
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import io.sebi.database.MediaDatabase
 import io.sebi.library.MediaLibraryEntry
+import io.sebi.sqldelight.mediametadata.Duplicates
 import io.sebi.sqldelight.mediametadata.SelectAllWithTags
 import io.sebi.sqldelight.mediametadata.SelectById
 import kotlinx.coroutines.sync.Mutex
@@ -42,22 +43,6 @@ class SqliteMetadataStorage : MetadataStorage {
     val mutex = Mutex()
     val roomEmpty = Mutex()
 
-    override suspend fun storeMetadata(id: String, metadata: MediaLibraryEntry) {
-        roomEmpty.withLock {
-            database.mediaMetadataQueries.insertOrReplaceEntry(
-                id,
-                metadata.name,
-                metadata.originUrl,
-                metadata.hits.toLong(),
-                if (metadata.markedForDeletion) 1 else 0
-            )
-            metadata.tags.forEach {
-                database.tagsQueries.addTag(it) // TODO: This does a lot of `ON CONFLICT DO NOTHING`. Maybe there's a nicer way?
-                database.tagsQueries.addTagForLibraryEntryByName(id, it)
-            }
-        }
-    }
-
     // https://github.com/Kotlin/kotlinx.coroutines/issues/94
     // https://greenteapress.com/semaphores/LittleBookOfSemaphores.pdf Ch 4.2
     private suspend inline fun <T> withReaderLock(criticalSection: () -> T): T {
@@ -76,6 +61,32 @@ class SqliteMetadataStorage : MetadataStorage {
                 }
             }
         }
+    }
+
+    override suspend fun storeMetadata(id: String, metadata: MediaLibraryEntry) {
+        // todo: this writer lock should probably be everywhere.
+        roomEmpty.withLock {
+            database.mediaMetadataQueries.insertOrReplaceEntry(
+                id,
+                metadata.name,
+                metadata.originUrl,
+                metadata.hits.toLong(),
+                if (metadata.markedForDeletion) 1 else 0
+            )
+            metadata.tags.forEach {
+                database.tagsQueries.addTag(it) // TODO: This does a lot of `ON CONFLICT DO NOTHING`. Maybe there's a nicer way?
+                database.tagsQueries.addTagForLibraryEntryByName(id, it)
+            }
+        }
+    }
+
+    override fun addDuplicate(id: String, dup: String, dist: Int) {
+        database.duplicatesQueries.addDuplicate(id, dup, dist.toLong())
+    }
+
+    override fun getDuplicate(id: String): Duplicates? {
+        val foo = database.duplicatesQueries.selectDuplicateForId(id).executeAsOneOrNull()
+        return foo
     }
 
     override suspend fun retrieveMetadata(id: String): MetadataResult {

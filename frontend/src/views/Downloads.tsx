@@ -45,7 +45,7 @@ export function Downloads() {
                 )
             }
         </ul>
-        <h2 className={"text-5xl"}>Problematic Entries</h2>
+        <h2 className={"text-5xl"}>Problematic Entries (<a href={"/api/problematic"}>endpoint</a>)</h2>
         <ul>
             {
                 probQ?.map(item =>

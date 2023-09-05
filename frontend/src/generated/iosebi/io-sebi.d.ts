@@ -3,9 +3,9 @@
 
 
 declare namespace IoSebi {
-  export interface LogEntry {
-    Companion: io.sebi.LogEntry.Companion;
-    formattedMessage: string;
+  export interface UrlRequest {
+    Companion: io.sebi.api.UrlRequest.Companion;
+    url: string;
   }
 
   export interface File {
@@ -30,24 +30,19 @@ declare namespace IoSebi {
     absolutePath: string;
   }
 
-  export interface DHash {
-    Companion: io.sebi.phash.DHash.Companion;
-  }
-
   export interface MediaLibraryEntry {
-    markedForDeletion: boolean;
-    creationDate: number;
-    tags: string[];
     Companion: io.sebi.library.MediaLibraryEntry.Companion;
     hits: number;
     uid: string;
     file: File;
     originUrl: string;
     name: string;
-    dHashes: DHash[];
     originPage: string;
     id: string;
+    markedForDeletion: boolean;
+    creationDate: number;
     thumbnails: File[];
+    tags: string[];
   }
 
   export interface DuplicateResponse {
@@ -61,6 +56,19 @@ declare namespace IoSebi {
     Companion: io.sebi.downloader.ProblematicTaskDTO.Companion;
     originUrl: string;
     error: string;
+  }
+
+  export interface SearchRequest {
+    Companion: io.sebi.api.SearchRequest.Companion;
+    offset: number;
+    term: string;
+  }
+
+  export interface DuplicatesDTO {
+    Companion: io.sebi.api.DuplicatesDTO.Companion;
+    dup_id: string;
+    src_id: string;
+    distance: number;
   }
 
   export interface WithOriginUrl {
@@ -79,28 +87,15 @@ declare namespace IoSebi {
     title: string;
   }
 
-  export interface UrlRequest {
-    Companion: io.sebi.api.UrlRequest.Companion;
-    url: string;
-  }
-
-  export interface SearchRequest {
-    Companion: io.sebi.api.SearchRequest.Companion;
-    offset: number;
-    term: string;
+  export interface LogEntry {
+    Companion: io.sebi.LogEntry.Companion;
+    formattedMessage: string;
   }
 
   export namespace io {
     export namespace sebi {
       export namespace library {
         export namespace MediaLibraryEntry {
-          export interface Companion {
-          }
-
-        }
-      }
-      export namespace phash {
-        export namespace DHash {
           export interface Companion {
           }
 
@@ -118,6 +113,11 @@ declare namespace IoSebi {
 
         }
         export namespace DuplicateResponse {
+          export interface Companion {
+          }
+
+        }
+        export namespace DuplicatesDTO {
           export interface Companion {
           }
 

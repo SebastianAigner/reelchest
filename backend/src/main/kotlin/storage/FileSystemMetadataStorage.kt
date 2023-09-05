@@ -2,6 +2,7 @@ package io.sebi.storage
 
 import io.sebi.library.MediaLibraryEntry
 import io.sebi.library.json
+import io.sebi.sqldelight.mediametadata.Duplicates
 import kotlinx.serialization.encodeToString
 import java.io.File
 import java.io.FileNotFoundException
@@ -35,5 +36,13 @@ class FileSystemMetadataStorage : MetadataStorage {
         return mediaLibraryDirectory.list().mapNotNull { id ->
             (retrieveMetadata(id) as? MetadataResult.Just)?.entry
         }
+    }
+
+    override fun addDuplicate(id: String, dup: String, dist: Int) {
+        TODO("Not yet implemented")
+    }
+
+    override fun getDuplicate(id: String): Duplicates? {
+        TODO("Not yet implemented")
     }
 }
