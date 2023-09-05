@@ -12,7 +12,6 @@ import io.sebi.downloader.CompletedDownloadTask
 import io.sebi.downloader.DownloadTask
 import io.sebi.network.NetworkManager
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.decodeFromJsonElement
@@ -40,8 +39,8 @@ enum class DecryptedMediaType {
 
 private val internalClient = HttpClient(Apache) {
     install(HttpTimeout) {
-        socketTimeoutMillis = 20_000
-        requestTimeoutMillis = 60_000
+        socketTimeoutMillis = 120_000
+        requestTimeoutMillis = 120_000
     }
     install(ContentNegotiation) {
         json()
