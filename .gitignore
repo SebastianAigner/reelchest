@@ -12,3 +12,8 @@ cache.map
 migrations
 .gradle
 remote_install
+deploy.sh
+*.xd
+*.cq4
+local.properties
+xd.lck
