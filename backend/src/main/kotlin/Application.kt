@@ -7,8 +7,10 @@ import io.ktor.server.engine.*
 import io.ktor.server.http.content.*
 import io.ktor.server.routing.*
 import io.sebi.api.api
+import io.sebi.api.feedApi
 import io.sebi.autoscrape.setupAutoscraper
 import io.sebi.downloader.DownloadManager
+import io.sebi.downloader.IntoMediaLibraryDownloader
 import io.sebi.duplicatecalculator.DuplicateCalculator
 import io.sebi.library.MediaLibrary
 import io.sebi.network.NetworkManager
@@ -79,6 +81,7 @@ fun Application.module() {
         )
     val duplicateCalculator = DuplicateCalculator(mediaLibrary)
     val tagger = CachingTagger()
+    val intoMediaLibraryDownloader = IntoMediaLibraryDownloader(downloadManager, urlDecoder, mediaLibrary)
 
     launch(Dispatchers.IO) {
         delay(45.minutes)
@@ -95,6 +98,7 @@ fun Application.module() {
     }
 
     launch(Dispatchers.IO) {
+        delay(30.minutes)
         generateThumbnails(mediaLibrary)
     }
 
@@ -102,7 +106,8 @@ fun Application.module() {
 
     routing {
         api(urlDecoder, mediaLibrary, duplicateCalculator, downloadManager, networkManager, tagger, metadataStorage)
-        addDownload(downloadManager, urlDecoder, mediaLibrary::addCompletedDownload)
+        addDownload(intoMediaLibraryDownloader)
+        feedApi(Feed(), intoMediaLibraryDownloader)
         addUpload(mediaLibrary)
         decryptEndpointRoute(urlDecoder)
         progressList(downloadManager)

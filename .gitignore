@@ -17,3 +17,4 @@ deploy.sh
 *.cq4
 local.properties
 xd.lck
+*.cq4t
