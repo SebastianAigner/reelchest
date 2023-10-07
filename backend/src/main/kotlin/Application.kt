@@ -98,7 +98,7 @@ fun Application.module() {
     }
 
     launch(Dispatchers.IO) {
-        delay(30.minutes)
+        delay(0.minutes)
         generateThumbnails(mediaLibrary)
     }
 

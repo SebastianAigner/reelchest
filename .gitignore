@@ -18,3 +18,4 @@ deploy.sh
 local.properties
 xd.lck
 *.cq4t
+*.hprof

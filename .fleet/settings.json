@@ -1,0 +1,5 @@
+{
+    "backend.maxHeapSizeMb": 16384,
+    "target.reuse.confirmation": "Always",
+    "run.destination.stop.already.running": "Always",
+}

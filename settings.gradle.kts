@@ -1,5 +1,6 @@
 include("backend")
 include("frontend")
+includeBuild("mobileapp")
 rootProject.name = "reelchest"
 
 plugins {

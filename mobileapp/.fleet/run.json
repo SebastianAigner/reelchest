@@ -1,0 +1,43 @@
+{
+    "configurations": [
+        {
+            "type": "xcode-app",
+            "name": "My Xcode config (doesn't work)",
+            "buildTarget": {
+                "project": "iosApp",
+                "target": "iosApp",
+            },
+            "configuration": "Debug",
+            "destination": "iPhone 15 Pro | iOS 17.0",
+        },
+        {
+            "type": "xcode-app",
+            "name": "LetsTryAgain",
+            "buildTarget": {
+                "project": "iosApp",
+                "target": "iosApp",
+            },
+            "configuration": "Debug",
+            "destination": "iPhone 15 | iOS 17.0",
+        },
+        
+        {
+            "name": "iosApp",
+            "type": "xcode-app",
+            "workingDir": "$PROJECT_DIR$",
+            "buildTarget": {
+                "project": "iosApp",
+                "target": "iosApp"
+            },
+            "configuration": "Debug",
+            "destination": "iPhone 15 | iOS 17.0"
+        },
+        {
+            "type": "android-app",
+            "name": "Android-app configuration",
+            "module": "MyApplication.androidApp.main",
+            "destination": "Pixel_3a_API_33_arm64-v8a",
+        },
+        
+    ]
+}
