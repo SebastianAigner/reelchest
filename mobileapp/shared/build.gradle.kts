@@ -5,11 +5,10 @@ plugins {
     id("org.jetbrains.compose")
     kotlin("plugin.serialization") version "1.9.0"
     id("io.realm.kotlin") version "1.11.0"
-
 }
 
 kotlin {
-    android()
+    androidTarget()
 
     iosX64()
     iosArm64()
@@ -35,29 +34,29 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("media.kamel:kamel-image:0.7.0")
+                implementation(libs.kamel.image)
 
                 val voyagerVersion = "1.0.0-rc06"
-                implementation("cafe.adriel.voyager:voyager-navigator:$voyagerVersion")
+                implementation(libs.voyager.navigator)
 //                implementation("cafe.adriel.voyager:voyager-transitions:$voyagerVersion")
                 // BottomSheetNavigator
-                implementation("cafe.adriel.voyager:voyager-bottom-sheet-navigator:$voyagerVersion")
+                implementation(libs.voyager.bottom.sheet.navigator)
                 // TabNavigator
-                implementation("cafe.adriel.voyager:voyager-tab-navigator:$voyagerVersion")
-                implementation("io.ktor:ktor-client-core:2.3.2")
-                implementation("io.ktor:ktor-client-content-negotiation:2.3.2")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.2")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
+                implementation(libs.voyager.tab.navigator)
+                implementation(libs.ktor.client.core)
+                implementation(libs.ktor.client.content.negotiation)
+                implementation(libs.ktor.serialization.kotlinx.json)
+                implementation(libs.kotlinx.serialization.json)
 
-                implementation("com.russhwolf:multiplatform-settings:1.0.0")
-                implementation("com.russhwolf:multiplatform-settings-no-arg:1.0.0")
-                implementation("com.russhwolf:multiplatform-settings-coroutines:1.0.0")
+                implementation(libs.multiplatform.settings)
+                implementation(libs.multiplatform.settings.no.arg)
+                implementation(libs.multiplatform.settings.coroutines)
 
-                implementation("org.mobilenativefoundation.store:store5:5.0.0-beta02")
+                implementation(libs.store5)
 
-                implementation("io.realm.kotlin:library-base:1.11.0")
-                implementation("io.realm.kotlin:library-sync:1.11.0") // If using Device Sync
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.0") // If using coroutines with the SDK
+                implementation(libs.library.base)
+                implementation(libs.library.sync) // If using Device Sync
+                implementation(libs.kotlinx.coroutines.core) // If using coroutines with the SDK
 
                 implementation(compose.runtime)
                 implementation(compose.foundation)
@@ -69,14 +68,14 @@ kotlin {
         }
         val androidMain by getting {
             dependencies {
-                api("androidx.activity:activity-compose:1.7.2")
-                api("androidx.appcompat:appcompat:1.6.1")
-                api("androidx.core:core-ktx:1.10.1")
-                implementation("androidx.media3:media3-exoplayer:1.1.0")
-                implementation("org.videolan.android:libvlc-all:4.0.0-eap12")
-                implementation("androidx.media3:media3-exoplayer-dash:1.1.0")
-                implementation("androidx.media3:media3-ui:1.1.0")
-                implementation("io.ktor:ktor-client-android:2.3.2")
+                api(libs.activity.compose)
+                api(libs.appcompat)
+                api(libs.core.ktx)
+                implementation(libs.media3.exoplayer)
+                implementation(libs.libvlc.all)
+                implementation(libs.media3.exoplayer.dash)
+                implementation(libs.androidx.media3.ui)
+                implementation(libs.ktor.client.android)
 
             }
         }
@@ -89,7 +88,7 @@ kotlin {
             iosArm64Main.dependsOn(this)
             iosSimulatorArm64Main.dependsOn(this)
             dependencies {
-                implementation("io.ktor:ktor-client-darwin:2.3.2")
+                implementation(libs.ktor.client.darwin)
             }
         }
     }
@@ -117,7 +116,7 @@ android {
 }
 
 
-// https://github.com/realm/realm-kotlin/issues/887
+// TODO: Workaround for https://github.com/realm/realm-kotlin/issues/887
 project.afterEvaluate {
     kotlin.targets.all {
         compilations.all {
