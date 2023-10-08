@@ -16,7 +16,7 @@ import com.russhwolf.settings.get
 import io.ktor.client.request.get
 import io.ktor.http.HttpStatusCode
 
-object SetupScreen: Screen {
+object SetupScreen : Screen {
     val settings = Settings()
 
     @Composable
@@ -25,7 +25,7 @@ object SetupScreen: Screen {
         var configuration by remember { mutableStateOf(settings.get<String>("endpoint")) }
         var isValid by remember { mutableStateOf(false) }
         LaunchedEffect(isValid) {
-            if(isValid) {
+            if (isValid) {
                 settings.putString("endpoint", configuration!!)
                 navigator.push(VideoListScreen)
             }

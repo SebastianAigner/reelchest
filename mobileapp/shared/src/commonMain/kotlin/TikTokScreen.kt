@@ -1,6 +1,4 @@
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,13 +10,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.PointerInputChange
-import androidx.compose.ui.input.pointer.pointerInput
 import cafe.adriel.voyager.core.screen.Screen
-import io.kamel.image.KamelImage
-import io.kamel.image.asyncPainterResource
 
 // Let me add a superclass!
 class TikTokScreen : Screen {
@@ -29,7 +21,7 @@ class TikTokScreen : Screen {
         "https://v.redd.it/zst7n5ki18rb1",
         "https://v.redd.it/fiurgvgypnnb1"
     )
-    
+
     @OptIn(ExperimentalFoundationApi::class)
     @Composable
     override fun Content() {
@@ -38,10 +30,10 @@ class TikTokScreen : Screen {
             val videoPlayerState = rememberVideoPlayerState()
 
             LaunchedEffect(pagerState.isScrollInProgress) {
-                if(pagerState.isScrollInProgress) {
+                if (pagerState.isScrollInProgress) {
                     videoPlayerState.pause()
                 } else {
-                    if(pagerState.currentPage == page) {
+                    if (pagerState.currentPage == page) {
                         videoPlayerState.play()
                     }
                 }
@@ -52,7 +44,8 @@ class TikTokScreen : Screen {
     }
 }
 
-@Composable fun TikTokPlayer(url: String, videoPlayerState: VideoPlayerState) {
+@Composable
+fun TikTokPlayer(url: String, videoPlayerState: VideoPlayerState) {
     // Our page content
     println("Composing stuff!")
 
@@ -63,14 +56,16 @@ class TikTokScreen : Screen {
         )
         Box {
             VideoPlayer(url + "/HLSPlaylist.m3u8", Modifier.fillMaxSize(), videoPlayerState)
-            Box(Modifier.fillMaxSize().clickable { // TODO: I'm trying to prevent touch events from getting forwarded to the underlying, potentially native, video player view.
-                if(videoPlayerState.isPlaying.value) {
-                    videoPlayerState.pause()
-                } else {
-                    videoPlayerState.play()
-                }
-            }) {
-                
+            Box(
+                Modifier.fillMaxSize()
+                    .clickable { // TODO: I'm trying to prevent touch events from getting forwarded to the underlying, potentially native, video player view.
+                        if (videoPlayerState.isPlaying.value) {
+                            videoPlayerState.pause()
+                        } else {
+                            videoPlayerState.play()
+                        }
+                    }) {
+
             }
         }
     }

@@ -138,7 +138,7 @@ object VideoListScreen : Screen {
             }
         }
         LaunchedEffect(state.loadingState) {
-            if("received" in state.loadingState) {
+            if ("received" in state.loadingState) {
                 delay(2000)
                 screenModel.clearState()
             }
@@ -189,7 +189,8 @@ object VideoListScreen : Screen {
                     Button(onClick = { navigator.push(TikTokScreen()) }) {
                         Text("TikTok")
                     }
-                    val demoUrl = "https://v.redd.it/wvv8jgjksuo71/HLSPlaylist.m3u8?a=1698935975%2CNTQ0ZDUzZWU4NWZjZDdkN2RkOTdiZDhiZGEzMjVmMWNmYTVlOThhMDU2ZjRmMGUzYmI0ZGVlOGMyNDc4MmFkNg%3D%3D&amp;v=1&amp;f=sd"
+                    val demoUrl =
+                        "https://v.redd.it/wvv8jgjksuo71/HLSPlaylist.m3u8?a=1698935975%2CNTQ0ZDUzZWU4NWZjZDdkN2RkOTdiZDhiZGEzMjVmMWNmYTVlOThhMDU2ZjRmMGUzYmI0ZGVlOGMyNDc4MmFkNg%3D%3D&amp;v=1&amp;f=sd"
                     Button(onClick = { navigator.push(VideoScreen(demoUrl)) }) {
                         Text("M3U8 Test")
                     }
@@ -199,7 +200,11 @@ object VideoListScreen : Screen {
                     Button(onClick = { screenModel.refresh() }) {
                         Text("Refresh")
                     }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(state.loadingState.ifBlank { " " }) // Always render space, to keep the line / surrounding buttons from jumping
                     }
                 }

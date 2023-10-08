@@ -1,7 +1,6 @@
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
 import kotlinx.serialization.Serializable
-import org.mongodb.kbson.ObjectId
 
 @Serializable
 data class MediaLibraryEntry(
@@ -23,7 +22,7 @@ data class MediaLibraryEntry(
 }
 
 class MediaLibraryRealmEntry : RealmObject {
-    @PrimaryKey    
+    @PrimaryKey
     var id: String = ""
     var name: String = ""
     var markedForDeletion: Boolean = false
