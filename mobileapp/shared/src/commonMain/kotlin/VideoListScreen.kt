@@ -1,12 +1,29 @@
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -120,9 +137,14 @@ object VideoListScreen : Screen {
                 job.cancel()
             }
         }
-
+        LaunchedEffect(state.loadingState) {
+            if("received" in state.loadingState) {
+                delay(2000)
+                screenModel.clearState()
+            }
+        }
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomStart) {
-            Column(Modifier.fillMaxSize()) {
+            Column {
                 Row {
                     TextField(
                         value = searchQuery,
@@ -151,32 +173,36 @@ object VideoListScreen : Screen {
                     }
                 }
             }
-            FlowRow {
-                Button(
-                    onClick = { navigator.push(SearchScreen()) },
-                ) {
-                    Text("Search")
+            Column {
+                FlowRow {
+                    Button(
+                        onClick = { navigator.push(SearchScreen()) },
+                    ) {
+                        Text("Search")
+                    }
+                    Button(onClick = { navigator.push(SettingsScreen) }) {
+                        Text("Settings")
+                    }
+                    Button(onClick = { navigator.push(DownloadsScreen) }) {
+                        Text("Downloads")
+                    }
+                    Button(onClick = { navigator.push(TikTokScreen()) }) {
+                        Text("TikTok")
+                    }
+                    val demoUrl = "https://v.redd.it/wvv8jgjksuo71/HLSPlaylist.m3u8?a=1698935975%2CNTQ0ZDUzZWU4NWZjZDdkN2RkOTdiZDhiZGEzMjVmMWNmYTVlOThhMDU2ZjRmMGUzYmI0ZGVlOGMyNDc4MmFkNg%3D%3D&amp;v=1&amp;f=sd"
+                    Button(onClick = { navigator.push(VideoScreen(demoUrl)) }) {
+                        Text("M3U8 Test")
+                    }
+                    Button(onClick = { navigator.push(QueueScreen()) }) {
+                        Text("Queue")
+                    }
+                    Button(onClick = { screenModel.refresh() }) {
+                        Text("Refresh")
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                        Text(state.loadingState.ifBlank { " " }) // Always render space, to keep the line / surrounding buttons from jumping
+                    }
                 }
-                Button(onClick = { navigator.push(SettingsScreen) }) {
-                    Text("Settings")
-                }
-                Button(onClick = { navigator.push(DownloadsScreen) }) {
-                    Text("Downloads")
-                }
-                Button(onClick = { navigator.push(TikTokScreen()) }) {
-                    Text("TikTok")
-                }
-                val demoUrl = "https://v.redd.it/wvv8jgjksuo71/HLSPlaylist.m3u8?a=1698935975%2CNTQ0ZDUzZWU4NWZjZDdkN2RkOTdiZDhiZGEzMjVmMWNmYTVlOThhMDU2ZjRmMGUzYmI0ZGVlOGMyNDc4MmFkNg%3D%3D&amp;v=1&amp;f=sd"
-                Button(onClick = { navigator.push(VideoScreen(demoUrl)) }) {
-                    Text("M3U8 Test")
-                }
-                Button(onClick = { navigator.push(QueueScreen()) }) {
-                    Text("Queue")
-                }
-                Button(onClick = { screenModel.refresh() }) {
-                    Text("Refresh")
-                }
-                Text(state.loadingState)
             }
         }
     }

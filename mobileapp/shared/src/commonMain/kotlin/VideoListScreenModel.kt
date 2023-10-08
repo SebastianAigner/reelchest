@@ -176,4 +176,11 @@ class VideoListScreenModel() : StateScreenModel<VideoListScreenModel.VideoListSt
             it.name
         }
     }
+
+    // TODO: This feels like working around UDF, and should probably be removed
+    fun clearState() {
+        mutableState.update {
+            it.copy(loadingState = "")
+        }
+    }
 }
