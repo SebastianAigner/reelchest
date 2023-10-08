@@ -17,6 +17,9 @@ import androidx.compose.ui.Modifier
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import io.sebi.videoplayer.VideoPlayer
+import io.sebi.videoplayer.VideoPlayerState
+import io.sebi.videoplayer.rememberVideoPlayerState
 import kotlinx.coroutines.delay
 
 class VideoScreen(val videoUrl: String, val cta: @Composable (() -> Unit)? = null) : Screen {

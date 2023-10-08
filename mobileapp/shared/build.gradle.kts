@@ -34,6 +34,9 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
+
+                implementation(project(":mediaPlayer"))
+
                 implementation(libs.kamel.image)
 
                 val voyagerVersion = "1.0.0-rc06"

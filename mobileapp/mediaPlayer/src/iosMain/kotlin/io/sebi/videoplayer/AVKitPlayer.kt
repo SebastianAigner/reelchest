@@ -1,3 +1,5 @@
+package io.sebi.videoplayer
+
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -5,7 +7,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.interop.UIKitView
 import kotlinx.cinterop.ExperimentalForeignApi
-import platform.AVFoundation.*
+import platform.AVFoundation.AVPlayer
+import platform.AVFoundation.AVPlayerLayer
+import platform.AVFoundation.cancelPendingPrerolls
+import platform.AVFoundation.currentItem
+import platform.AVFoundation.currentTime
+import platform.AVFoundation.duration
+import platform.AVFoundation.pause
+import platform.AVFoundation.play
+import platform.AVFoundation.seekToTime
 import platform.CoreMedia.CMTimeGetSeconds
 import platform.CoreMedia.CMTimeMake
 import platform.Foundation.NSURL

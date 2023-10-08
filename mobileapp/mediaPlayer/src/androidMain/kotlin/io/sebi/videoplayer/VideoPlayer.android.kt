@@ -1,3 +1,5 @@
+package io.sebi.videoplayer
+
 import android.net.Uri
 import android.widget.VideoView
 import androidx.compose.foundation.layout.fillMaxSize
