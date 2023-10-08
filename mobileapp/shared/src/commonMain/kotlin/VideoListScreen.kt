@@ -38,7 +38,6 @@ import io.kamel.image.KamelImage
 import io.kamel.image.asyncPainterResource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.random.Random
 
 @Composable
 fun GenericImageCell(imageUrl: String, title: String, onClick: () -> Unit) {
@@ -78,44 +77,6 @@ fun MediaLibraryEntryCell(entry: MediaLibraryEntry, onClick: () -> Unit) {
         (entry.name.lines().firstOrNull() ?: "No name").take(255),
         onClick = onClick
     )
-}
-
-sealed class Sorting(val name: String) {
-    abstract fun sort(videos: List<MediaLibraryEntry>): List<MediaLibraryEntry>
-}
-
-class LatestFirst : Sorting("Latest") {
-    override fun sort(videos: List<MediaLibraryEntry>): List<MediaLibraryEntry> {
-        return videos
-    }
-
-}
-
-class OldestFirst : Sorting("Oldest") {
-    override fun sort(videos: List<MediaLibraryEntry>): List<MediaLibraryEntry> {
-        return videos.reversed()
-    }
-
-}
-
-class MostViewed : Sorting("Most Viewed") {
-    override fun sort(videos: List<MediaLibraryEntry>): List<MediaLibraryEntry> {
-        return videos.sortedByDescending { it.hits }
-    }
-}
-
-class LeastViewed : Sorting("Least Viewed") {
-    override fun sort(videos: List<MediaLibraryEntry>): List<MediaLibraryEntry> {
-        return videos.sortedBy { it.hits }
-    }
-
-}
-
-class Shuffle(val seed: Int) : Sorting("Shuffled") {
-    override fun sort(videos: List<MediaLibraryEntry>): List<MediaLibraryEntry> {
-        val r = Random(seed)
-        return videos.shuffled(r)
-    }
 }
 
 object VideoListScreen : Screen {
