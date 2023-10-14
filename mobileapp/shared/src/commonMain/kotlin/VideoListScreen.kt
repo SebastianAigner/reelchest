@@ -61,7 +61,7 @@ fun GenericImageCell(imageUrl: String, title: String, onClick: () -> Unit) {
                 modifier = Modifier.aspectRatio(1.0f),
                 contentDescription = null,
                 resource = asyncPainterResource(imageUrl),
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Crop,
             )
         } else {
             Box(Modifier.aspectRatio(1.0f).fillMaxSize())

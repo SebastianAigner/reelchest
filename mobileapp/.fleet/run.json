@@ -20,7 +20,7 @@
             "configuration": "Debug",
             "destination": "iPhone 15 | iOS 17.0",
         },
-        
+
         {
             "name": "iosApp",
             "type": "xcode-app",
@@ -38,6 +38,25 @@
             "module": "MyApplication.androidApp.main",
             "destination": "Pixel_3a_API_33_arm64-v8a",
         },
-        
+        {
+            "type": "xcode-app",
+            "name": "SpicePad Debug",
+            "buildTarget": {
+                "project": "iosApp",
+                "target": "iosApp",
+            },
+            "configuration": "Debug",
+            "destination": "SpicePad",
+        },
+        {
+            "type": "xcode-app",
+            "name": "SpicePad Release",
+            "buildTarget": {
+                "project": "iosApp",
+                "target": "iosApp",
+            },
+            "configuration": "Release",
+            "destination": "SpicePad",
+        },
     ]
 }
