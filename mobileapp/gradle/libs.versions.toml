@@ -1,18 +1,23 @@
 [versions]
+kotlin = "1.9.0"
+junit = "4.13.2"
+ktor = "2.3.2"
+logback = "1.4.7"
+compose = "1.5.0-dev1136"
+serialization = "1.6.0"
 activityCompose = "1.8.0"
 appcompat = "1.6.1"
 coreKtx = "1.12.0"
 kamel-image = "0.7.0"
 kotlinxCoroutinesCore = "1.7.3"
 kotlinxSerializationJson = "1.6.0"
-ktorClient = "2.3.4"
-ktorClientAndroid = "2.3.2"
 libvlcAll = "4.0.0-eap12"
 media3Exoplayer = "1.1.1"
 realmVersion = "1.11.0"
 multiplatformSettings = "1.0.0"
 store5 = "5.0.0-beta02"
 voyagerVersion = "1.0.0-rc06"
+android = "8.1.0"
 
 [libraries]
 activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
@@ -22,11 +27,11 @@ core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
 kamel-image = { module = "media.kamel:kamel-image", version.ref = "kamel-image" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
-ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktorClientAndroid" }
-ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktorClient" }
-ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktorClient" }
-ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktorClientAndroid" }
-ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktorClient" }
+ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 library-sync = { module = "io.realm.kotlin:library-sync", version.ref = "realmVersion" }
 library-base = { module = "io.realm.kotlin:library-base", version.ref = "realmVersion" }
 libvlc-all = { module = "org.videolan.android:libvlc-all", version.ref = "libvlcAll" }
@@ -41,4 +46,12 @@ voyager-navigator = { module = "cafe.adriel.voyager:voyager-navigator", version.
 voyager-tab-navigator = { module = "cafe.adriel.voyager:voyager-tab-navigator", version.ref = "voyagerVersion" }
 
 [plugins]
-realm-kotlin = { id = "io.realm.kotlin", version = "realmVersion" }
+realm-kotlin = { id = "io.realm.kotlin", version.ref = "realmVersion" }
+kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
+jetbrainsCompose = { id = "org.jetbrains.compose", version.ref = "compose" }
+kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+cocoapods = { id = "org.jetbrains.kotlin.native.cocoapods", version.ref = "kotlin" }
+serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+androidApp = { id = "com.android.application", version.ref = "android" }
+androidLib = { id = "com.android.library", version.ref = "android" }

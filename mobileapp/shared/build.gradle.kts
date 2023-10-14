@@ -1,10 +1,10 @@
 plugins {
-    kotlin("multiplatform")
+    alias(libs.plugins.kotlinMultiplatform)
     kotlin("native.cocoapods")
-    id("com.android.library")
-    id("org.jetbrains.compose")
-    kotlin("plugin.serialization") version "1.9.0"
-    id("io.realm.kotlin") version "1.11.0"
+    alias(libs.plugins.androidLib)
+    alias(libs.plugins.jetbrainsCompose)
+    alias(libs.plugins.serialization)
+    alias(libs.plugins.realm.kotlin)
 }
 
 kotlin {
