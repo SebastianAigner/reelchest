@@ -3,22 +3,21 @@
 
 
 declare namespace IoSebi {
-  export interface DuplicatesDTO {
-    Companion: io.sebi.api.DuplicatesDTO.Companion;
-    dup_id: string;
-    src_id: string;
-    distance: number;
-  }
-
-  export interface UrlRequest {
-    Companion: io.sebi.api.UrlRequest.Companion;
-    url: string;
-  }
-
   export interface ProblematicTaskDTO extends WithOriginUrl {
     Companion: io.sebi.downloader.ProblematicTaskDTO.Companion;
     originUrl: string;
     error: string;
+  }
+
+  export interface LogEntry {
+    Companion: io.sebi.LogEntry.Companion;
+    formattedMessage: string;
+  }
+
+  export interface SearchRequest {
+    Companion: io.sebi.api.SearchRequest.Companion;
+    offset: number;
+    term: string;
   }
 
   export interface File {
@@ -65,6 +64,18 @@ declare namespace IoSebi {
     distance: number;
   }
 
+  export interface DuplicatesDTO {
+    Companion: io.sebi.api.DuplicatesDTO.Companion;
+    dup_id: string;
+    src_id: string;
+    distance: number;
+  }
+
+  export interface UrlRequest {
+    Companion: io.sebi.api.UrlRequest.Companion;
+    url: string;
+  }
+
   export interface WithOriginUrl {
     originUrl: string;
   }
@@ -79,17 +90,6 @@ declare namespace IoSebi {
     Companion: io.sebi.api.MetadatedDownloadQueueEntry.Companion;
     queueEntry: DownloadTaskDTO;
     title: string;
-  }
-
-  export interface LogEntry {
-    Companion: io.sebi.LogEntry.Companion;
-    formattedMessage: string;
-  }
-
-  export interface SearchRequest {
-    Companion: io.sebi.api.SearchRequest.Companion;
-    offset: number;
-    term: string;
   }
 
   export namespace io {

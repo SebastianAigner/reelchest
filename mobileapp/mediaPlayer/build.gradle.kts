@@ -31,19 +31,9 @@ kotlin {
         val androidMain by getting {
             dependencies {
                 implementation(libs.media3.exoplayer)
-                implementation(libs.libvlc.all)
                 implementation(libs.media3.exoplayer.dash)
                 implementation(libs.androidx.media3.ui)
             }
-        }
-        val iosX64Main by getting
-        val iosArm64Main by getting
-        val iosSimulatorArm64Main by getting
-        val iosMain by creating {
-            dependsOn(commonMain)
-            iosX64Main.dependsOn(this)
-            iosArm64Main.dependsOn(this)
-            iosSimulatorArm64Main.dependsOn(this)
         }
     }
 }
@@ -55,4 +45,8 @@ android {
     defaultConfig {
         minSdk = (findProperty("android.minSdk") as String).toInt()
     }
+}
+
+kotlin {
+    jvmToolchain(17)
 }

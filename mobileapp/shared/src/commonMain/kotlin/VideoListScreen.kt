@@ -1,4 +1,6 @@
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,23 +42,21 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun GenericImageCell(imageUrl: String, title: String, onClick: () -> Unit) {
+fun GenericImageCell(imageUrl: String, title: String, modifier: Modifier) {
     var shouldDrawImage by remember { mutableStateOf(false) }
     LaunchedEffect(imageUrl) {
         // TODO: This feels like a hack -- probably, this "fast scrolling" + cancellation should be handled by the imageloading library.
         shouldDrawImage = false
         delay(200)
-        println("Should show image now!")
         shouldDrawImage = true
     }
-    Column(Modifier
-        .sizeIn(minWidth = 64.dp, minHeight = 64.dp)
-        .clickable {
-            onClick()
-        }
-        .fillMaxWidth()) {
+    Column(
+        Modifier
+            .sizeIn(minWidth = 64.dp, minHeight = 64.dp)
+            .then(modifier)
+            .fillMaxWidth()
+    ) {
         if (shouldDrawImage) {
-            println("composing with kamel image!")
             KamelImage(
                 modifier = Modifier.aspectRatio(1.0f),
                 contentDescription = null,
@@ -71,16 +71,16 @@ fun GenericImageCell(imageUrl: String, title: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun MediaLibraryEntryCell(entry: MediaLibraryEntry, onClick: () -> Unit) {
+fun MediaLibraryEntryCell(entry: MediaLibraryEntry, modifier: Modifier) {
     GenericImageCell(
         Settings().get<String>("endpoint")!! + "/api/mediaLibrary/${entry.id}/randomThumb", // todo: this should be a CompositionLocal
         (entry.name.lines().firstOrNull() ?: "No name").take(255),
-        onClick = onClick
+        modifier = modifier
     )
 }
 
 object VideoListScreen : Screen {
-    @OptIn(ExperimentalLayoutApi::class)
+    @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
@@ -124,13 +124,22 @@ object VideoListScreen : Screen {
                     columns = GridCells.Fixed(4), Modifier.fillMaxSize()
                 ) {
                     items(state.filteredVideos, key = { it.id }) {
-                        MediaLibraryEntryCell(it) {
-                            navigator.push(
-                                VideoScreen(
-                                    Settings().get<String>("endpoint")!! + "/api/video/${it.id}"
+                        MediaLibraryEntryCell(it, Modifier.combinedClickable(
+                            onClick = {
+                                navigator.push(
+                                    VideoScreen(
+                                        Settings().get<String>("endpoint")!! + "/api/video/${it.id}"
+                                    )
                                 )
-                            )
-                        }
+                            },
+                            onLongClick = {
+                                navigator.push(
+                                    WebScreen(
+                                        Settings().get<String>("endpoint")!! + "/#/movie/${it.id}"
+                                    )
+                                )
+                            }
+                        ))
                     }
                 }
             }

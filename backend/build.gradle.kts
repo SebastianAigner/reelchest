@@ -129,3 +129,7 @@ kapt {
         arg("jtsgenModuleVersion", version)
     }
 }
+
+kotlin {
+    jvmToolchain(11)
+}

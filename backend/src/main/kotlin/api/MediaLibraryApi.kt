@@ -67,6 +67,7 @@ fun Route.mediaLibraryApi(
             call.respond(HttpStatusCode.OK)
         }
         get {
+            return@get call.respond(emptyList<DuplicateResponse>())
             val dups = duplicateCalculator.duplicatesMap ?: error("No duplicates map.")
             val lst = dups
                 .toList()

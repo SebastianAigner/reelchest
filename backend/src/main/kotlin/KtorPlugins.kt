@@ -18,6 +18,7 @@ fun Application.installPlugins() {
     val logger = LoggerFactory.getLogger("Plugins")
 
     install(CallLogging) {
+        disableDefaultColors()
         level = Level.INFO
         filter { call ->
             listOf("/api/queue", "/api/log", "/api/problematic").none {

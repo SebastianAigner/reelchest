@@ -1,25 +1,21 @@
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.coroutineScope
 import cafe.adriel.voyager.core.model.rememberScreenModel
@@ -35,7 +31,7 @@ import io.ktor.client.utils.buildHeaders
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
@@ -54,18 +50,21 @@ data class SearchQuery(
 
 class SearchScreenModel() : StateScreenModel<SearchScreenModel.SearchScreenState>(
     SearchScreenState(
-        emptyList()
+        emptyList(),
+        mostRecentSearch = Settings()["recentsearch"] ?: ""
     )
 ) {
 
     data class SearchScreenState(
         val results: List<SearchResult>,
         val offset: Int = 0,
-        val currentQuery: String = ""
+        val currentQuery: String = "",
+        val mostRecentSearch: String
     )
 
     fun search(query: String) {
-        mutableState.update { it.copy(currentQuery = query) }
+        Settings().putString("recentsearch", query)
+        mutableState.update { it.copy(currentQuery = query, mostRecentSearch = query) }
         coroutineScope.launch {
             val res =
                 globalHttpClient.post(Settings().get<String>("endpoint")!! + "/api/search/http://localhost:9091/search") {
@@ -85,7 +84,7 @@ class SearchScreenModel() : StateScreenModel<SearchScreenModel.SearchScreenState
     }
 
     fun loadVideoFor(searchResult: SearchResult): String {
-        return Settings().get<String>("endpoint")!! + "decrypt?url=${searchResult.url}"
+        return Settings().get<String>("endpoint")!! + "/decrypt?url=${searchResult.url}"
     }
 
     @Serializable
@@ -111,6 +110,13 @@ class SearchScreenModel() : StateScreenModel<SearchScreenModel.SearchScreenState
 }
 
 class SearchScreen : Screen {
+
+    @Composable
+    fun foo() {
+
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
     @Composable
     override fun Content() {
         var query by remember { mutableStateOf("") }
@@ -119,64 +125,80 @@ class SearchScreen : Screen {
         val state by model.state.collectAsState()
 
         Column(Modifier.fillMaxSize()) {
-            Row {
-                TextField(query, onValueChange = {
-                    query = it
-                })
-                Button(onClick = {
-                    model.search(query)
-                }) {
-                    Text("Search!")
+            Column(Modifier.fillMaxSize().weight(1f)) {
+                Row {
+                    TextField(query, onValueChange = {
+                        query = it
+                    })
+                    val focusManager = LocalFocusManager.current
+                    Button(onClick = {
+                        focusManager.clearFocus()
+                        model.search(query)
+                    }) {
+                        Text("Search!")
+                    }
+                    if (state.mostRecentSearch.isNotBlank()) {
+                        Button(onClick = {
+                            focusManager.clearFocus()
+                            model.search(state.mostRecentSearch)
+                        }) {
+                            Text(state.mostRecentSearch)
+                        }
+                    }
+                    NextPageButton(model)
                 }
-                NextPageButton(model)
-            }
 
-            val lazyGridState = rememberLazyGridState()
-            LaunchedEffect(state.results) {
-                lazyGridState.scrollToItem(0)
-            }
-            LazyVerticalGrid(
-                modifier = Modifier.fillMaxWidth(),
-                columns = GridCells.Fixed(3),
-                state = lazyGridState
-            ) {
-                items(state.results) {
-                    GenericImageCell(
-                        it.thumbUrl,
-                        it.title,
-                        onClick = {
-                            navigator.push(
-                                VideoScreen(
-                                    model.loadVideoFor(it)
-                                ) {
-                                    Button(onClick = {
-                                        model.queueDownloadFor(it)
-                                    }) {
-                                        Text("Download!")
-                                    }
+                val lazyGridState = rememberLazyGridState()
+                //            LaunchedEffect(state.results) {
+                //                println("I'm scrolling up! ${state.results.take(2)}")
+                //                lazyGridState.scrollToItem(0)
+                //            }
+                LaunchedEffect(Unit) {
+
+                    snapshotFlow { state.results }.drop(1).collect {
+                        println(it.take(1))
+                        lazyGridState.scrollToItem(0)
+                    }
+                }
+                LazyVerticalGrid(
+                    modifier = Modifier.fillMaxWidth(),
+                    columns = GridCells.Fixed(3),
+                    state = lazyGridState
+                ) {
+                    items(state.results) {
+                        GenericImageCell(
+                            it.thumbUrl,
+                            it.title,
+                            Modifier.combinedClickable(
+                                onClick = {
+                                    navigator.push(
+                                        VideoScreen(
+                                            model.loadVideoFor(it)
+                                        ) {
+                                            Button(onClick = {
+                                                model.queueDownloadFor(it)
+                                            }) {
+                                                Text("Download!")
+                                            }
+                                        }
+                                    )
+                                },
+                                onLongClick = {
+                                    navigator.push(WebScreen(it.url))
                                 }
                             )
-                        }
-                    )
-                }
-                if (state.results.isNotEmpty()) {
-                    item(span = { GridItemSpan(3) }) {
-                        Row(Modifier.fillMaxWidth()) {
-                            NextPageButton(model)
+                        )
+                    }
+                    if (state.results.isNotEmpty()) {
+                        item(span = { GridItemSpan(3) }) {
+                            Row(Modifier.fillMaxWidth()) {
+                                NextPageButton(model)
+                            }
                         }
                     }
                 }
             }
-            Box(
-                Modifier.fillMaxSize(),
-                contentAlignment = Alignment.BottomStart
-            ) {
-                Button(onClick = {
-                    navigator.pop()
-                }) {
-                    Text("Back")
-                }
-            }
+            Button(modifier = Modifier.wrapContentSize(), onClick = { navigator.pop() }) { Text("Back") }
         }
     }
 

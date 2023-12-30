@@ -36,7 +36,6 @@ fun Configuration.json(
 }
 
 
-@OptIn(ExperimentalResourceApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun App() {
     MaterialTheme {

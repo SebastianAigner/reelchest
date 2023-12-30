@@ -11,8 +11,6 @@ import io.realm.kotlin.ext.query
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import org.mobilenativefoundation.store.store5.*
 import org.mobilenativefoundation.store.store5.impl.extensions.fresh
 import kotlin.random.Random
@@ -99,27 +97,23 @@ class VideoListScreenModel() : StateScreenModel<VideoListScreenModel.VideoListSt
         coroutineScope.launch {
             myStore
                 .stream(StoreReadRequest.cached(Unit, true))
-                .collect {
-                    when (it) {
+                .collect { response: StoreReadResponse<List<MediaLibraryEntry>> ->
+                    when (response) {
                         is StoreReadResponse.Data -> {
-                            println(it.value)
                             mutableState.update {
-                                it.copy(loadingState = "Data received. ${dr++}")
-                            }
-                            mutableState.update { state ->
-                                state.copy(videos = it.value)
+                                it.copy(loadingState = "Data received. ${dr++}", videos = response.value)
                             }
                         }
 
                         is StoreReadResponse.Error.Exception -> {
                             mutableState.update { state ->
-                                state.copy(loadingState = "EX: ${it.error}")
+                                state.copy(loadingState = "EX: ${response.error}")
                             }
                         }
 
                         is StoreReadResponse.Error.Message -> {
                             mutableState.update { state ->
-                                state.copy(loadingState = "EX: ${it.message}")
+                                state.copy(loadingState = "EX: ${response.message}")
                             }
                         }
 
@@ -145,8 +139,10 @@ class VideoListScreenModel() : StateScreenModel<VideoListScreenModel.VideoListSt
         }
     }
 
+    @OptIn(ExperimentalStoreApi::class)
     fun refresh() {
         coroutineScope.launch {
+            myStore.clear()
             myStore.fresh(Unit)
         }
     }

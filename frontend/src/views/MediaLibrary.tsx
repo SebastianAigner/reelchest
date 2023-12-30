@@ -137,6 +137,7 @@ export function MediaLibrary() {
         <div className={"grid grid-cols-1 sm:grid-cols-3 gap-8"}>
             {
                 videosFilteredBySearchBar
+                    .slice(0, 100)
                     .map(item =>
                         <MediaLibraryCard item={item.mediaLibraryEntry} key={item.mediaLibraryEntry.id}/>
                     )

@@ -115,7 +115,9 @@ fun Application.module() {
         setupStaticPaths()
     }
 
-    warmApi(environment as ApplicationEngineEnvironment, this)
+    launch {
+        warmApi(environment as ApplicationEngineEnvironment, this)
+    }
 }
 
 fun warmApi(env: ApplicationEngineEnvironment, scope: CoroutineScope) {

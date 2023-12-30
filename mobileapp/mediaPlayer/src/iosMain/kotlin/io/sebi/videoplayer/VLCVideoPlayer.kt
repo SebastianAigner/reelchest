@@ -17,6 +17,7 @@ import platform.Foundation.NSURL
 import platform.UIKit.UIView
 import platform.darwin.NSObject
 
+@OptIn(ExperimentalForeignApi::class)
 class MediaPlayerDelegate : NSObject(), VLCMediaPlayerDelegateProtocol {
     override fun mediaPlayerTimeChanged(aNotification: NSNotification?) {
         println(aNotification)

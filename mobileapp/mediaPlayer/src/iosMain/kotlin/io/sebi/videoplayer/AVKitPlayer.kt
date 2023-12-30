@@ -3,23 +3,19 @@ package io.sebi.videoplayer
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.interop.UIKitView
 import kotlinx.cinterop.ExperimentalForeignApi
-import platform.AVFoundation.AVPlayer
-import platform.AVFoundation.AVPlayerLayer
-import platform.AVFoundation.cancelPendingPrerolls
-import platform.AVFoundation.currentItem
-import platform.AVFoundation.currentTime
-import platform.AVFoundation.duration
-import platform.AVFoundation.pause
-import platform.AVFoundation.play
-import platform.AVFoundation.seekToTime
+import kotlinx.coroutines.delay
+import platform.AVFoundation.*
 import platform.CoreMedia.CMTimeGetSeconds
 import platform.CoreMedia.CMTimeMake
 import platform.Foundation.NSURL
+import platform.UIKit.UIColor
 import platform.UIKit.UIView
+
 
 @OptIn(ExperimentalForeignApi::class)
 @Composable
@@ -28,12 +24,28 @@ fun AVKitPlayer(
     modifier: Modifier,
     videoPlayerState: VideoPlayerState
 ) {
-    val uiView = remember { UIView() }
+    val uiView = remember {
+        UIView().apply {
+            backgroundColor =
+                UIColor.blackColor // TODO: Report this -- seems that the "transparentness" of the default doesn't actually punch through to Compose?
+        }
+    }
     val avPlayerLayer = remember { AVPlayerLayer() }
     val mediaPlayer = remember {
         uiView.layer.addSublayer(avPlayerLayer)
         AVPlayer(NSURL.URLWithString(url)!!).apply {
             avPlayerLayer.player = this
+        }
+    }
+
+    LaunchedEffect(url) {
+        println("Playing $url")
+        while (true) {
+            delay(150)
+            val currSecs = CMTimeGetSeconds(mediaPlayer.currentTime())
+            val dur = mediaPlayer.currentItem?.duration ?: continue
+            val total = CMTimeGetSeconds(dur)
+            videoPlayerState.position.value = (currSecs / total).ifNaN { 0.0 }.toFloat()
         }
     }
 
@@ -96,4 +108,8 @@ fun AVKitPlayer(
             modifier = Modifier.fillMaxSize()
         )
     }
+}
+
+fun Double.ifNaN(default: () -> Double): Double {
+    return if (this.isNaN()) default() else this
 }
