@@ -168,7 +168,7 @@ class SearchScreen : Screen {
                                 onClick = {
                                     navigator.push(
                                         VideoScreen(
-                                            model.loadVideoFor(it)
+                                            model.loadVideoFor(it), navigator.toMyNavigator()
                                         ) {
                                             Button(onClick = {
                                                 model.queueDownloadFor(it)

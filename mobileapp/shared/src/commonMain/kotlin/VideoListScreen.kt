@@ -79,11 +79,12 @@ fun MediaLibraryEntryCell(entry: MediaLibraryEntry, modifier: Modifier) {
     )
 }
 
-object VideoListScreen : Screen {
+class VideoListScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
+    val navigateTo = navigator::goNewWindow
+
     @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
     @Composable
     override fun Content() {
-        val navigator = LocalNavigator.currentOrThrow
         val screenModel = rememberScreenModel { VideoListScreenModel() }
         val state by screenModel.state.collectAsState()
         var searchQuery by remember { mutableStateOf("") }
@@ -126,14 +127,15 @@ object VideoListScreen : Screen {
                     items(state.filteredVideos, key = { it.id }) {
                         MediaLibraryEntryCell(it, Modifier.combinedClickable(
                             onClick = {
-                                navigator.push(
+                                navigateTo(
                                     VideoScreen(
-                                        Settings().get<String>("endpoint")!! + "/api/video/${it.id}"
+                                        Settings().get<String>("endpoint")!! + "/api/video/${it.id}",
+                                        navigator
                                     )
                                 )
                             },
                             onLongClick = {
-                                navigator.push(
+                                navigateTo(
                                     WebScreen(
                                         Settings().get<String>("endpoint")!! + "/#/movie/${it.id}"
                                     )
@@ -146,25 +148,28 @@ object VideoListScreen : Screen {
             Column {
                 FlowRow {
                     Button(
-                        onClick = { navigator.push(SearchScreen()) },
+                        onClick = { navigateTo(SearchScreen()) },
                     ) {
                         Text("Search")
                     }
-                    Button(onClick = { navigator.push(SettingsScreen) }) {
+                    Button(onClick = { navigateTo(SettingsScreen) }) {
                         Text("Settings")
                     }
-                    Button(onClick = { navigator.push(DownloadsScreen) }) {
+                    Button(onClick = { navigateTo(DownloadsScreen()) }) {
                         Text("Downloads")
                     }
-                    Button(onClick = { navigator.push(TikTokScreen()) }) {
+                    Button(onClick = { navigateTo(TikTokScreen()) }) {
                         Text("TikTok")
+                    }
+                    Button(onClick = { navigateTo(WindowManaScreen()) }) {
+                        Text("XP")
                     }
                     val demoUrl =
                         "https://v.redd.it/wvv8jgjksuo71/HLSPlaylist.m3u8?a=1698935975%2CNTQ0ZDUzZWU4NWZjZDdkN2RkOTdiZDhiZGEzMjVmMWNmYTVlOThhMDU2ZjRmMGUzYmI0ZGVlOGMyNDc4MmFkNg%3D%3D&amp;v=1&amp;f=sd"
-                    Button(onClick = { navigator.push(VideoScreen(demoUrl)) }) {
+                    Button(onClick = { navigateTo(VideoScreen(demoUrl, navigator)) }) {
                         Text("M3U8 Test")
                     }
-                    Button(onClick = { navigator.push(QueueScreen()) }) {
+                    Button(onClick = { navigateTo(QueueScreen()) }) {
                         Text("Queue")
                     }
                     Button(onClick = { screenModel.refresh() }) {

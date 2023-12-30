@@ -27,7 +27,7 @@ object SetupScreen : Screen {
         LaunchedEffect(isValid) {
             if (isValid) {
                 settings.putString("endpoint", configuration!!)
-                navigator.push(VideoListScreen)
+                navigator.push(VideoListScreen(navigator.toMyNavigator()))
             }
         }
         LaunchedEffect(configuration) {

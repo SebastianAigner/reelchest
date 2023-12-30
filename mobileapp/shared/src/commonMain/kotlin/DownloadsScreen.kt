@@ -71,7 +71,7 @@ class DownloadScreenModel() : StateScreenModel<DownloadScreenModel.DownloadScree
     }
 }
 
-object DownloadsScreen : Screen {
+class DownloadsScreen : Screen {
 
     @Composable
     override fun Content() {

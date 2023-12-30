@@ -3,6 +3,7 @@ rootProject.name = "MyApplication"
 include(":androidApp")
 include(":shared")
 include(":mediaPlayer")
+include(":windowManager")
 
 pluginManagement {
     repositories {

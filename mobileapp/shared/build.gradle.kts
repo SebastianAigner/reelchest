@@ -35,6 +35,7 @@ kotlin {
             dependencies {
 
                 implementation(project(":mediaPlayer"))
+                implementation(project(":windowManager"))
 
                 implementation(libs.kamel.image)
 

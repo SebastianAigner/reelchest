@@ -8,7 +8,7 @@
                 "project": "iosApp",
                 "target": "iosApp"
             },
-            "configuration": "Release",
+            "configuration": "Debug",
             "destination": "SpicePad"
         }
     ]

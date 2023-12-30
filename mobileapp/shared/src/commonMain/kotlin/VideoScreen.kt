@@ -30,12 +30,14 @@ import io.sebi.videoplayer.VideoPlayerState
 import io.sebi.videoplayer.rememberVideoPlayerState
 import kotlinx.coroutines.delay
 
-class VideoScreen(val videoUrl: String, val cta: @Composable (() -> Unit)? = null) : Screen {
+class VideoScreen(
+    val videoUrl: String,
+    val navigator: WindowCapableNavigator<Screen>,
+    val cta: @Composable (() -> Unit)? = null
+) : Screen {
     @Composable
     override fun Content() {
         val videoPlayerState = rememberVideoPlayerState()
-
-        val navigator = LocalNavigator.currentOrThrow
         var currentTime by remember { mutableStateOf(0) }
         var shouldShowUI by remember { mutableStateOf(true) }
         LaunchedEffect(Unit) {
@@ -53,7 +55,7 @@ class VideoScreen(val videoUrl: String, val cta: @Composable (() -> Unit)? = nul
                 videoPlayerState
             )
             var pos by remember { mutableStateOf<Offset>(Offset(0.0f, 0.0f)) }
-            Box(Modifier.fillMaxSize().pointerInput (Unit) {
+            Box(Modifier.fillMaxSize().pointerInput(Unit) {
                 detectTapGestures(onTap = {
                     println("Tapped $it")
                     shouldShowUI = !shouldShowUI
@@ -63,12 +65,12 @@ class VideoScreen(val videoUrl: String, val cta: @Composable (() -> Unit)? = nul
 
             }
             if (shouldShowUI) {
-                
+
                 Box(Modifier.fillMaxSize()) {
                     StickyControlPanel(pos, { shouldShowUI = !shouldShowUI }, listOf("-10", "P/P", "+10"), {
-                        when(it) {
+                        when (it) {
                             0 -> videoPlayerState.jumpBackward(10)
-                            1 -> if(videoPlayerState.isPlaying.value) videoPlayerState.pause() else videoPlayerState.play()
+                            1 -> if (videoPlayerState.isPlaying.value) videoPlayerState.pause() else videoPlayerState.play()
                             2 -> videoPlayerState.jumpForward(10)
                             else -> println("huh?")
                         }
@@ -79,7 +81,7 @@ class VideoScreen(val videoUrl: String, val cta: @Composable (() -> Unit)? = nul
                 }
                 Row {
                     Button(onClick = {
-                        navigator.pop()
+                        navigator.goBack()
                     }) {
                         Text("Back")
                     }
@@ -128,7 +130,14 @@ fun VideoPageControls(videoPlayerState: VideoPlayerState) {
 
 
 @Composable
-fun StickyControlPanel(pos: Offset, onMiddlePress: () -> Unit, topRowLabels: List<String>, onTopRowPressed: (Int) -> Unit, sliderValue: Float, onSliderValueChanged: (Float) -> Unit) {
+fun StickyControlPanel(
+    pos: Offset,
+    onMiddlePress: () -> Unit,
+    topRowLabels: List<String>,
+    onTopRowPressed: (Int) -> Unit,
+    sliderValue: Float,
+    onSliderValueChanged: (Float) -> Unit
+) {
     with(LocalDensity.current) {
         val CENTER_LEN = 50.dp
         val centerShift = DpOffset(CENTER_LEN / 2, CENTER_LEN / 2)
