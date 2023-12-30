@@ -111,11 +111,6 @@ class SearchScreenModel() : StateScreenModel<SearchScreenModel.SearchScreenState
 
 class SearchScreen : Screen {
 
-    @Composable
-    fun foo() {
-
-    }
-
     @OptIn(ExperimentalFoundationApi::class)
     @Composable
     override fun Content() {
