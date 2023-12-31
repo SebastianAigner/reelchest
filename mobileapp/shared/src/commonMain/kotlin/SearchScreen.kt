@@ -109,13 +109,12 @@ class SearchScreenModel() : StateScreenModel<SearchScreenModel.SearchScreenState
     }
 }
 
-class SearchScreen : Screen {
+class SearchScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
 
     @OptIn(ExperimentalFoundationApi::class)
     @Composable
     override fun Content() {
         var query by remember { mutableStateOf("") }
-        val navigator = LocalNavigator.currentOrThrow
         val model = rememberScreenModel { SearchScreenModel() }
         val state by model.state.collectAsState()
 
@@ -166,9 +165,10 @@ class SearchScreen : Screen {
                             it.title,
                             Modifier.combinedClickable(
                                 onClick = {
-                                    navigator.push(
+
+                                    navigator.goNewWindow(
                                         VideoScreen(
-                                            model.loadVideoFor(it), navigator.toMyNavigator()
+                                            model.loadVideoFor(it), navigator
                                         ) {
                                             Button(onClick = {
                                                 model.queueDownloadFor(it)
@@ -179,7 +179,7 @@ class SearchScreen : Screen {
                                     )
                                 },
                                 onLongClick = {
-                                    navigator.push(WebScreen(it.url))
+                                    navigator.goNewWindow(WebScreen(it.url))
                                 }
                             )
                         )
@@ -193,7 +193,7 @@ class SearchScreen : Screen {
                     }
                 }
             }
-            Button(modifier = Modifier.wrapContentSize(), onClick = { navigator.pop() }) { Text("Back") }
+            Button(modifier = Modifier.wrapContentSize(), onClick = { navigator.goBack() }) { Text("Back") }
         }
     }
 

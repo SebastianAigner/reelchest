@@ -65,7 +65,7 @@ class WindowManaScreen() : Screen {
                     DownloadsScreen().toXpWindow(wm)
                 },
                 "Search" to {
-                    SearchScreen().toXpWindow(wm)
+                    SearchScreen(wm.toMyNavigator()).toXpWindow(wm)
                 }
             )
         )

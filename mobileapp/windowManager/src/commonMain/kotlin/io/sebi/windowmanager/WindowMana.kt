@@ -16,10 +16,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.*
 import org.jetbrains.compose.resources.painterResource
 import androidx.compose.ui.zIndex
 import kotlinx.coroutines.*
@@ -123,6 +120,8 @@ fun XPButton(text: String, onClick: () -> Unit) {
 class WindowManager {
     val windows = mutableStateListOf<XPWindow>()
     val zIndices = mutableStateMapOf<XPWindow, Float>()
+    val locations = mutableMapOf<XPWindow, MutableState<DpOffset>>()
+
     fun spawnWindow(xpWindow: XPWindow) {
         exitFullScreen()
         windows += xpWindow
@@ -155,11 +154,13 @@ class WindowManager {
                 MyWindow(
                     640.dp,
                     480.dp,
-                    200f + Random.nextFloat() * 30f,
-                    200f + Random.nextFloat() * 30f,
-                    zIndices[window] ?: 0.0f,
-                    window === fullscreenedWindow,
-                    {
+                    locations.getOrPut(window) { mutableStateOf(DpOffset(20.dp, 20.dp)) }.value,
+                    zIndex = zIndices[window] ?: 0.0f,
+                    isFullScreen = window === fullscreenedWindow,
+                    onDrag = {
+                        locations[window]!!.value += it
+                    },
+                    onFocus = {
                         focusWindow(window)
                     },
                     closeWindow = { closeWindow(window) },
@@ -196,18 +197,19 @@ interface WindowCapableNavigator<T> {
 fun MyWindow(
     width: Dp,
     height: Dp,
-    x: Float = 0f,
-    y: Float = 0f,
+    offset: DpOffset,
+
     zIndex: Float,
     isFullScreen: Boolean,
+    onDrag: (DpOffset) -> Unit,
     onFocus: () -> Unit,
     onRequestFullscreen: () -> Unit,
     closeWindow: () -> Unit,
     title: String,
     content: @Composable () -> Unit = {}
 ) {
-    var offsetX by remember { mutableStateOf(x) }
-    var offsetY by remember { mutableStateOf(y) }
+//    var offsetX by remember { mutableStateOf(x) }
+//    var offsetY by remember { mutableStateOf(y) }
     var currentWidth by remember { mutableStateOf(width) }
     var currentHeight by remember { mutableStateOf(height) }
     var expanded by remember { mutableStateOf(false) }
@@ -215,12 +217,7 @@ fun MyWindow(
     var shouldResizeY by remember { mutableStateOf(false) }
     Box(Modifier
         .zIndex(zIndex)
-        .then(if (!isFullScreen) Modifier.offset {
-            IntOffset(
-                offsetX.roundToInt(),
-                offsetY.roundToInt()
-            )
-        } else Modifier)
+        .then(if (!isFullScreen) Modifier.offset(offset.x, offset.y) else Modifier)
         .pointerInput(Unit) {
             detectTapGestures(onDoubleTap = {
                 onRequestFullscreen()
@@ -256,8 +253,7 @@ fun MyWindow(
             )
         }
         .shadow(10.dp)
-        .border(3.dp, Color(0xFF0956EE))
-        .padding(3.dp)
+        .then(if (!isFullScreen) Modifier.border(3.dp, Color(0xFF0956EE)).padding(3.dp) else Modifier)
         .background(Color(0xFFEBE8D6))
         .then(if (isFullScreen) Modifier.fillMaxSize() else Modifier.width(currentWidth).height(currentHeight))
     ) {
@@ -273,8 +269,7 @@ fun MyWindow(
                             onDrag = { change, dragAmount ->
                                 onFocus()
                                 change.consume()
-                                offsetX += dragAmount.x
-                                offsetY += dragAmount.y
+                                onDrag(DpOffset(dragAmount.x.toDp(), dragAmount.y.toDp()))
                             }
                         )
                     }, contentAlignment = Alignment.CenterStart

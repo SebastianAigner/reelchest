@@ -148,7 +148,7 @@ class VideoListScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
             Column {
                 FlowRow {
                     Button(
-                        onClick = { navigateTo(SearchScreen()) },
+                        onClick = { navigateTo(SearchScreen(navigator)) },
                     ) {
                         Text("Search")
                     }
