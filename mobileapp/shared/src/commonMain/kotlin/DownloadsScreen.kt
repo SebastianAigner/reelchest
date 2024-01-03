@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.coroutineScope
 import cafe.adriel.voyager.core.model.rememberScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -60,10 +61,11 @@ class DownloadScreenModel() : StateScreenModel<DownloadScreenModel.DownloadScree
     }
 
     fun updateProblematic() {
-        coroutineScope.launch {
-            val res =
-                globalHttpClient.get(Settings().get<String>("endpoint")!! + "/api/problematic")
-                    .body<List<ProblematicTaskDTO>>()
+        screenModelScope.launch {
+            val endpoint = Settings().getStringOrNull("endpoint") ?: return@launch
+            val res = globalHttpClient
+                .get("$endpoint/api/problematic")
+                .body<List<ProblematicTaskDTO>>()
             mutableState.update {
                 it.copy(problematic = res)
             }

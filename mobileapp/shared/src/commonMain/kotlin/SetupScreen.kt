@@ -51,6 +51,11 @@ object SetupScreen : Screen {
             }) {
                 Text("Go directly to TikTok")
             }
+            Button(onClick = {
+                navigator.push(WindowManaScreen())
+            }) {
+                Text("Go to WM")
+            }
         }
     }
 }
