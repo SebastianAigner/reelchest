@@ -224,29 +224,90 @@ class WindowManager {
                             println("Cursor position on desktop: $cursorPositionInDesktop")
                         },
                         onDragEnd = {
-                            println("Drag ending! $cursorPositionInDesktop")
-                            // Top-Left
-                            if (cursorPositionInDesktop.x < 50.dp && cursorPositionInDesktop.y < 50.dp) {
-                                locations[window]!!.value = DpOffset(0.dp, 0.dp)
-                                sizes[window]!!.value =
-                                    DpSize(desktopSize.width / 2f, desktopSize.height / 2f)
-                            }
+                            // sizes: [10%]---[50%]---[10%]
+                            // percentages: 0%-10%, 25-75% ,90% - 100%
+                            val firstThirdX = (Float.NEGATIVE_INFINITY.dp)..desktopSize.width * 0.1f
+                            val middleThirdX =
+                                (desktopSize.width * 0.25f)..(desktopSize.width * 0.75f)
+                            val lastThirdX =
+                                (desktopSize.width * 0.9f)..(Float.POSITIVE_INFINITY.dp)
 
-                            // Bottom-Left
-                            val cutoff = desktopSize.height * 0.9f
-                            println(cutoff)
-                            if (cursorPositionInDesktop.x < 50.dp && cursorPositionInDesktop.y > cutoff) {
-                                locations[window]!!.value = DpOffset(0.dp, desktopSize.height / 2f)
-                                sizes[window]!!.value =
-                                    DpSize(desktopSize.width / 2f, desktopSize.height / 2f)
-                            }
+                            val topThirdY = (Float.NEGATIVE_INFINITY.dp)..desktopSize.height * 0.1f
+                            val middleThirdY =
+                                (desktopSize.height * 0.25f)..(desktopSize.height * 0.75f)
+                            val bottomThirdY =
+                                (desktopSize.height * 0.9f)..(Float.POSITIVE_INFINITY.dp)
+                            val pos = cursorPositionInDesktop
+                            println("$pos $firstThirdX $topThirdY")
+                            val snapped: Pair<DpOffset, DpSize>? = when {
+                                pos.x in firstThirdX && pos.y in topThirdY -> {
+                                    DpOffset(0.dp, 0.dp) to DpSize(
+                                        desktopSize.width / 2f,
+                                        desktopSize.height / 2f
+                                    )
+                                }
 
-                            // Middle-Left
-                            if (cursorPositionInDesktop.x < 50.dp && cursorPositionInDesktop.y > cutoff) {
-                                locations[window]!!.value = DpOffset(0.dp, desktopSize.height / 2f)
-                                sizes[window]!!.value =
-                                    DpSize(desktopSize.width / 2f, desktopSize.height / 2f)
+                                pos.x in firstThirdX && pos.y in middleThirdY -> {
+                                    DpOffset(0.dp, 0.dp) to DpSize(
+                                        desktopSize.width / 2f,
+                                        desktopSize.height
+                                    )
+                                }
+
+                                pos.x in firstThirdX && pos.y in bottomThirdY -> {
+                                    DpOffset(0.dp, desktopSize.height / 2f) to DpSize(
+                                        desktopSize.width / 2f,
+                                        desktopSize.height / 2f
+                                    )
+                                }
+
+                                pos.x in lastThirdX && pos.y in topThirdY -> {
+                                    DpOffset(desktopSize.width / 2f, 0.dp) to DpSize(
+                                        desktopSize.width / 2f,
+                                        desktopSize.height / 2f
+                                    )
+                                }
+
+                                pos.x in lastThirdX && pos.y in middleThirdY -> {
+                                    DpOffset(desktopSize.width / 2f, 0.dp) to DpSize(
+                                        desktopSize.width / 2f,
+                                        desktopSize.height
+                                    )
+                                }
+
+                                pos.x in lastThirdX && pos.y in bottomThirdY -> {
+                                    DpOffset(
+                                        desktopSize.width / 2f,
+                                        desktopSize.height / 2f
+                                    ) to DpSize(desktopSize.width / 2f, desktopSize.height / 2f)
+                                }
+
+                                pos.x in middleThirdX && pos.y in topThirdY -> {
+                                    DpOffset(0.dp, 0.dp) to DpSize(
+                                        desktopSize.width,
+                                        desktopSize.height / 2f
+                                    )
+                                }
+
+                                pos.x in middleThirdX && pos.y in bottomThirdY -> {
+                                    DpOffset(0.dp, desktopSize.height / 2f) to DpSize(
+                                        desktopSize.width,
+                                        desktopSize.height / 2f
+                                    )
+                                }
+
+                                else -> null
                             }
+                            snapped?.let { (offset, size) ->
+                                locations[window]!!.value = offset
+                                sizes[window]!!.value = size
+                            }
+                            val loc = locations[window]!!.value
+                            val newLoc = DpOffset(
+                                loc.x.coerceAtLeast(0.dp).coerceAtMost(desktopSize.width - 10.dp),
+                                loc.y.coerceAtLeast(0.dp).coerceAtMost(desktopSize.height - 10.dp)
+                            )
+                            locations[window]!!.value = newLoc
                         },
                         onResize = { x, y ->
                             sizes[window]!!.value += DpSize(x, y)
@@ -361,9 +422,9 @@ fun MyWindow(
                 },
             )
         }
+        .shadow(10.dp)
         .then(if (!isFullScreen) Modifier.border(10.dp, Color(0xFF0956EE)) else Modifier)
         .then(if (!isFullScreen) Modifier.padding(10.dp) else Modifier)
-        .shadow(10.dp)
         .background(Color(0xFFEBE8D6))
         .then(
             if (isFullScreen) Modifier.fillMaxSize() else Modifier.size(
@@ -382,8 +443,10 @@ fun MyWindow(
                     .pointerInput(Unit) {
                         detectDragGestures(
                             onDragStart = { offset ->
+                                if (isFullScreen) {
+                                    return@detectDragGestures
+                                }
                                 onDragStart(offset)
-                                println("offset $offset")
                             },
                             onDrag = { change, dragAmount ->
                                 onFocus()

@@ -10,7 +10,7 @@ fun main(): Unit = application {
         LaunchedEffect(wm) {
             wm.spawnWindow(ExampleXPWindow(wm = wm))
         }
-//        Launcher(wm)
+        Launcher(wm, emptyList())
         wm.UI()
     }
 }
