@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import io.sebi.webview.WebKitBrowserView
 
 class WebScreen(val url: String) : Screen {
     @Composable
@@ -15,7 +16,7 @@ class WebScreen(val url: String) : Screen {
         val currentNavigator = LocalNavigator.currentOrThrow
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomStart) {
             WebKitBrowserView(url, Modifier)
-            
+
             Button({
                 currentNavigator.pop()
             }) {
@@ -26,8 +27,3 @@ class WebScreen(val url: String) : Screen {
 }
 
 
-@Composable
-expect fun WebKitBrowserView(
-    url: String,
-    modifier: Modifier,
-): Unit

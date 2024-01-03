@@ -4,6 +4,7 @@ include(":androidApp")
 include(":shared")
 include(":mediaPlayer")
 include(":windowManager")
+include(":webView")
 
 pluginManagement {
     repositories {

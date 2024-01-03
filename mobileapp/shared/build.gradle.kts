@@ -36,6 +36,7 @@ kotlin {
 
                 implementation(project(":mediaPlayer"))
                 implementation(project(":windowManager"))
+                implementation(project(":webView"))
 
                 implementation(libs.kamel.image)
 
