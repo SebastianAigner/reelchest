@@ -1,3 +1,4 @@
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,7 +17,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.Text
@@ -30,17 +30,23 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.zIndex
@@ -51,7 +57,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 import kotlin.random.Random
@@ -142,7 +147,8 @@ class ExampleXPWindow(wm: WindowManager, title: String = "Untitled") :
 @Composable
 fun XPButton(text: String, onClick: () -> Unit) {
     Box(
-        Modifier.clickable { onClick() }.shadow(2.dp).border(1.dp, Color.Black, RoundedCornerShape(3.dp))
+        Modifier.clickable { onClick() }.shadow(2.dp)
+            .border(1.dp, Color.Black, RoundedCornerShape(3.dp))
             .background(Color(0xFFF4F4F0)).padding(10.dp)
     ) {
         Text(text)
@@ -153,6 +159,7 @@ class WindowManager {
     val windows = mutableStateListOf<XPWindow>()
     val zIndices = mutableStateMapOf<XPWindow, Float>()
     val locations = mutableMapOf<XPWindow, MutableState<DpOffset>>()
+    val sizes = mutableMapOf<XPWindow, MutableState<DpSize>>()
 
     fun spawnWindow(xpWindow: XPWindow) {
         exitFullScreen()
@@ -181,31 +188,84 @@ class WindowManager {
 
     @Composable
     fun Windows() {
-        for (window in windows) {
-            key(window.id) {
-                MyWindow(
-                    640.dp,
-                    480.dp,
-                    locations.getOrPut(window) { mutableStateOf(DpOffset(20.dp, 20.dp)) }.value,
-                    zIndex = zIndices[window] ?: 0.0f,
-                    isFullScreen = window === fullscreenedWindow,
-                    onDrag = {
-                        locations[window]!!.value += it
-                    },
-                    onFocus = {
-                        focusWindow(window)
-                    },
-                    closeWindow = { closeWindow(window) },
-                    onRequestFullscreen = {
-                        if (fullscreenedWindow === window) {
-                            exitFullScreen()
-                        } else {
-                            setFullScreen(window)
-                        }
-                    },
-                    title = window.title
-                ) {
-                    window.Content()
+        var desktopSize by remember { mutableStateOf(DpSize.Zero) }
+        val localDensity = LocalDensity.current
+        Box(Modifier.fillMaxSize().onGloballyPositioned { coordinates: LayoutCoordinates ->
+            with(localDensity) {
+                val sizeInPixels = coordinates.size
+                desktopSize = DpSize(sizeInPixels.width.toDp(), sizeInPixels.height.toDp())
+            }
+        }) {
+            val boxWithConstraintsScope = this
+
+            var dragStartOffsetInsideWindowItself by remember {
+                mutableStateOf<DpOffset>(DpOffset(0.dp, 0.dp))
+            }
+            var cursorPositionInDesktop by remember { mutableStateOf(DpOffset.Zero) }
+            for (window in windows) {
+                key(window.id) {
+                    val size =
+                        sizes.getOrPut(window) { mutableStateOf(DpSize(640.dp, 480.dp)) }.value
+                    MyWindow(
+                        width = size.width,
+                        height = size.height,
+                        locations.getOrPut(window) { mutableStateOf(DpOffset(20.dp, 20.dp)) }.value,
+                        zIndex = zIndices[window] ?: 0.0f,
+                        isFullScreen = window === fullscreenedWindow,
+                        onDragStart = {
+                            dragStartOffsetInsideWindowItself = with(localDensity) {
+                                DpOffset(it.x.toDp(), it.y.toDp())
+                            }
+                        },
+                        onDrag = {
+                            locations[window]!!.value += it
+                            cursorPositionInDesktop =
+                                locations[window]!!.value + dragStartOffsetInsideWindowItself
+                            println("Cursor position on desktop: $cursorPositionInDesktop")
+                        },
+                        onDragEnd = {
+                            println("Drag ending! $cursorPositionInDesktop")
+                            // Top-Left
+                            if (cursorPositionInDesktop.x < 50.dp && cursorPositionInDesktop.y < 50.dp) {
+                                locations[window]!!.value = DpOffset(0.dp, 0.dp)
+                                sizes[window]!!.value =
+                                    DpSize(desktopSize.width / 2f, desktopSize.height / 2f)
+                            }
+
+                            // Bottom-Left
+                            val cutoff = desktopSize.height * 0.9f
+                            println(cutoff)
+                            if (cursorPositionInDesktop.x < 50.dp && cursorPositionInDesktop.y > cutoff) {
+                                locations[window]!!.value = DpOffset(0.dp, desktopSize.height / 2f)
+                                sizes[window]!!.value =
+                                    DpSize(desktopSize.width / 2f, desktopSize.height / 2f)
+                            }
+
+                            // Middle-Left
+                            if (cursorPositionInDesktop.x < 50.dp && cursorPositionInDesktop.y > cutoff) {
+                                locations[window]!!.value = DpOffset(0.dp, desktopSize.height / 2f)
+                                sizes[window]!!.value =
+                                    DpSize(desktopSize.width / 2f, desktopSize.height / 2f)
+                            }
+                        },
+                        onResize = { x, y ->
+                            sizes[window]!!.value += DpSize(x, y)
+                        },
+                        onFocus = {
+                            focusWindow(window)
+                        },
+                        closeWindow = { closeWindow(window) },
+                        onRequestFullscreen = {
+                            if (fullscreenedWindow === window) {
+                                exitFullScreen()
+                            } else {
+                                setFullScreen(window)
+                            }
+                        },
+                        title = window.title
+                    ) {
+                        window.Content()
+                    }
                 }
             }
         }
@@ -233,7 +293,10 @@ fun MyWindow(
 
     zIndex: Float,
     isFullScreen: Boolean,
-    onDrag: (DpOffset) -> Unit,
+    onDragStart: (Offset) -> Unit,
+    onDrag: (change: DpOffset) -> Unit,
+    onDragEnd: () -> Unit,
+    onResize: (x: Dp, y: Dp) -> Unit,
     onFocus: () -> Unit,
     onRequestFullscreen: () -> Unit,
     closeWindow: () -> Unit,
@@ -242,11 +305,21 @@ fun MyWindow(
 ) {
 //    var offsetX by remember { mutableStateOf(x) }
 //    var offsetY by remember { mutableStateOf(y) }
-    var currentWidth by remember { mutableStateOf(width) }
-    var currentHeight by remember { mutableStateOf(height) }
     var expanded by remember { mutableStateOf(false) }
     var shouldResizeX by remember { mutableStateOf(false) }
     var shouldResizeY by remember { mutableStateOf(false) }
+    var hiddenTopBar by remember { mutableStateOf(false) }
+    val currentWidth by rememberUpdatedState(width)
+    val currentHeight by rememberUpdatedState(height)
+    val topBarColor by animateColorAsState(if (hiddenTopBar) Color.Black else Color(0xFF0956EE))
+    LaunchedEffect(isFullScreen) {
+        if (isFullScreen) {
+            delay(1000)
+            hiddenTopBar = true
+        } else {
+            hiddenTopBar = false
+        }
+    }
     Box(Modifier
         .zIndex(zIndex)
         .then(if (!isFullScreen) Modifier.offset(offset.x, offset.y) else Modifier)
@@ -261,10 +334,15 @@ fun MyWindow(
             detectDragGestures(
                 onDragStart = { offset ->
                     onFocus()
-                    if (offset.x.toDp() > currentWidth - 10.dp) {
+                    val xo = offset.x.toDp()
+                    val yo = offset.y.toDp()
+                    val right = currentWidth - 10.dp
+                    val bottom = currentHeight - 10.dp
+                    println("$xo (needs $right), $yo (needs $bottom)")
+                    if (xo > right) {
                         shouldResizeX = true
                     }
-                    if (offset.y.toDp() > currentHeight - 10.dp) {
+                    if (yo > bottom) {
                         shouldResizeY = true
                     }
                 },
@@ -274,20 +352,24 @@ fun MyWindow(
                 },
                 onDrag = { change, dragAmount ->
                     if (shouldResizeX) {
-                        change.consume()
-                        currentWidth += dragAmount.x.toDp()
+                        onResize(dragAmount.x.toDp(), 0.dp)
                     }
                     if (shouldResizeY) {
-                        change.consume()
-                        currentHeight += dragAmount.y.toDp()
+                        onResize(0.dp, dragAmount.y.toDp())
                     }
-                }
+                    change.consume()
+                },
             )
         }
+        .then(if (!isFullScreen) Modifier.border(10.dp, Color(0xFF0956EE)) else Modifier)
+        .then(if (!isFullScreen) Modifier.padding(10.dp) else Modifier)
         .shadow(10.dp)
-        .then(if (!isFullScreen) Modifier.border(3.dp, Color(0xFF0956EE)).padding(3.dp) else Modifier)
         .background(Color(0xFFEBE8D6))
-        .then(if (isFullScreen) Modifier.fillMaxSize() else Modifier.width(currentWidth).height(currentHeight))
+        .then(
+            if (isFullScreen) Modifier.fillMaxSize() else Modifier.size(
+                width, height
+            ),
+        )
     ) {
         Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Top) {
             // Top Window Bar
@@ -295,18 +377,29 @@ fun MyWindow(
                 Modifier
                     .fillMaxWidth()
                     .height(30.dp)
-                    .background(Color(0xFF0956EE))
+//                    .background(Color(0xFF0956EE))
+                    .background(topBarColor)
                     .pointerInput(Unit) {
                         detectDragGestures(
+                            onDragStart = { offset ->
+                                onDragStart(offset)
+                                println("offset $offset")
+                            },
                             onDrag = { change, dragAmount ->
                                 onFocus()
                                 change.consume()
                                 onDrag(DpOffset(dragAmount.x.toDp(), dragAmount.y.toDp()))
+                            },
+                            onDragEnd = {
+                                onDragEnd()
                             }
                         )
                     }, contentAlignment = Alignment.CenterStart
             ) {
-                Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Text(
                         title,
                         fontSize = 1.2.em,
@@ -314,9 +407,12 @@ fun MyWindow(
                         overflow = TextOverflow.Ellipsis,
                         softWrap = false
                     )
-                    Box(Modifier.clickable {
-                        closeWindow()
-                    }.background(Color.Red).aspectRatio(1.0f).fillMaxHeight(), contentAlignment = Alignment.Center) {
+                    Box(
+                        Modifier.clickable {
+                            closeWindow()
+                        }.background(Color.Red).aspectRatio(1.0f).fillMaxHeight(),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Text("X", color = Color.White)
                     }
                 }
@@ -329,9 +425,14 @@ fun MyWindow(
 @OptIn(ExperimentalResourceApi::class)
 @Composable
 fun Launcher(wm: WindowManager, icons: List<Pair<String, () -> XPWindow>>) {
-    val background = painterResource(DrawableResource("bliss.png"))
+    val background = painterResource("bliss.png")
 
-    Image(background, null, contentScale = ContentScale.FillBounds, modifier = Modifier.fillMaxSize())
+    Image(
+        background,
+        null,
+        contentScale = ContentScale.FillBounds,
+        modifier = Modifier.fillMaxSize()
+    )
 
     Box(Modifier.padding(20.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
@@ -346,11 +447,7 @@ fun Launcher(wm: WindowManager, icons: List<Pair<String, () -> XPWindow>>) {
 
 @OptIn(ExperimentalResourceApi::class)
 @Composable
-fun LauncherIcon(
-    image: Painter = painterResource(DrawableResource("exe.jpeg")),
-    text: String,
-    onClick: () -> Unit
-) {
+fun LauncherIcon(image: Painter = painterResource("exe.jpeg"), text: String, onClick: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Image(image, null, Modifier.size(45.dp).clickable { onClick() })
         Text(text, color = Color.White)
