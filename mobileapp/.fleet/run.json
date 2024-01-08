@@ -9,7 +9,7 @@
                 "target": "iosApp"
             },
             "configuration": "Debug",
-            "destination": "SpicePad"
+            "destination": "Akula"
         },
         {
             "name": "iPad Pro Emulator",

@@ -1,9 +1,9 @@
 [versions]
-kotlin = "1.9.21"
+kotlin = "1.9.22"
 junit = "4.13.2"
 ktor = "2.3.7"
 logback = "1.4.7"
-compose = "1.6.0-alpha01"
+compose = "1.6.0-dev1357"
 serialization = "1.6.0"
 activityCompose = "1.8.2"
 appcompat = "1.6.1"

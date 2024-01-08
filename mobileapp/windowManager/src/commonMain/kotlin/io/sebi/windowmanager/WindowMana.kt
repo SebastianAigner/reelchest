@@ -57,6 +57,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 import kotlin.random.Random
@@ -488,7 +489,7 @@ fun MyWindow(
 @OptIn(ExperimentalResourceApi::class)
 @Composable
 fun Launcher(wm: WindowManager, icons: List<Pair<String, () -> XPWindow>>) {
-    val background = painterResource("bliss.png")
+    val background = painterResource(DrawableResource("bliss.png"))
 
     Image(
         background,
@@ -510,7 +511,11 @@ fun Launcher(wm: WindowManager, icons: List<Pair<String, () -> XPWindow>>) {
 
 @OptIn(ExperimentalResourceApi::class)
 @Composable
-fun LauncherIcon(image: Painter = painterResource("exe.jpeg"), text: String, onClick: () -> Unit) {
+fun LauncherIcon(
+    image: Painter = painterResource(DrawableResource("exe.jpeg")),
+    text: String,
+    onClick: () -> Unit
+) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Image(image, null, Modifier.size(45.dp).clickable { onClick() })
         Text(text, color = Color.White)
