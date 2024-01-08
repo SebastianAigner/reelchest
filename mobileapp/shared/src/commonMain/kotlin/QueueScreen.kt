@@ -12,8 +12,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.coroutineScope
 import cafe.adriel.voyager.core.model.rememberScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -55,28 +55,28 @@ class QueueScreenModel() : StateScreenModel<QueueScreenState>(
     }
 
     fun accept(qe: FeedEntry) {
-        coroutineScope.launch {
+        screenModelScope.launch {
             postToEndpoint("accept", qe)
             updateQueue()
         }
     }
 
     fun decline(qe: FeedEntry) {
-        coroutineScope.launch {
+        screenModelScope.launch {
             postToEndpoint("decline", qe)
             updateQueue()
         }
     }
 
     fun skip(qe: FeedEntry) {
-        coroutineScope.launch {
+        screenModelScope.launch {
             postToEndpoint("skip", qe)
             updateQueue()
         }
     }
 
     fun updateQueue() {
-        coroutineScope.launch {
+        screenModelScope.launch {
             val entries = globalHttpClient.get(Settings().get<String>("endpoint")!! + "/feed")
                 .body<List<FeedEntry>>()
             mutableState.update {

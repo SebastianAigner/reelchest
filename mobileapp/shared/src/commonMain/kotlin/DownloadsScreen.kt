@@ -9,7 +9,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.coroutineScope
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
@@ -46,7 +45,7 @@ class DownloadScreenModel() : StateScreenModel<DownloadScreenModel.DownloadScree
     )
 
     fun updateQueued() {
-        coroutineScope.launch {
+        screenModelScope.launch {
             val res = globalHttpClient.get(Settings().get<String>("endpoint")!! + "/api/queue")
                 .body<List<MetadatedDownloadQueueEntry>>()
             mutableState.update {

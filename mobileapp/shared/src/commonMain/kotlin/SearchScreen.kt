@@ -1,27 +1,32 @@
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.coroutineScope
 import cafe.adriel.voyager.core.model.rememberScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.get
 import io.ktor.client.call.body
@@ -31,7 +36,8 @@ import io.ktor.client.utils.buildHeaders
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
@@ -65,7 +71,7 @@ class SearchScreenModel() : StateScreenModel<SearchScreenModel.SearchScreenState
     fun search(query: String) {
         Settings().putString("recentsearch", query)
         mutableState.update { it.copy(currentQuery = query, mostRecentSearch = query) }
-        coroutineScope.launch {
+        screenModelScope.launch {
             val res =
                 globalHttpClient.post(Settings().get<String>("endpoint")!! + "/api/search/http://localhost:9091/search") {
                     buildHeaders {
@@ -91,7 +97,7 @@ class SearchScreenModel() : StateScreenModel<SearchScreenModel.SearchScreenState
     data class DownloadRequest(val url: String)
 
     fun queueDownloadFor(searchResult: SearchResult) {
-        coroutineScope.launch {
+        screenModelScope.launch {
             globalHttpClient.post(Settings().get<String>("endpoint")!! + "/api/download") {
                 buildHeaders {
                     contentType(ContentType.Application.Json)

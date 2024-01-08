@@ -1,17 +1,24 @@
 import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.coroutineScope
+import cafe.adriel.voyager.core.model.screenModelScope
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.get
-import io.ktor.client.call.*
-import io.ktor.client.request.*
+import io.ktor.client.call.body
+import io.ktor.client.request.get
 import io.realm.kotlin.Realm
 import io.realm.kotlin.RealmConfiguration
 import io.realm.kotlin.UpdatePolicy
 import io.realm.kotlin.ext.query
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.mobilenativefoundation.store.store5.*
+import org.mobilenativefoundation.store.store5.ExperimentalStoreApi
+import org.mobilenativefoundation.store.store5.Fetcher
+import org.mobilenativefoundation.store.store5.SourceOfTruth
+import org.mobilenativefoundation.store.store5.Store
+import org.mobilenativefoundation.store.store5.StoreBuilder
+import org.mobilenativefoundation.store.store5.StoreReadRequest
+import org.mobilenativefoundation.store.store5.StoreReadResponse
 import org.mobilenativefoundation.store.store5.impl.extensions.fresh
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
@@ -94,14 +101,17 @@ class VideoListScreenModel() : StateScreenModel<VideoListScreenModel.VideoListSt
     var dr = 0
 
     init {
-        coroutineScope.launch {
+        screenModelScope.launch {
             myStore
                 .stream(StoreReadRequest.cached(Unit, true))
                 .collect { response: StoreReadResponse<List<MediaLibraryEntry>> ->
                     when (response) {
                         is StoreReadResponse.Data -> {
                             mutableState.update {
-                                it.copy(loadingState = "Data received. ${dr++}", videos = response.value)
+                                it.copy(
+                                    loadingState = "Data received. ${dr++}",
+                                    videos = response.value
+                                )
                             }
                         }
 
@@ -141,7 +151,7 @@ class VideoListScreenModel() : StateScreenModel<VideoListScreenModel.VideoListSt
 
     @OptIn(ExperimentalStoreApi::class)
     fun refresh() {
-        coroutineScope.launch {
+        screenModelScope.launch {
             myStore.clear()
             myStore.fresh(Unit)
         }
