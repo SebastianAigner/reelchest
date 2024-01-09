@@ -231,13 +231,13 @@ class WindowManager {
                             val middleThirdX =
                                 (desktopSize.width * 0.25f)..(desktopSize.width * 0.75f)
                             val lastThirdX =
-                                (desktopSize.width * (1-shortThirdFactor))..(Float.POSITIVE_INFINITY.dp)
+                                (desktopSize.width * (1 - shortThirdFactor))..(Float.POSITIVE_INFINITY.dp)
 
                             val topThirdY = (Float.NEGATIVE_INFINITY.dp)..desktopSize.height * shortThirdFactor
                             val middleThirdY =
                                 (desktopSize.height * 0.25f)..(desktopSize.height * 0.75f)
                             val bottomThirdY =
-                                (desktopSize.height * (1-shortThirdFactor))..(Float.POSITIVE_INFINITY.dp)
+                                (desktopSize.height * (1 - shortThirdFactor))..(Float.POSITIVE_INFINITY.dp)
                             val pos = cursorPositionInDesktop
                             println("$pos $firstThirdX $topThirdY")
                             val snapped: Pair<DpOffset, DpSize>? = when {
@@ -305,7 +305,8 @@ class WindowManager {
                             }
                             val loc = locations[window]!!.value
                             val newLoc = DpOffset(
-                                loc.x.coerceAtLeast(-sizes[window]!!.value.width * 0.9f).coerceAtMost(desktopSize.width - 10.dp),
+                                loc.x.coerceAtLeast(-sizes[window]!!.value.width * 0.9f)
+                                    .coerceAtMost(desktopSize.width - 10.dp),
                                 loc.y.coerceAtLeast(0.dp).coerceAtMost(desktopSize.height - 10.dp)
                             )
                             locations[window]!!.value = newLoc
@@ -365,8 +366,6 @@ fun MyWindow(
     title: String,
     content: @Composable () -> Unit = {}
 ) {
-//    var offsetX by remember { mutableStateOf(x) }
-//    var offsetY by remember { mutableStateOf(y) }
     var expanded by remember { mutableStateOf(false) }
     var shouldResizeX by remember { mutableStateOf(false) }
     var shouldResizeY by remember { mutableStateOf(false) }
@@ -424,64 +423,69 @@ fun MyWindow(
             )
         }
         .shadow(10.dp)
-        .then(if (!isFullScreen) Modifier.border(10.dp, Color(0xFF0956EE)) else Modifier)
-        .then(if (!isFullScreen) Modifier.padding(10.dp) else Modifier)
-        .background(Color(0xFFEBE8D6))
         .then(
             if (isFullScreen) Modifier.fillMaxSize() else Modifier.size(
                 width, height
             ),
         )
     ) {
-        Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Top) {
-            // Top Window Bar
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(30.dp)
+        Box(
+            Modifier.fillMaxSize()
+                .then(if (!isFullScreen) Modifier.border(10.dp, Color(0xFF0956EE)) else Modifier)
+                .then(if (!isFullScreen) Modifier.padding(10.dp) else Modifier)
+                .background(Color(0xFFEBE8D6))
+        ) {
+            Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Top) {
+                // Top Window Bar
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(30.dp)
 //                    .background(Color(0xFF0956EE))
-                    .background(topBarColor)
-                    .pointerInput(Unit) {
-                        detectDragGestures(
-                            onDragStart = { offset ->
-                                if (isFullScreen) {
-                                    return@detectDragGestures
+                        .background(topBarColor)
+                        .pointerInput(Unit) {
+                            detectDragGestures(
+                                onDragStart = { offset ->
+                                    if (isFullScreen) {
+                                        return@detectDragGestures
+                                    }
+                                    onDragStart(offset)
+                                },
+                                onDrag = { change, dragAmount ->
+                                    onFocus()
+                                    change.consume()
+                                    onDrag(DpOffset(dragAmount.x.toDp(), dragAmount.y.toDp()))
+                                },
+                                onDragEnd = {
+                                    println("Drag end!")
+                                    onDragEnd()
                                 }
-                                onDragStart(offset)
-                            },
-                            onDrag = { change, dragAmount ->
-                                onFocus()
-                                change.consume()
-                                onDrag(DpOffset(dragAmount.x.toDp(), dragAmount.y.toDp()))
-                            },
-                            onDragEnd = {
-                                onDragEnd()
-                            }
-                        )
-                    }, contentAlignment = Alignment.CenterStart
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
+                            )
+                        }, contentAlignment = Alignment.CenterStart
                 ) {
-                    Text(
-                        title,
-                        fontSize = 1.2.em,
-                        color = Color.White,
-                        overflow = TextOverflow.Ellipsis,
-                        softWrap = false
-                    )
-                    Box(
-                        Modifier.clickable {
-                            closeWindow()
-                        }.background(Color.Red).aspectRatio(1.0f).fillMaxHeight(),
-                        contentAlignment = Alignment.Center
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("X", color = Color.White)
+                        Text(
+                            title,
+                            fontSize = 1.2.em,
+                            color = Color.White,
+                            overflow = TextOverflow.Ellipsis,
+                            softWrap = false
+                        )
+                        Box(
+                            Modifier.clickable {
+                                closeWindow()
+                            }.background(Color.Red).aspectRatio(1.0f).fillMaxHeight(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("X", color = Color.White)
+                        }
                     }
                 }
+                content()
             }
-            content()
         }
     }
 }
