@@ -66,6 +66,9 @@ class WindowManaScreen() : Screen {
                 },
                 "Search" to {
                     SearchScreen(wm.toMyNavigator()).toXpWindow(wm)
+                },
+                "Logs" to {
+                    LogWindow(wm)
                 }
             )
         )

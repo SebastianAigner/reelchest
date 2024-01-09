@@ -225,18 +225,19 @@ class WindowManager {
                         },
                         onDragEnd = {
                             // sizes: [10%]---[50%]---[10%]
-                            // percentages: 0%-10%, 25-75% ,90% - 100%
-                            val firstThirdX = (Float.NEGATIVE_INFINITY.dp)..desktopSize.width * 0.1f
+                            // percentages: 0%-STF%, 25-75% ,(100-STF)% - 100%
+                            val shortThirdFactor = 0.02f
+                            val firstThirdX = (Float.NEGATIVE_INFINITY.dp)..desktopSize.width * shortThirdFactor
                             val middleThirdX =
                                 (desktopSize.width * 0.25f)..(desktopSize.width * 0.75f)
                             val lastThirdX =
-                                (desktopSize.width * 0.9f)..(Float.POSITIVE_INFINITY.dp)
+                                (desktopSize.width * (1-shortThirdFactor))..(Float.POSITIVE_INFINITY.dp)
 
-                            val topThirdY = (Float.NEGATIVE_INFINITY.dp)..desktopSize.height * 0.1f
+                            val topThirdY = (Float.NEGATIVE_INFINITY.dp)..desktopSize.height * shortThirdFactor
                             val middleThirdY =
                                 (desktopSize.height * 0.25f)..(desktopSize.height * 0.75f)
                             val bottomThirdY =
-                                (desktopSize.height * 0.9f)..(Float.POSITIVE_INFINITY.dp)
+                                (desktopSize.height * (1-shortThirdFactor))..(Float.POSITIVE_INFINITY.dp)
                             val pos = cursorPositionInDesktop
                             println("$pos $firstThirdX $topThirdY")
                             val snapped: Pair<DpOffset, DpSize>? = when {
@@ -304,7 +305,7 @@ class WindowManager {
                             }
                             val loc = locations[window]!!.value
                             val newLoc = DpOffset(
-                                loc.x.coerceAtLeast(0.dp).coerceAtMost(desktopSize.width - 10.dp),
+                                loc.x.coerceAtLeast(-sizes[window]!!.value.width * 0.9f).coerceAtMost(desktopSize.width - 10.dp),
                                 loc.y.coerceAtLeast(0.dp).coerceAtMost(desktopSize.height - 10.dp)
                             )
                             locations[window]!!.value = newLoc

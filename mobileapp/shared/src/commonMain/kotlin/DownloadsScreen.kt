@@ -1,13 +1,19 @@
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
@@ -18,6 +24,7 @@ import com.russhwolf.settings.Settings
 import com.russhwolf.settings.get
 import io.ktor.client.call.body
 import io.ktor.client.request.get
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -44,29 +51,35 @@ class DownloadScreenModel() : StateScreenModel<DownloadScreenModel.DownloadScree
         val problematic: List<ProblematicTaskDTO>
     )
 
-    fun updateQueued() {
+    fun startUpdatingQueued() {
         screenModelScope.launch {
-            val res = globalHttpClient.get(Settings().get<String>("endpoint")!! + "/api/queue")
-                .body<List<MetadatedDownloadQueueEntry>>()
-            mutableState.update {
-                it.copy(queued = res)
+            while(true) {
+                val res = globalHttpClient.get(Settings().get<String>("endpoint")!! + "/api/queue")
+                    .body<List<MetadatedDownloadQueueEntry>>()
+                mutableState.update {
+                    it.copy(queued = res)
+                }
+                delay(1000)
             }
         }
     }
 
     fun updateAll() {
-        updateProblematic()
-        updateQueued()
+        startUpdatingProblematic()
+        startUpdatingQueued()
     }
 
-    fun updateProblematic() {
+    fun startUpdatingProblematic() {
         screenModelScope.launch {
-            val endpoint = Settings().getStringOrNull("endpoint") ?: return@launch
-            val res = globalHttpClient
-                .get("$endpoint/api/problematic")
-                .body<List<ProblematicTaskDTO>>()
-            mutableState.update {
-                it.copy(problematic = res)
+            while(true) {
+                val endpoint = Settings().getStringOrNull("endpoint") ?: return@launch
+                val res = globalHttpClient
+                    .get("$endpoint/api/problematic")
+                    .body<List<ProblematicTaskDTO>>()
+                mutableState.update {
+                    it.copy(problematic = res)
+                }
+                delay(1000)
             }
         }
     }
@@ -82,16 +95,17 @@ class DownloadsScreen : Screen {
         LaunchedEffect(Unit) {
             screenModel.updateAll()
         }
-        Box(Modifier.fillMaxSize()) {
+        Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
             Column {
-                Text("Q U E U E D")
+                Text(text = "Queued", style = MaterialTheme.typography.h1)
                 for (queued in state.queued) {
                     val perc = (queued.queueEntry.progress * 100).toInt()
                     val nam = queued.title
                     val originUrl = queued.queueEntry.originUrl
-                    Text("[$perc%] $originUrl ($nam)")
+                    Text("[$perc %] $originUrl ($nam)")
                 }
-                Text("P R O B L E M A T I C")
+                Spacer(Modifier.height(40.dp))
+                Text(text = "Problematic", style = MaterialTheme.typography.h1)
                 for (prob in state.problematic) {
                     val url = prob.originUrl
                     val err = prob.error
@@ -99,9 +113,6 @@ class DownloadsScreen : Screen {
                 }
                 Button(onClick = { navigator.pop() }) {
                     Text("Back")
-                }
-                Button(onClick = { screenModel.updateAll() }) {
-                    Text("Refresh")
                 }
             }
         }

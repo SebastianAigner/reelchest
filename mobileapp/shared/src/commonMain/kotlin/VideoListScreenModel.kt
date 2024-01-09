@@ -48,8 +48,6 @@ class VideoListScreenModel() : StateScreenModel<VideoListScreenModel.VideoListSt
                 }
             },
             writer = { key, local ->
-                val all = realm.query<MediaLibraryRealmEntry>().find()
-
                 val realmObjs = local.map { it.toRealmObject() }
                 println("Storing $realmObjs")
                 realm.write {
@@ -62,7 +60,9 @@ class VideoListScreenModel() : StateScreenModel<VideoListScreenModel.VideoListSt
                 realm.write {
                     val all = realm.query<MediaLibraryRealmEntry>().find()
                     for (res in all) {
-                        delete(res)
+                        findLatest(res)?.let {
+                            delete(it)
+                        }
                     }
                 }
             },
@@ -70,7 +70,9 @@ class VideoListScreenModel() : StateScreenModel<VideoListScreenModel.VideoListSt
                 realm.write {
                     val all = realm.query<MediaLibraryRealmEntry>().find()
                     for (res in all) {
-                        delete(res)
+                        findLatest(res)?.let {
+                            delete(it)
+                        }
                     }
                 }
             }
