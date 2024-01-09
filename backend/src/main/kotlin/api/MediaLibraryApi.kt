@@ -46,9 +46,14 @@ fun Route.mediaLibraryApi(
     metadataStorage: MetadataStorage,
 ) {
     get {
-        val mediaLib = mediaLibrary.entries.map { it.withoutPage() }.sortedByDescending {
-            it.creationDate
-        }.distinctBy { it.id }
+        val mediaLib =
+            mediaLibrary
+                .entries
+                .map { it.withoutPage() }
+                .sortedByDescending {
+                    it.creationDate
+                }
+                .distinctBy { it.id }
         if (this.context.request.queryParameters["auto"] != null) {
             return@get call.respond(mediaLib.map { it.withAutoTags(tagger) })
         }

@@ -1,9 +1,9 @@
 {
     "configurations": [
         {
-            "name": "SpicePad",
+            "name": "SpicePad Debug",
             "type": "xcode-app",
-            "workingDir": "/Users/Sebastian.Aigner/Desktop/github/reelchest/mobileapp",
+            "workingDir": "$PROJECT_DIR$",
             "buildTarget": {
                 "project": "iosApp",
                 "target": "iosApp"
@@ -12,9 +12,20 @@
             "destination": "SpicePad"
         },
         {
+            "name": "SpicePad Release",
+            "type": "xcode-app",
+            "workingDir": "$PROJECT_DIR$",
+            "buildTarget": {
+                "project": "iosApp",
+                "target": "iosApp"
+            },
+            "configuration": "Release",
+            "destination": "SpicePad"
+        },
+        {
             "name": "iPad Pro Emulator",
             "type": "xcode-app",
-            "workingDir": "/Users/Sebastian.Aigner/Desktop/github/reelchest/mobileapp",
+            "workingDir": "$PROJECT_DIR$",
             "buildTarget": {
                 "project": "iosApp",
                 "target": "iosApp"
@@ -25,7 +36,7 @@
         {
             "name": "iosApp",
             "type": "xcode-app",
-            "workingDir": "/Users/Sebastian.Aigner/Desktop/github/reelchest/mobileapp",
+            "workingDir": "$PROJECT_DIR$",
             "buildTarget": {
                 "project": "iosApp",
                 "target": "iosApp"
