@@ -26,7 +26,7 @@ jobs:
         run: |
           ./gradlew buildFatJar
 
-      - name: Push emoji stylesheet artifact
+      - name: Push built backend
         uses: actions/upload-artifact@v3
         with:
           path: backend/build/libs/backend-all.jar
