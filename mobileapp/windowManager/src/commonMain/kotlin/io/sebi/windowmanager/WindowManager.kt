@@ -289,7 +289,8 @@ class WindowManager {
                 .coerceAtMost(desktopSize.width - 10.dp),
             loc.y.coerceAtLeast(0.dp).coerceAtMost(desktopSize.height - 10.dp)
         )
-        locations[window]!!.value = newLoc
+        locations[window]!!.value =
+            newLoc // TODO: It seems that sometimes, in rare cases, you can move the window out of bounds even with this set. I don't understand why.
     }
 
     @Composable
