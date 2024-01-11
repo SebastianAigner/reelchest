@@ -5,12 +5,33 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -29,13 +50,16 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.zIndex
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 import kotlin.random.Random
-import kotlin.ranges.coerceAtLeast
-import kotlin.ranges.coerceAtMost
-import kotlin.ranges.rangeTo
 
 
 abstract class XPWindow(
@@ -167,13 +191,13 @@ class WindowManager {
         var desktopSize by remember { mutableStateOf(DpSize.Zero) }
         val localDensity = LocalDensity.current
         Box(Modifier.fillMaxSize().onGloballyPositioned { coordinates: LayoutCoordinates ->
+            val sizeInPixels = coordinates.size
             with(localDensity) {
-                val sizeInPixels = coordinates.size
                 desktopSize = DpSize(sizeInPixels.width.toDp(), sizeInPixels.height.toDp())
             }
         }) {
             var dragStartOffsetInsideWindowItself by remember {
-                mutableStateOf<DpOffset>(DpOffset(0.dp, 0.dp))
+                mutableStateOf(DpOffset(0.dp, 0.dp))
             }
             var cursorPositionInDesktop by remember { mutableStateOf(DpOffset.Zero) }
             for (window in windows) {
@@ -192,101 +216,47 @@ class WindowManager {
                             }
                         },
                         onDrag = {
-                            locations[window]!!.value += it
+                            locations.getValue(window).value += it
                             cursorPositionInDesktop =
-                                locations[window]!!.value + dragStartOffsetInsideWindowItself
-                            println("Cursor position on desktop: $cursorPositionInDesktop")
+                                locations.getValue(window).value + dragStartOffsetInsideWindowItself
                         },
                         onDragEnd = {
-                            // sizes: [10%]---[50%]---[10%]
-                            // percentages: 0%-STF%, 25-75% ,(100-STF)% - 100%
-                            val shortThirdFactor = 0.02f
-                            val firstThirdX = (Float.NEGATIVE_INFINITY.dp)..desktopSize.width * shortThirdFactor
-                            val middleThirdX =
-                                (desktopSize.width * 0.25f)..(desktopSize.width * 0.75f)
-                            val lastThirdX =
-                                (desktopSize.width * (1 - shortThirdFactor))..(Float.POSITIVE_INFINITY.dp)
-
-                            val topThirdY = (Float.NEGATIVE_INFINITY.dp)..desktopSize.height * shortThirdFactor
-                            val middleThirdY =
-                                (desktopSize.height * 0.25f)..(desktopSize.height * 0.75f)
-                            val bottomThirdY =
-                                (desktopSize.height * (1 - shortThirdFactor))..(Float.POSITIVE_INFINITY.dp)
-                            val pos = cursorPositionInDesktop
-                            println("$pos $firstThirdX $topThirdY")
-                            val snapped: Pair<DpOffset, DpSize>? = when {
-                                pos.x in firstThirdX && pos.y in topThirdY -> {
-                                    DpOffset(0.dp, 0.dp) to DpSize(
-                                        desktopSize.width / 2f,
-                                        desktopSize.height / 2f
-                                    )
-                                }
-
-                                pos.x in firstThirdX && pos.y in middleThirdY -> {
-                                    DpOffset(0.dp, 0.dp) to DpSize(
-                                        desktopSize.width / 2f,
-                                        desktopSize.height
-                                    )
-                                }
-
-                                pos.x in firstThirdX && pos.y in bottomThirdY -> {
-                                    DpOffset(0.dp, desktopSize.height / 2f) to DpSize(
-                                        desktopSize.width / 2f,
-                                        desktopSize.height / 2f
-                                    )
-                                }
-
-                                pos.x in lastThirdX && pos.y in topThirdY -> {
-                                    DpOffset(desktopSize.width / 2f, 0.dp) to DpSize(
-                                        desktopSize.width / 2f,
-                                        desktopSize.height / 2f
-                                    )
-                                }
-
-                                pos.x in lastThirdX && pos.y in middleThirdY -> {
-                                    DpOffset(desktopSize.width / 2f, 0.dp) to DpSize(
-                                        desktopSize.width / 2f,
-                                        desktopSize.height
-                                    )
-                                }
-
-                                pos.x in lastThirdX && pos.y in bottomThirdY -> {
-                                    DpOffset(
-                                        desktopSize.width / 2f,
-                                        desktopSize.height / 2f
-                                    ) to DpSize(desktopSize.width / 2f, desktopSize.height / 2f)
-                                }
-
-                                pos.x in middleThirdX && pos.y in topThirdY -> {
-                                    DpOffset(0.dp, 0.dp) to DpSize(
-                                        desktopSize.width,
-                                        desktopSize.height / 2f
-                                    )
-                                }
-
-                                pos.x in middleThirdX && pos.y in bottomThirdY -> {
-                                    DpOffset(0.dp, desktopSize.height / 2f) to DpSize(
-                                        desktopSize.width,
-                                        desktopSize.height / 2f
-                                    )
-                                }
-
-                                else -> null
-                            }
-                            snapped?.let { (offset, size) ->
-                                locations[window]!!.value = offset
-                                sizes[window]!!.value = size
-                            }
-                            val loc = locations[window]!!.value
-                            val newLoc = DpOffset(
-                                loc.x.coerceAtLeast(-sizes[window]!!.value.width * 0.9f)
-                                    .coerceAtMost(desktopSize.width - 10.dp),
-                                loc.y.coerceAtLeast(0.dp).coerceAtMost(desktopSize.height - 10.dp)
-                            )
-                            locations[window]!!.value = newLoc
+                            snapWindow(desktopSize, cursorPositionInDesktop, window)
                         },
-                        onResize = { x, y ->
-                            sizes[window]!!.value += DpSize(x, y)
+                        onResize = { op ->
+                            when (op) {
+                                is BottomRightResizeOperation -> {
+                                    sizes.getValue(window).value += DpSize(op.offset.x, op.offset.y)
+                                }
+
+                                is TopRightResizeOperation -> {
+                                    locations.getValue(window).value += DpOffset(0.dp, op.offset.y)
+                                    sizes.getValue(window).value += DpSize(
+                                        op.offset.x,
+                                        -op.offset.y
+                                    )
+                                }
+
+                                is TopLeftResizeOperation -> {
+                                    locations.getValue(window).value += op.offset
+                                    sizes.getValue(window).value += DpSize(
+                                        -op.offset.x,
+                                        -op.offset.y
+                                    )
+                                }
+
+                                is BottomLeftResizeOperation -> {
+                                    locations.getValue(window).value += DpOffset(op.offset.x, 0.dp)
+                                    sizes.getValue(window).value += DpSize(
+                                        -op.offset.x,
+                                        op.offset.y
+                                    )
+                                }
+
+                                else -> {
+                                    error("Unreachable") // TODO: Why is this necessary?
+                                }
+                            }
                         },
                         onFocus = {
                             focusWindow(window)
@@ -308,6 +278,99 @@ class WindowManager {
         }
     }
 
+    private fun snapWindow(
+        desktopSize: DpSize,
+        cursorPositionInDesktop: DpOffset,
+        window: XPWindow
+    ) {
+        // sizes: [10%]---[50%]---[10%]
+        // percentages: 0%-STF%, 25-75% ,(100-STF)% - 100%
+        val shortThirdFactor = 0.02f
+        val firstThirdX = (Float.NEGATIVE_INFINITY.dp)..desktopSize.width * shortThirdFactor
+        val middleThirdX =
+            (desktopSize.width * 0.25f)..(desktopSize.width * 0.75f)
+        val lastThirdX =
+            (desktopSize.width * (1 - shortThirdFactor))..(Float.POSITIVE_INFINITY.dp)
+
+        val topThirdY = (Float.NEGATIVE_INFINITY.dp)..desktopSize.height * shortThirdFactor
+        val middleThirdY =
+            (desktopSize.height * 0.25f)..(desktopSize.height * 0.75f)
+        val bottomThirdY =
+            (desktopSize.height * (1 - shortThirdFactor))..(Float.POSITIVE_INFINITY.dp)
+        val pos = cursorPositionInDesktop
+        println("$pos $firstThirdX $topThirdY")
+        val snapped: Pair<DpOffset, DpSize>? = when {
+            pos.x in firstThirdX && pos.y in topThirdY -> {
+                DpOffset(0.dp, 0.dp) to DpSize(
+                    desktopSize.width / 2f,
+                    desktopSize.height / 2f
+                )
+            }
+
+            pos.x in firstThirdX && pos.y in middleThirdY -> {
+                DpOffset(0.dp, 0.dp) to DpSize(
+                    desktopSize.width / 2f,
+                    desktopSize.height
+                )
+            }
+
+            pos.x in firstThirdX && pos.y in bottomThirdY -> {
+                DpOffset(0.dp, desktopSize.height / 2f) to DpSize(
+                    desktopSize.width / 2f,
+                    desktopSize.height / 2f
+                )
+            }
+
+            pos.x in lastThirdX && pos.y in topThirdY -> {
+                DpOffset(desktopSize.width / 2f, 0.dp) to DpSize(
+                    desktopSize.width / 2f,
+                    desktopSize.height / 2f
+                )
+            }
+
+            pos.x in lastThirdX && pos.y in middleThirdY -> {
+                DpOffset(desktopSize.width / 2f, 0.dp) to DpSize(
+                    desktopSize.width / 2f,
+                    desktopSize.height
+                )
+            }
+
+            pos.x in lastThirdX && pos.y in bottomThirdY -> {
+                DpOffset(
+                    desktopSize.width / 2f,
+                    desktopSize.height / 2f
+                ) to DpSize(desktopSize.width / 2f, desktopSize.height / 2f)
+            }
+
+            pos.x in middleThirdX && pos.y in topThirdY -> {
+                DpOffset(0.dp, 0.dp) to DpSize(
+                    desktopSize.width,
+                    desktopSize.height / 2f
+                )
+            }
+
+            pos.x in middleThirdX && pos.y in bottomThirdY -> {
+                DpOffset(0.dp, desktopSize.height / 2f) to DpSize(
+                    desktopSize.width,
+                    desktopSize.height / 2f
+                )
+            }
+
+            else -> null
+        }
+        snapped?.let { (offset, size) ->
+            locations[window]!!.value = offset
+            sizes[window]!!.value = size
+        }
+        val loc = locations[window]!!.value
+        val newLoc = DpOffset(
+            loc.x.coerceAtLeast(-sizes[window]!!.value.width * 0.9f)
+                .coerceAtMost(desktopSize.width - 10.dp),
+            loc.y.coerceAtLeast(0.dp).coerceAtMost(desktopSize.height - 10.dp)
+        )
+        locations[window]!!.value = newLoc
+    }
+
     @Composable
     fun UI() {
         Box(Modifier.fillMaxSize()) {
@@ -315,6 +378,13 @@ class WindowManager {
         }
     }
 }
+
+sealed interface ResizeOperation
+data class TopRightResizeOperation(val offset: DpOffset) : ResizeOperation
+data class TopLeftResizeOperation(val offset: DpOffset) : ResizeOperation
+data class BottomRightResizeOperation(val offset: DpOffset) : ResizeOperation
+data class BottomLeftResizeOperation(val offset: DpOffset) : ResizeOperation
+
 
 interface WindowCapableNavigator<T> {
     fun goBack()
@@ -333,7 +403,7 @@ fun MyWindow(
     onDragStart: (Offset) -> Unit,
     onDrag: (change: DpOffset) -> Unit,
     onDragEnd: () -> Unit,
-    onResize: (x: Dp, y: Dp) -> Unit,
+    onResize: (ResizeOperation) -> Unit,
     onFocus: () -> Unit,
     onRequestFullscreen: () -> Unit,
     closeWindow: () -> Unit,
@@ -341,8 +411,10 @@ fun MyWindow(
     content: @Composable () -> Unit = {}
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var shouldResizeX by remember { mutableStateOf(false) }
-    var shouldResizeY by remember { mutableStateOf(false) }
+    var shouldResizeRight by remember { mutableStateOf(false) }
+    var shouldResizeBottom by remember { mutableStateOf(false) }
+    var shouldResizeLeft by remember { mutableStateOf(false) }
+    var shouldResizeTop by remember { mutableStateOf(false) }
     var hiddenTopBar by remember { mutableStateOf(false) }
     val currentWidth by rememberUpdatedState(width)
     val currentHeight by rememberUpdatedState(height)
@@ -371,28 +443,109 @@ fun MyWindow(
                     onFocus()
                     val xo = offset.x.toDp()
                     val yo = offset.y.toDp()
-                    val right = currentWidth - 10.dp
-                    val bottom = currentHeight - 10.dp
+                    val right = currentWidth - 10.dp // todo: don't hardcode this
+                    val bottom = currentHeight - 10.dp // todo: don't hardcode this
+                    val top = 10.dp // todo: don't hardcode this
+                    val left = 10.dp // todo: don't hardcode this
                     println("$xo (needs $right), $yo (needs $bottom)")
+                    if (xo < left) {
+                        shouldResizeLeft = true
+                    }
+                    if (yo < top) {
+                        shouldResizeTop = true
+                    }
                     if (xo > right) {
-                        shouldResizeX = true
+                        shouldResizeRight = true
                     }
                     if (yo > bottom) {
-                        shouldResizeY = true
+                        shouldResizeBottom = true
                     }
                 },
                 onDragEnd = {
-                    shouldResizeX = false
-                    shouldResizeY = false
+                    // TODO: Should these be a single state object? (I don't want to make multiple recompositions here)
+                    shouldResizeRight = false
+                    shouldResizeBottom = false
+                    shouldResizeLeft = false
+                    shouldResizeTop = false
                 },
                 onDrag = { change, dragAmount ->
-                    if (shouldResizeX) {
-                        onResize(dragAmount.x.toDp(), 0.dp)
-                    }
-                    if (shouldResizeY) {
-                        onResize(0.dp, dragAmount.y.toDp())
+                    when {
+                        shouldResizeBottom && shouldResizeRight -> {
+                            onResize(
+                                BottomRightResizeOperation(
+                                    DpOffset(
+                                        dragAmount.x.toDp(),
+                                        dragAmount.y.toDp()
+                                    )
+                                )
+                            )
+                        }
+
+                        shouldResizeTop && shouldResizeRight -> {
+                            onResize(
+                                TopRightResizeOperation(
+                                    DpOffset(
+                                        dragAmount.x.toDp(),
+                                        dragAmount.y.toDp()
+                                    )
+                                )
+                            )
+                        }
+
+                        shouldResizeTop && shouldResizeLeft -> {
+                            onResize(
+                                TopLeftResizeOperation(
+                                    DpOffset(
+                                        dragAmount.x.toDp(),
+                                        dragAmount.y.toDp()
+                                    )
+                                )
+                            )
+                        }
+
+                        shouldResizeBottom && shouldResizeLeft -> {
+                            onResize(
+                                BottomLeftResizeOperation(
+                                    DpOffset(
+                                        dragAmount.x.toDp(),
+                                        dragAmount.y.toDp()
+                                    )
+                                )
+                            )
+                        }
+
+                        shouldResizeTop -> {
+                            onResize(TopRightResizeOperation(DpOffset(0.dp, dragAmount.y.toDp())))
+                        }
+
+                        shouldResizeLeft -> {
+                            onResize(TopLeftResizeOperation(DpOffset(dragAmount.x.toDp(), 0.dp)))
+                        }
+
+                        shouldResizeBottom -> {
+                            onResize(
+                                BottomRightResizeOperation(
+                                    DpOffset(
+                                        0.dp,
+                                        dragAmount.y.toDp()
+                                    )
+                                )
+                            )
+                        }
+
+                        shouldResizeRight -> {
+                            onResize(
+                                BottomRightResizeOperation(
+                                    DpOffset(
+                                        dragAmount.x.toDp(),
+                                        0.dp
+                                    )
+                                )
+                            )
+                        }
                     }
                     change.consume()
+                    return@detectDragGestures
                 },
             )
         }
