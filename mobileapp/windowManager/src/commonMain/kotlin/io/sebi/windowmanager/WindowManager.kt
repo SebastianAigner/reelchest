@@ -1,5 +1,4 @@
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,10 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Button
 import androidx.compose.material.Text
-import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -37,9 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
@@ -56,9 +50,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.ExperimentalResourceApi
-import org.jetbrains.compose.resources.painterResource
 import kotlin.random.Random
 
 
@@ -82,76 +73,6 @@ abstract class XPWindow(
 
     open fun onDispose() {
         windowScope.cancel()
-    }
-}
-
-class JSONBrowserWindow(wm: WindowManager) : XPWindow(wm = wm, title = "JSON Browser") {
-    @Composable
-    override fun Content() {
-        var text by remember { mutableStateOf("") }
-        var res by remember { mutableStateOf("") }
-        LaunchedEffect(text) {
-            try {
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-        Column(Modifier.fillMaxSize()) {
-            TextField(text, { text = it })
-            Text(res)
-        }
-    }
-
-}
-
-class ExampleXPWindow(wm: WindowManager, title: String = "Untitled") :
-    XPWindow(wm = wm, title = title) {
-
-
-    @Composable
-    override fun Content() {
-        var x by remember { mutableStateOf(0) }
-        Column {
-            Text(title)
-            Button(onClick = {
-                wm.spawnWindow(ExampleXPWindow(wm = wm, title = title + "a"))
-            }) {
-                Text("Spawn Window")
-            }
-            XPButton("Count! $x") {
-                windowScope.launch {
-                    while (true) {
-                        x++
-                        delay(500)
-                    }
-                }
-            }
-            XPButton("Crash!", onClick = {
-                windowScope.launch {
-                    error("Uncaught!")
-                }
-            })
-            XPButton("Cancel!", onClick = {
-                windowScope.launch {
-                    windowScope.cancel()
-                }
-            })
-            XPButton("Full!", onClick = {
-                wm.setFullScreen(this@ExampleXPWindow)
-            })
-        }
-    }
-}
-
-@Composable
-fun XPButton(text: String, onClick: () -> Unit) {
-    Box(
-        Modifier.clickable { onClick() }.shadow(2.dp)
-            .border(1.dp, Color.Black, RoundedCornerShape(3.dp))
-            .background(Color(0xFFF4F4F0)).padding(10.dp)
-    ) {
-        Text(text)
     }
 }
 
@@ -617,34 +538,3 @@ fun MyWindow(
     }
 }
 
-@OptIn(ExperimentalResourceApi::class)
-@Composable
-fun Launcher(wm: WindowManager, icons: List<Pair<String, () -> XPWindow>>) {
-    val background = painterResource("bliss.png")
-
-    Image(
-        background,
-        null,
-        contentScale = ContentScale.FillBounds,
-        modifier = Modifier.fillMaxSize()
-    )
-
-    Box(Modifier.padding(20.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-            for ((title, windowCreator) in icons) {
-                LauncherIcon(text = title) {
-                    wm.spawnWindow(windowCreator())
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalResourceApi::class)
-@Composable
-fun LauncherIcon(image: Painter = painterResource("exe.jpeg"), text: String, onClick: () -> Unit) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Image(image, null, Modifier.size(45.dp).clickable { onClick() })
-        Text(text, color = Color.White)
-    }
-}
