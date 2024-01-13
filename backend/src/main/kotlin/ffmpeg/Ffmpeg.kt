@@ -7,6 +7,7 @@ import io.sebi.phash.JpegSplitter
 import io.sebi.phash.writeULongs
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.withTimeoutOrNull
+import org.jetbrains.annotations.Blocking
 import org.slf4j.LoggerFactory
 import java.io.File
 import javax.imageio.ImageIO
@@ -52,7 +53,7 @@ suspend fun generateThumbnails(videoFile: File) {
     }
 }
 
-
+@Blocking
 fun generateDHashes(videoFile: File) {
     val proc = ProcessBuilder(
         "ffmpeg",
