@@ -46,9 +46,14 @@ fun Route.api(
 
         route("autotags") {
             get("/popular") {
-                val popular = mediaLibrary.entries.map {
-                    it.withAutoTags(tagger).autoTags
-                }.flatten().groupingBy { it }.eachCount().toList().sortedByDescending { it.second }.toList()
+                val popular =
+                    mediaLibrary
+                        .entries
+                        .flatMap { it.withAutoTags(tagger).autoTags }
+                        .groupingBy { it }
+                        .eachCount()
+                        .toList()
+                        .sortedByDescending { it.second }
                 call.respond(popular)
             }
         }

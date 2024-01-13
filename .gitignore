@@ -19,3 +19,4 @@ local.properties
 xd.lck
 *.cq4t
 *.hprof
+backend/.idea

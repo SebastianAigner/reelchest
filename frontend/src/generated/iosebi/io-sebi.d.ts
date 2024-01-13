@@ -3,23 +3,6 @@
 
 
 declare namespace IoSebi {
-  export interface ProblematicTaskDTO extends WithOriginUrl {
-    Companion: io.sebi.downloader.ProblematicTaskDTO.Companion;
-    originUrl: string;
-    error: string;
-  }
-
-  export interface LogEntry {
-    Companion: io.sebi.LogEntry.Companion;
-    formattedMessage: string;
-  }
-
-  export interface SearchRequest {
-    Companion: io.sebi.api.SearchRequest.Companion;
-    offset: number;
-    term: string;
-  }
-
   export interface File {
     parent: string;
     parentFile: any;
@@ -71,6 +54,17 @@ declare namespace IoSebi {
     distance: number;
   }
 
+  export interface LogEntry {
+    Companion: io.sebi.LogEntry.Companion;
+    formattedMessage: string;
+  }
+
+  export interface ProblematicTaskDTO extends WithOriginUrl {
+    Companion: io.sebi.downloader.ProblematicTaskDTO.Companion;
+    originUrl: string;
+    error: string;
+  }
+
   export interface UrlRequest {
     Companion: io.sebi.api.UrlRequest.Companion;
     url: string;
@@ -90,6 +84,12 @@ declare namespace IoSebi {
     Companion: io.sebi.api.MetadatedDownloadQueueEntry.Companion;
     queueEntry: DownloadTaskDTO;
     title: string;
+  }
+
+  export interface SearchRequest {
+    Companion: io.sebi.api.SearchRequest.Companion;
+    offset: number;
+    term: string;
   }
 
   export namespace io {

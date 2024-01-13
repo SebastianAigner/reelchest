@@ -4,30 +4,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -38,18 +17,9 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.*
 import androidx.compose.ui.zIndex
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlin.random.Random
 
 
@@ -79,8 +49,8 @@ abstract class XPWindow(
 class WindowManager {
     val windows = mutableStateListOf<XPWindow>()
     val zIndices = mutableStateMapOf<XPWindow, Float>()
-    val locations = mutableMapOf<XPWindow, MutableState<DpOffset>>()
-    val sizes = mutableMapOf<XPWindow, MutableState<DpSize>>()
+    val locations = mutableStateMapOf<XPWindow, DpOffset>()
+    val sizes = mutableStateMapOf<XPWindow, DpSize>()
 
     fun spawnWindow(xpWindow: XPWindow) {
         exitFullScreen()
@@ -124,11 +94,11 @@ class WindowManager {
             for (window in windows) {
                 key(window.id) {
                     val size =
-                        sizes.getOrPut(window) { mutableStateOf(DpSize(640.dp, 480.dp)) }.value
+                        sizes.getOrPut(window) { DpSize(640.dp, 480.dp) }
                     MyWindow(
                         width = size.width,
                         height = size.height,
-                        locations.getOrPut(window) { mutableStateOf(DpOffset(20.dp, 20.dp)) }.value,
+                        locations.getOrPut(window) { DpOffset(20.dp, 20.dp) },
                         zIndex = zIndices[window] ?: 0.0f,
                         isFullScreen = window === fullscreenedWindow,
                         onDragStart = {
@@ -137,38 +107,40 @@ class WindowManager {
                             }
                         },
                         onDrag = {
-                            locations.getValue(window).value += it
+                            locations[window] = locations.getValue(window) + it
                             cursorPositionInDesktop =
-                                locations.getValue(window).value + dragStartOffsetInsideWindowItself
+                                locations.getValue(window) + dragStartOffsetInsideWindowItself
                         },
                         onDragEnd = {
+                            println("On Drag End")
+                            // TODO: On Desktop, for some reason this is sometimes not called.
                             snapWindow(desktopSize, cursorPositionInDesktop, window)
                         },
                         onResize = { op ->
                             when (op) {
                                 is BottomRightResizeOperation -> {
-                                    sizes.getValue(window).value += DpSize(op.offset.x, op.offset.y)
+                                    sizes[window] = sizes.getValue(window) + DpSize(op.offset.x, op.offset.y)
                                 }
 
                                 is TopRightResizeOperation -> {
-                                    locations.getValue(window).value += DpOffset(0.dp, op.offset.y)
-                                    sizes.getValue(window).value += DpSize(
+                                    locations[window] = locations.getValue(window) + DpOffset(0.dp, op.offset.y)
+                                    sizes[window] = sizes.getValue(window) + DpSize(
                                         op.offset.x,
                                         -op.offset.y
                                     )
                                 }
 
                                 is TopLeftResizeOperation -> {
-                                    locations.getValue(window).value += op.offset
-                                    sizes.getValue(window).value += DpSize(
+                                    locations[window] = locations.getValue(window) + op.offset
+                                    sizes[window] = sizes.getValue(window) + DpSize(
                                         -op.offset.x,
                                         -op.offset.y
                                     )
                                 }
 
                                 is BottomLeftResizeOperation -> {
-                                    locations.getValue(window).value += DpOffset(op.offset.x, 0.dp)
-                                    sizes.getValue(window).value += DpSize(
+                                    locations[window] = locations.getValue(window) + DpOffset(op.offset.x, 0.dp)
+                                    sizes[window] = sizes.getValue(window) + DpSize(
                                         -op.offset.x,
                                         op.offset.y
                                     )
@@ -279,18 +251,18 @@ class WindowManager {
 
             else -> null
         }
-        snapped?.let { (offset, size) ->
-            locations[window]!!.value = offset
-            sizes[window]!!.value = size
-        }
-        val loc = locations[window]!!.value
+
+        val loc = snapped?.first ?: locations.getValue(window)
+        val siz = snapped?.second ?: sizes.getValue(window)
         val newLoc = DpOffset(
-            loc.x.coerceAtLeast(-sizes[window]!!.value.width * 0.9f)
-                .coerceAtMost(desktopSize.width - 10.dp),
-            loc.y.coerceAtLeast(0.dp).coerceAtMost(desktopSize.height - 10.dp)
+            loc.x.coerceIn(-siz.width * 0.9f, desktopSize.width - 10.dp),
+            loc.y.coerceIn(0.dp, desktopSize.height - 10.dp)
         )
-        locations[window]!!.value =
-            newLoc // TODO: It seems that sometimes, in rare cases, you can move the window out of bounds even with this set. I don't understand why.
+        locations[window] =
+            newLoc.also {
+                println("🚨 Set the new location to $it")
+            } // TODO: It seems that sometimes, in rare cases, you can move the window out of bounds even with this set. I don't understand why.
+        sizes[window] = siz
     }
 
     @Composable
@@ -508,6 +480,10 @@ fun MyWindow(
                                 onDragEnd = {
                                     println("Drag end!")
                                     onDragEnd()
+                                },
+                                onDragCancel = {
+                                    println("Drag cancel!")
+                                    onDragEnd() // I don't think we need to differentiate this for this specific case.
                                 }
                             )
                         }, contentAlignment = Alignment.CenterStart
