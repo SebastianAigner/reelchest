@@ -1,11 +1,10 @@
 package io.sebi.phash
 
 import java.io.BufferedInputStream
+import java.io.ByteArrayOutputStream
 
 
 object JpegSplitter {
-
-    @OptIn(ExperimentalUnsignedTypes::class)
     fun split(inputStream: BufferedInputStream, onConcludeFile: (ByteArray) -> Unit) {
 
         val startA: UByte = 0xffu
@@ -15,11 +14,12 @@ object JpegSplitter {
 
         var state = State.WAITING_FOR_STARTA
         var fc = 0
-        val byteArr = mutableListOf<UByte>()
+        val baos = ByteArrayOutputStream()
         val concludeFile: () -> Unit = {
-            onConcludeFile(byteArr.toUByteArray().toByteArray())
+            onConcludeFile(baos.toByteArray())
             fc++
-            byteArr.clear()
+            baos.close()
+            baos.reset()
         }
         for (b in inputStream) {
             val byte = b.toUByte()
@@ -29,32 +29,35 @@ object JpegSplitter {
                         state = State.WAITING_FOR_STARTB
                     }
                 }
+
                 State.WAITING_FOR_STARTB -> {
                     if (byte == startB) {
                         // we have a valid header!
-                        byteArr += startA
-                        byteArr += startB
+                        baos += startA
+                        baos += startB
                         state = State.WAITING_FOR_ENDA
                     }
                 }
+
                 State.WAITING_FOR_ENDA -> {
                     if (byte == endA) {
                         state = State.WAITING_FOR_ENDB
                     } else {
-                        byteArr += byte
+                        baos += byte
                     }
                 }
+
                 State.WAITING_FOR_ENDB -> {
                     if (byte == endB) {
-                        byteArr += endA
-                        byteArr += endB
+                        baos += endA
+                        baos += endB
                         concludeFile()
                         // we go back and hope there's more bytes!
                         state = State.WAITING_FOR_STARTA
                     } else {
                         // we didn't imm. hit ENDB. write the "false positive" endA, the current byte, and go back to waiting for the postamble
-                        byteArr += endA
-                        byteArr += byte
+                        baos += endA
+                        baos += byte
                         state = State.WAITING_FOR_ENDA
                     }
                 }
@@ -69,4 +72,12 @@ object JpegSplitter {
         WAITING_FOR_ENDA,
         WAITING_FOR_ENDB,
     }
+}
+
+fun ByteArrayOutputStream.writeUByte(uByte: UByte) {
+    write(uByte.toInt())
+}
+
+operator fun ByteArrayOutputStream.plusAssign(uByte: UByte) {
+    writeUByte(uByte)
 }
