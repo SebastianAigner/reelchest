@@ -1,11 +1,6 @@
-use std::collections::{HashMap, HashSet};
-use std::fmt::format;
-use std::future;
-use std::io::stderr;
-use std::iter::Map;
-use std::ptr::hash;
+use std::collections::{HashMap};
 use std::time::Instant;
-use async_channel::{Receiver, RecvError, Sender, SendError};
+use async_channel::{Receiver, Sender};
 use itertools::Itertools;
 use rand::rngs::ThreadRng;
 use rand::seq::SliceRandom;
@@ -76,8 +71,8 @@ struct Duplicate {
     b: String,
 }
 
-fn spawn_worker(r: Receiver<(String, Vec<DHash>)>, hashes: HashMap<String, Vec<DHash>>, res_sender_channel: Sender<Duplicate>) -> JoinHandle<i32> {
-    let x = tokio::spawn(async move {
+fn spawn_worker(r: Receiver<(String, Vec<DHash>)>, hashes: HashMap<String, Vec<DHash>>, res_sender_channel: Sender<Duplicate>) -> JoinHandle<()> {
+    tokio::spawn(async move {
         loop {
             match r.recv().await {
                 Ok((id, curr_hashes)) => {
@@ -94,11 +89,10 @@ fn spawn_worker(r: Receiver<(String, Vec<DHash>)>, hashes: HashMap<String, Vec<D
                         }
                     }
                 }
-                Err(_) => { return 1; }
+                Err(_) => { return; }
             }
         }
-    });
-    return x;
+    })
 }
 
 
@@ -117,27 +111,30 @@ fn calculate_duplicate(current_id: &String, current_hashes: &Vec<DHash>, all_has
         let handful: Vec<_> = current_hashes.choose_multiple(&mut rng, 100).collect();
         let all_other_hashes = all_hashes
             .into_iter()
-            .filter(|(id, b)| {
+            .filter(|(id, _)| {
                 id != &current_id
             });
         let minimal_deviations_from_this_hash: HashMap<_, _> = all_other_hashes
-            .filter(|(a, b)| {
-                !b.is_empty()
-            }).map(|(a, other)| {
-            let devation_from_this_hash: u32 = handful
-                .iter()
-                .map(|sample| {
-                    minimal_distance(other, &sample)
-                })
-                .sum();
-            (a, devation_from_this_hash)
-        }).collect();
+            .filter(|(_, hashes)| {
+                !hashes.is_empty()
+            })
+            .map(|(other_hash_id, other_hash)| {
+                let devation_from_this_hash: u32 = handful
+                    .iter()
+                    .map(|sample| {
+                        minimal_distance(other_hash, &sample)
+                    })
+                    .sum();
+                (other_hash_id, devation_from_this_hash)
+            })
+            .collect();
 
         let (id_with_smallest_deviation, deviation) = minimal_deviations_from_this_hash
             .into_iter()
-            .min_by(|(aid, adev), (bid, bdev)| {
-                adev.cmp(bdev)
-            }).expect("Couldn't smallest deviation!");
+            .min_by(|(_, a_deviation), (_, b_deviation)| {
+                a_deviation.cmp(b_deviation)
+            })
+            .expect("Couldn't smallest deviation!");
 
         Some(IdWithDistance {
             id: id_with_smallest_deviation.clone(),
@@ -197,10 +194,9 @@ fn minimal_distance(hashes: &[DHash], target: &DHash) -> u32 {
             a.distance_to(target)
         })
         .min()
-        .unwrap_or_else( || {
-            let thing = format!("Couldn't compute minimal distance. Probably empty hashes? {:?} {:?}", hashes, target);
-            println!("{}", thing);
-            panic!();
+        .unwrap_or_else(|| {
+            let problem = format!("Couldn't compute minimal distance. Probably empty hashes? {:?} {:?}", hashes, target);
+            panic!("{}", problem);
         })
 }
 
