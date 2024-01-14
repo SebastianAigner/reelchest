@@ -16,6 +16,8 @@ import io.sebi.phash.getMinimalDistance
 import io.sebi.sqldelight.mediametadata.Duplicates
 import io.sebi.storage.MetadataStorage
 import io.sebi.tagging.Tagger
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -133,9 +135,11 @@ fun Route.mediaLibraryApi(
                 "bin" -> {
                     // create a new dataoutputstream to put the ULongs
                     call.respondOutputStream {
-                        val dos = DataOutputStream(this)
-                        for (hash in dhashes) {
-                            dos.writeLong(hash.toLong())
+                        withContext(Dispatchers.IO) {
+                            val dos = DataOutputStream(this@respondOutputStream)
+                            for (hash in dhashes) {
+                                dos.writeLong(hash.toLong())
+                            }
                         }
                     }
                 }
@@ -154,6 +158,10 @@ fun Route.mediaLibraryApi(
             call.respond(out)
         }
         get("possibleDuplicates") {
+            return@get call.respond(
+                HttpStatusCode.NotFound,
+                "Duplicate detection is disabled because low-end devices can't handle the memory issues"
+            )
             val id = call.parameters["id"]!!
             val entry = mediaLibrary.findById(id) ?: return@get call.respond(HttpStatusCode.NotFound)
             val restLibrary = mediaLibrary.entries
