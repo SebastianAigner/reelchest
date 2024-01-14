@@ -5,3 +5,7 @@ Implements the [duplicates detection agent](https://github.com/SebastianAigner/r
 - It's quick!
   - Kotlin: 7m 32s
   - Rust: 52s (~8.7 times faster)
+
+# TODO
+- [ ] Use semaphores to not request all hashes at once (right now they're all done in a single burst)
+- [ ] Integrate with the persisted duplicates API (once it's done)
