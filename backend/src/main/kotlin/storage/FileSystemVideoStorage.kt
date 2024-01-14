@@ -13,7 +13,7 @@ class FileSystemVideoStorage : VideoStorage {
         logger.info("Adding to media library: $id")
         val mediaLibraryFileTarget = File("./mediaLibrary/${id}/${id}.mp4")
         mediaLibraryFileTarget.parentFile.mkdirs()
-        logger.info("Beginning to copy file to target location...")
+        logger.info("Beginning to copy $id to target location...")
         Files.copy(videoFile, mediaLibraryFileTarget.toPath(), StandardCopyOption.REPLACE_EXISTING)
         logger.info("...target location copy done.")
     }
