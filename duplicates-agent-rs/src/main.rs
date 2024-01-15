@@ -1,4 +1,5 @@
 use std::collections::{HashMap};
+use std::sync::Arc;
 use std::time::Instant;
 use async_channel::{Receiver, Sender};
 use itertools::Itertools;
@@ -14,11 +15,9 @@ type Foo = u64;
 async fn main() {
     let (jobs_sender_channel, jobs_receiver_channel) = async_channel::unbounded();
     let (res_sender_channel, res_receiver_channel) = async_channel::unbounded();
-    get_all_hashes().await;
     let hashes = get_all_hashes().await;
     let start = Instant::now();
-    let my_hashes_clone = hashes.clone();
-    for (id, curr_hashes) in my_hashes_clone {
+    for (id, curr_hashes) in hashes.clone() {
         match jobs_sender_channel.send((id, curr_hashes)).await {
             Ok(_) => {}
             Err(x) => {
@@ -27,14 +26,15 @@ async fn main() {
         }
     }
     jobs_sender_channel.close();
+    let hash_arc = Arc::new(hashes);
     let handles: Vec<_> = (0..20).map(|i| {
-        spawn_worker(jobs_receiver_channel.clone(), hashes.clone(), res_sender_channel.clone())
+        spawn_worker(jobs_receiver_channel.clone(), hash_arc.clone(), res_sender_channel.clone())
     }).collect();
     for handle in handles {
         handle.await.expect("TODO: panic message");
     }
     res_receiver_channel.close(); // todo: it seems annoying that i have to do this "manually" after everything is done.
-    // but if i don't, the loop below will hang.
+                                  // but if i don't, the loop below will hang.
 
     let mut final_vec = vec![];
 
@@ -44,24 +44,20 @@ async fn main() {
                 final_vec.push(a);
             }
             Err(e) => {
-                println!("err: {}", e);
+                println!("err: {e}");
                 break;
             }
         }
     }
-    final_vec.sort_by(|a, b| {
-        a.distance.cmp(&b.distance)
-    });
-    let candidates: Vec<_> = final_vec.iter().take(10).collect();
-    let outstr = candidates
+    final_vec.sort_by(|a, b| a.distance.cmp(&b.distance));
+    // let candidates: Vec<_> = final_vec.iter().take(10).collect();
+    let outstr = final_vec[..10]
         .iter()
-        .map(|x| {
-            format!("{} -{}-> {}", x.a, x.distance, x.b)
-        })
+        .map(|x| format!("{} -{}-> {}", x.a, x.distance, x.b))
         .join("\n");
-    println!("{}", outstr);
+    println!("{outstr}");
     let done = start.elapsed();
-    println!("Done in {:?}", done);
+    println!("Done in {done:?}");
 }
 
 #[derive(Debug)]
@@ -71,7 +67,7 @@ struct Duplicate {
     b: String,
 }
 
-fn spawn_worker(r: Receiver<(String, Vec<DHash>)>, hashes: HashMap<String, Vec<DHash>>, res_sender_channel: Sender<Duplicate>) -> JoinHandle<()> {
+fn spawn_worker(r: Receiver<(String, Vec<DHash>)>, hashes: Arc<HashMap<String, Vec<DHash>>>, res_sender_channel: Sender<Duplicate>) -> JoinHandle<()> {
     tokio::spawn(async move {
         loop {
             match r.recv().await {
@@ -102,50 +98,43 @@ struct IdWithDistance {
     distance: u32,
 }
 
-
-fn calculate_duplicate(current_id: &String, current_hashes: &Vec<DHash>, all_hashes: &HashMap<String, Vec<DHash>>) -> Option<IdWithDistance> {
+fn calculate_duplicate(
+    current_id: &String,
+    current_hashes: &Vec<DHash>,
+    all_hashes: &HashMap<String, Vec<DHash>>,
+) -> Option<IdWithDistance> {
     let mut rng: ThreadRng = thread_rng();
     if current_hashes.is_empty() {
         return None;
-    } else {
-        let handful: Vec<_> = current_hashes.choose_multiple(&mut rng, 100).collect();
-        let all_other_hashes = all_hashes
-            .into_iter()
-            .filter(|(id, _)| {
-                id != &current_id
-            });
-        let minimal_deviations_from_this_hash: HashMap<_, _> = all_other_hashes
-            .filter(|(_, hashes)| {
-                !hashes.is_empty()
-            })
-            .map(|(other_hash_id, other_hash)| {
-                let devation_from_this_hash: u32 = handful
-                    .iter()
-                    .map(|sample| {
-                        minimal_distance(other_hash, &sample)
-                    })
-                    .sum();
-                (other_hash_id, devation_from_this_hash)
-            })
-            .collect();
-
-        let (id_with_smallest_deviation, deviation) = minimal_deviations_from_this_hash
-            .into_iter()
-            .min_by(|(_, a_deviation), (_, b_deviation)| {
-                a_deviation.cmp(b_deviation)
-            })
-            .expect("Couldn't smallest deviation!");
-
-        Some(IdWithDistance {
-            id: id_with_smallest_deviation.clone(),
-            distance: deviation,
-        })
     }
+
+    let handful: Vec<_> = current_hashes.choose_multiple(&mut rng, 100).collect();
+    let all_other_hashes = all_hashes.iter().filter(|(id, _)| id != &current_id);
+    let minimal_deviations_from_this_hash: HashMap<_, _> = all_other_hashes
+        .filter(|(_, hashes)| !hashes.is_empty())
+        .map(|(other_hash_id, other_hash)| {
+            let devation_from_this_hash: u32 = handful
+                .iter()
+                .map(|sample| minimal_distance(other_hash, &sample))
+                .sum();
+            (other_hash_id, devation_from_this_hash)
+        })
+        .collect();
+
+    let (id_with_smallest_deviation, deviation) = minimal_deviations_from_this_hash
+        .into_iter()
+        .min_by(|(_, a_deviation), (_, b_deviation)| a_deviation.cmp(b_deviation))
+        .expect("Couldn't smallest deviation!");
+
+    Some(IdWithDistance {
+        id: id_with_smallest_deviation.clone(),
+        distance: deviation,
+    })
 }
 
-
 async fn get_all_hashes() -> HashMap<String, Vec<DHash>> {
-    let entries: Vec<MediaLibraryEntry> = reqwest::get(endpoint).await.unwrap().json().await.unwrap();
+    let entries: Vec<MediaLibraryEntry> =
+        reqwest::get(ENDPOINT).await.unwrap().json().await.unwrap();
 
     let ids: Vec<_> = entries
         .into_iter()
@@ -153,20 +142,13 @@ async fn get_all_hashes() -> HashMap<String, Vec<DHash>> {
         //.take(100) // TODO: Unlimit this
         .collect();
 
-    let hashes = ids
-        .iter()
-        .map(|id| {
-            get_hashes_for_id(&id)
-        });
+    let hashes = ids.iter().map(|id| get_hashes_for_id(id));
 
     let results = futures::future::join_all(hashes).await;
 
-    let ids_to_hashes: HashMap<_, _> = ids
-        .into_iter() // interesting! that's so that we can move the string into
+    ids.into_iter() // interesting! that's so that we can move the string into
         .zip(results)
-        .collect();
-
-    ids_to_hashes
+        .collect()
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -200,13 +182,13 @@ fn minimal_distance(hashes: &[DHash], target: &DHash) -> u32 {
         })
 }
 
-const endpoint: &str = "http://192.168.178.165:8080/api/mediaLibrary";
+const ENDPOINT: &str = "http://192.168.178.165:8080/api/mediaLibrary";
 
 async fn get_hashes_for_id(id: &str) -> Vec<DHash> {
-    println!("Getting hashes for {}", id);
+    println!("Getting hashes for {id}");
     let client = reqwest::Client::new();
 
-    let url = format!("{}/{}/hash.bin", endpoint, id);
+    let url = format!("{ENDPOINT}/{id}/hash.bin");
     let res = client.get(&url).send().await;
 
     match res {
@@ -217,10 +199,13 @@ async fn get_hashes_for_id(id: &str) -> Vec<DHash> {
                 let bytes = response.bytes().await.expect("Didn't get bytes from URL!");
                 let size = core::mem::size_of::<u64>();
                 let chunks = bytes.chunks_exact(size);
-                let bytes = chunks.map(|chunk| {
-                    DHash { raw: u64::from_be_bytes(chunk.try_into().expect("Couldn't turn into longs!")) }
-                }).collect_vec();
-                bytes
+                chunks
+                    .map(|chunk| DHash {
+                        raw: u64::from_be_bytes(
+                            chunk.try_into().expect("Couldn't turn into longs!"),
+                        ),
+                    })
+                    .collect()
             }
         }
         Err(_) => vec![],
