@@ -1,40 +1,62 @@
-use std::collections::{HashMap};
-use std::sync::Arc;
-use std::time::Instant;
 use async_channel::{Receiver, Sender};
 use itertools::Itertools;
 use rand::rngs::ThreadRng;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::time::Instant;
 use tokio::task::JoinHandle;
 
-type Foo = u64;
+// -----
+// https://users.rust-lang.org/t/satisfying-tokio-spawn-static-lifetime-requirement/78773/8
+#[derive(Clone)]
+struct Runner {
+    shared: Arc<RunnerInner>,
+}
+
+#[derive(Clone)]
+struct RunnerInner {
+    recv_chan: Receiver<(String, Vec<DHash>)>,
+    sender_chan: Sender<Duplicate>,
+    hashes: HashMap<String, Vec<DHash>>,
+}
+// -----
 
 #[tokio::main]
 async fn main() {
     let (jobs_sender_channel, jobs_receiver_channel) = async_channel::unbounded();
     let (res_sender_channel, res_receiver_channel) = async_channel::unbounded();
+    get_all_hashes().await;
     let hashes = get_all_hashes().await;
     let start = Instant::now();
-    for (id, curr_hashes) in hashes.clone() {
-        match jobs_sender_channel.send((id, curr_hashes)).await {
-            Ok(_) => {}
-            Err(x) => {
-                println!("{}", x)
-            }
+    let my_hashes_clone = hashes.clone();
+
+    for (id, curr_hashes) in my_hashes_clone {
+        if let Err(x) = jobs_sender_channel.send((id, curr_hashes)).await {
+            println!("{x}");
         }
     }
+
     jobs_sender_channel.close();
-    let hash_arc = Arc::new(hashes);
-    let handles: Vec<_> = (0..20).map(|i| {
-        spawn_worker(jobs_receiver_channel.clone(), hash_arc.clone(), res_sender_channel.clone())
-    }).collect();
+
+    let runner = Runner {
+        shared: Arc::new(RunnerInner {
+            recv_chan: jobs_receiver_channel.clone(),
+            sender_chan: res_sender_channel.clone(),
+            hashes,
+        }),
+    };
+
+    let handles: Vec<_> = (0..20)
+        .map(|_| spawn_worker(runner.shared.clone()))
+        .collect();
     for handle in handles {
         handle.await.expect("TODO: panic message");
     }
     res_receiver_channel.close(); // todo: it seems annoying that i have to do this "manually" after everything is done.
-                                  // but if i don't, the loop below will hang.
+    // but if i don't, the loop below will hang.
 
     let mut final_vec = vec![];
 
@@ -67,30 +89,30 @@ struct Duplicate {
     b: String,
 }
 
-fn spawn_worker(r: Receiver<(String, Vec<DHash>)>, hashes: Arc<HashMap<String, Vec<DHash>>>, res_sender_channel: Sender<Duplicate>) -> JoinHandle<()> {
+fn spawn_worker(shared: Arc<RunnerInner>) -> JoinHandle<()> {
     tokio::spawn(async move {
         loop {
-            match r.recv().await {
-                Ok((id, curr_hashes)) => {
-                    let res = calculate_duplicate(&id, &curr_hashes, &hashes);
-                    println!("{} {:?}", id, res);
-                    match res {
-                        None => {}
-                        Some(other) => {
-                            res_sender_channel.send(Duplicate {
-                                a: id,
-                                b: other.id,
-                                distance: other.distance,
-                            }).await.expect("Really would like to be able to send my dude");
-                        }
-                    }
+            if let Ok((id, curr_hashes)) = shared.recv_chan.recv().await {
+                let res = calculate_duplicate(&id, &curr_hashes, &shared.hashes);
+                println!("{id} {res:?}");
+
+                if let Some(other) = res {
+                    shared
+                        .sender_chan
+                        .send(Duplicate {
+                            a: id,
+                            b: other.id,
+                            distance: other.distance,
+                        })
+                        .await
+                        .expect("Really would like to be able to send my dude");
                 }
-                Err(_) => { return; }
+            } else {
+                return;
             }
         }
     })
 }
-
 
 #[derive(Debug)]
 struct IdWithDistance {
@@ -110,16 +132,15 @@ fn calculate_duplicate(
 
     let handful: Vec<_> = current_hashes.choose_multiple(&mut rng, 100).collect();
     let all_other_hashes = all_hashes.iter().filter(|(id, _)| id != &current_id);
-    let minimal_deviations_from_this_hash: HashMap<_, _> = all_other_hashes
+    let minimal_deviations_from_this_hash = all_other_hashes
         .filter(|(_, hashes)| !hashes.is_empty())
         .map(|(other_hash_id, other_hash)| {
             let devation_from_this_hash: u32 = handful
                 .iter()
-                .map(|sample| minimal_distance(other_hash, &sample))
+                .map(|&&sample| minimal_distance(other_hash, sample))
                 .sum();
             (other_hash_id, devation_from_this_hash)
-        })
-        .collect();
+        });
 
     let (id_with_smallest_deviation, deviation) = minimal_deviations_from_this_hash
         .into_iter()
@@ -157,27 +178,27 @@ struct MediaLibraryEntry {
     uid: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 struct DHash {
     raw: u64,
 }
 
 impl DHash {
-    fn distance_to(&self, other: &Self) -> u32 {
+    const fn distance_to(self, other: Self) -> u32 {
         let xorred = self.raw ^ other.raw;
         xorred.count_ones()
     }
 }
 
-fn minimal_distance(hashes: &[DHash], target: &DHash) -> u32 {
+fn minimal_distance(hashes: &[DHash], target: DHash) -> u32 {
     hashes
         .iter()
-        .map(|a| {
-            a.distance_to(target)
-        })
+        .map(|a| a.distance_to(target))
         .min()
         .unwrap_or_else(|| {
-            let problem = format!("Couldn't compute minimal distance. Probably empty hashes? {:?} {:?}", hashes, target);
+            let problem = format!(
+                "Couldn't compute minimal distance. Probably empty hashes? {hashes:?} {target:?}",
+            );
             panic!("{}", problem);
         })
 }
