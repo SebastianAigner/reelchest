@@ -9,3 +9,4 @@ Implements the [duplicates detection agent](https://github.com/SebastianAigner/r
 # TODO
 - [ ] Use semaphores to not request all hashes at once (right now they're all done in a single burst)
 - [ ] Integrate with the persisted duplicates API (once it's done)
+- [ ] Cross-compile this for my low-end devices (Raspberry Pi 3 / 4)
