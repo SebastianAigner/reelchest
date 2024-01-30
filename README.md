@@ -17,3 +17,7 @@ Start the backend with the Gradle `run`, either by executing it from the IDE or 
 For frontend development, run `yarn dev` in the `frontend` directory to enable the Vite dev server. Access the frontend on port `3000`.
 
 Requests to endpoints under `/api/` are automatically proxied to the backend running on port `8080`.
+
+## TODO
+
+- [ ] Allow mobile clients to store media offline (e.g. to watch during flights)
