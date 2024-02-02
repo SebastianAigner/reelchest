@@ -5,6 +5,8 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::{BufReader, BufWriter, Write};
 use std::sync::Arc;
 use std::time::Instant;
 use tokio::task::JoinHandle;
@@ -24,12 +26,35 @@ struct RunnerInner {
 }
 // -----
 
+fn write_hashes_to_disk(hashes: &HashMap<String, Vec<DHash>>) -> Result<(), std::io::Error> {
+    let file = File::create("hashes.json")?;
+    let mut writer = BufWriter::new(file);
+    serde_json::to_writer(&mut writer, &hashes)?;
+    writer.flush()?;
+    Ok(())
+}
+
+fn load_hashes_from_disk() -> Option<HashMap<String, Vec<DHash>>> {
+    let file = File::open("hashes.json").ok()?;
+    let reader = BufReader::new(file);
+    println!("Reading from disk...");
+    serde_json::from_reader(reader).ok()?
+}
+
 #[tokio::main]
 async fn main() {
     let (jobs_sender_channel, jobs_receiver_channel) = async_channel::unbounded();
     let (res_sender_channel, res_receiver_channel) = async_channel::unbounded();
-    get_all_hashes().await;
-    let hashes = get_all_hashes().await;
+    let disk_hashes = load_hashes_from_disk();
+    let hashes = if let Some(read_hashes) = disk_hashes {
+        read_hashes
+    } else {
+        let network_hashes = get_all_hashes().await;
+        println!("Writing to disk...");
+        write_hashes_to_disk(&network_hashes).unwrap();
+        network_hashes
+    };
+
     let start = Instant::now();
     let my_hashes_clone = hashes.clone();
 
