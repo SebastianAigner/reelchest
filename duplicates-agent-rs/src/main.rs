@@ -20,9 +20,9 @@ struct Runner {
 
 #[derive(Clone)]
 struct RunnerInner {
-    recv_chan: Receiver<(String, Vec<DHash>)>,
+    recv_chan: Receiver<(Arc<str>, Vec<DHash>)>,
     sender_chan: Sender<Duplicate>,
-    hashes: HashMap<String, Vec<DHash>>,
+    hashes: HashMap<Arc<str>, Vec<DHash>>,
 }
 // -----
 
@@ -54,6 +54,11 @@ async fn main() {
         write_hashes_to_disk(&network_hashes).unwrap();
         network_hashes
     };
+
+    let hashes: HashMap<Arc<str>, Vec<DHash>> = hashes.clone().iter().map(|(k,v)| {
+        let key: Arc<str> = k.clone().into_boxed_str().into();
+        (key, v.clone())
+    }).collect();
 
     let start = Instant::now();
     let my_hashes_clone = hashes.clone();
@@ -109,9 +114,9 @@ async fn main() {
 
 #[derive(Debug)]
 struct Duplicate {
-    a: String,
+    a: Arc<str>,
     distance: u32,
-    b: String,
+    b: Arc<str>,
 }
 
 fn spawn_worker(shared: Arc<RunnerInner>) -> JoinHandle<()> {
@@ -141,14 +146,14 @@ fn spawn_worker(shared: Arc<RunnerInner>) -> JoinHandle<()> {
 
 #[derive(Debug)]
 struct IdWithDistance {
-    id: String,
+    id: Arc<str>,
     distance: u32,
 }
 
 fn calculate_duplicate(
-    current_id: &String,
+    current_id: &Arc<str>,
     current_hashes: &Vec<DHash>,
-    all_hashes: &HashMap<String, Vec<DHash>>,
+    all_hashes: &HashMap<Arc<str>, Vec<DHash>>,
 ) -> Option<IdWithDistance> {
     let mut rng: ThreadRng = thread_rng();
     if current_hashes.is_empty() {
@@ -203,7 +208,7 @@ struct MediaLibraryEntry {
     uid: String,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 struct DHash {
     raw: u64,
 }
