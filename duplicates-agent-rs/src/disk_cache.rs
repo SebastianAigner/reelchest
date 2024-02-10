@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Write};
+
 use crate::DHash;
 
 pub(crate) fn write_hashes_to_disk(hashes: &HashMap<String, Vec<DHash>>) -> Result<(), std::io::Error> {

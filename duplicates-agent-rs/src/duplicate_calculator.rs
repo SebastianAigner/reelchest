@@ -1,10 +1,12 @@
 use std::collections::HashMap;
 use std::sync::Arc;
+
 use itertools::FoldWhile::{Continue, Done};
 use itertools::Itertools;
 use rand::prelude::{SliceRandom, ThreadRng};
 use rand::thread_rng;
-use crate::{DHash};
+
+use crate::DHash;
 
 #[derive(Debug)]
 pub struct Duplicate {

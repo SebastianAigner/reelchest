@@ -1,21 +1,22 @@
-mod disk_cache;
-mod network;
-mod duplicate_calculator;
-mod dhash;
-
 use std::collections::HashMap;
 use std::convert::Into;
 use std::sync::Arc;
 use std::time::Instant;
+
 use async_channel::{Receiver, Sender};
 use itertools::Itertools;
-use rand::seq::SliceRandom;
-use serde::{Deserialize, Serialize};
 use tokio::task::JoinHandle;
+
 use duplicate_calculator::calculate_duplicate_fast_fold;
+
 use crate::dhash::DHash;
 use crate::duplicate_calculator::Duplicate;
 use crate::network::get_all_hashes;
+
+mod disk_cache;
+mod network;
+mod duplicate_calculator;
+mod dhash;
 
 // -----
 // https://users.rust-lang.org/t/satisfying-tokio-spawn-static-lifetime-requirement/78773/8
@@ -105,7 +106,6 @@ async fn main() {
 }
 
 
-
 fn spawn_worker(shared: Arc<RunnerInner>) -> JoinHandle<()> {
     tokio::spawn(async move {
         loop {
@@ -130,6 +130,3 @@ fn spawn_worker(shared: Arc<RunnerInner>) -> JoinHandle<()> {
         }
     })
 }
-
-
-
