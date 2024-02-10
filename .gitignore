@@ -20,3 +20,5 @@ xd.lck
 *.cq4t
 *.hprof
 backend/.idea
+**/.DS_Store
+.DS_Store
