@@ -12,3 +12,4 @@ Implements the [duplicates detection agent](https://github.com/SebastianAigner/r
 - [ ] Cross-compile this for my low-end devices (Raspberry Pi 3 / 4)
 - [x] Apply [`Arc<str>` optimization](https://www.youtube.com/watch?v=A4cKi7PTJSs)
 - [x] Apply early-terminating `mininum_cumulative_sum` to save a bunch of computations (at the expense of tracking state)
+- [x] Use `fold_while` from itertools instead of nested loops and evaluate performance

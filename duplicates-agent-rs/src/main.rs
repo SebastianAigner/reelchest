@@ -1,14 +1,17 @@
+use std::collections::HashMap;
+use std::convert::Into;
+use std::fs::File;
+use std::io::{BufReader, BufWriter, Write};
+use std::sync::Arc;
+use std::time::Instant;
+
 use async_channel::{Receiver, Sender};
+use itertools::FoldWhile::{Continue, Done};
 use itertools::Itertools;
 use rand::rngs::ThreadRng;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::fs::File;
-use std::io::{BufReader, BufWriter, Write};
-use std::sync::Arc;
-use std::time::Instant;
 use tokio::task::JoinHandle;
 
 // -----
@@ -124,7 +127,7 @@ fn spawn_worker(shared: Arc<RunnerInner>) -> JoinHandle<()> {
     tokio::spawn(async move {
         loop {
             if let Ok((id, curr_hashes)) = shared.recv_chan.recv().await {
-                let res = calculate_duplicate_fast(&id, &curr_hashes, &shared.hashes);
+                let res = calculate_duplicate_fast_fold(&id, &curr_hashes, &shared.hashes);
                 println!("{id} {res:?}");
 
                 if let Some(other) = res {
@@ -151,6 +154,7 @@ struct IdWithDistance {
     distance: u32,
 }
 
+// 52s on test dataset.
 fn calculate_duplicate(
     current_id: &Arc<str>,
     current_hashes: &Vec<DHash>,
@@ -193,6 +197,7 @@ fn calculate_duplicate(
 /// calculate_duplicate_fast stops its computations for a given hash when it's clear
 /// that the intermediate computation result already disqualifies it as the shortest distance,
 /// and moves on directly to the next group to be tested.
+/// 40s on test dataset
 fn calculate_duplicate_fast(
     current_id: &Arc<str>,
     current_hashes: &Vec<DHash>,
@@ -221,6 +226,47 @@ fn calculate_duplicate_fast(
             let minimal_distance = minimal_distance_to_group(**this_dhash, other_hashgroup);
             distance_accumulator += minimal_distance;
         }
+        if distance_accumulator < current_minimum_distance {
+            // println!("found closer distance, going from {} to {}", current_minimum_distance, cum_dist);
+            current_minimum_distance = distance_accumulator;
+            current_minimum_entry_id = other_entry_id.clone();
+        }
+    }
+    return Some(IdWithDistance {
+        id: current_minimum_entry_id,
+        distance: current_minimum_distance,
+    });
+}
+
+/// Same as calculate_duplicate_fast, but uses fold_while (an early-terminating fold) instead of just loops.
+fn calculate_duplicate_fast_fold(
+    current_id: &Arc<str>,
+    current_hashes: &Vec<DHash>,
+    all_hashes: &HashMap<Arc<str>, Vec<DHash>>,
+) -> Option<IdWithDistance> {
+    let mut rng: ThreadRng = thread_rng();
+    if current_hashes.is_empty() {
+        return None;
+    }
+
+    let handful_hashgroup: Vec<_> = current_hashes.choose_multiple(&mut rng, 100).collect();
+    let all_other_hashes = all_hashes.iter().filter(|(id, group)| id != &current_id && !group.is_empty());
+    let mut current_minimum_distance = u32::MAX;
+    let mut current_minimum_entry_id: Arc<str> = "none".into();
+
+    // we take a handful of hashes
+    // for those 100 hashes, look at other-hashgroup.
+    // look at each handful-entry. find the CLOSEST match in the other-hashgroup. sum up those closest match distances.
+    // the accumulation of those is the total minimal distance between the handful and other-hashgroup.
+    for (other_entry_id, other_hashgroup) in all_other_hashes {
+        let distance_accumulator = handful_hashgroup.iter().fold_while(0, |curr_dist_acc, this_dhash| {
+            if curr_dist_acc > current_minimum_distance {
+                Done(curr_dist_acc)
+            } else {
+                let new_acc = curr_dist_acc + minimal_distance_to_group(**this_dhash, other_hashgroup);
+                Continue(new_acc)
+            }
+        }).into_inner();
         if distance_accumulator < current_minimum_distance {
             // println!("found closer distance, going from {} to {}", current_minimum_distance, cum_dist);
             current_minimum_distance = distance_accumulator;
