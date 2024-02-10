@@ -71,7 +71,7 @@ async fn main() {
         }),
     };
 
-    let handles: Vec<_> = (0..20)
+    let handles: Vec<_> = (0..num_cpus::get())
         .map(|_| spawn_worker(runner.shared.clone()))
         .collect();
     for handle in handles {

@@ -5,6 +5,18 @@ Implements the [duplicates detection agent](https://github.com/SebastianAigner/r
 - It's quick!
   - Kotlin: 7m 32s
   - Rust: 40s (~11.3 times faster) ~~52s (~8.7 times faster)~~
+- It cross-compiles to my Raspberry Pi (3)!
+  - Begin by following [tutorial](https://amritrathie.vercel.app/posts/2020/03/06/cross-compiling-rust-from-macos-to-raspberry-pi/#getting-a-linker). 
+  - `rustup target add armv7-unknown-linux-musleabihf`
+  - `brew install arm-linux-gnueabihf-binutils`
+  - See `.cargo/config` for linker setup
+    - Encountered issue with OpenSSL: ` Could not find directory of OpenSSL installation, and this `-sys` crate cannot proceed without this knowledge.`
+      - Switched to RusTLS via `reqwest = { version = "0.11.23", features = ["json", "rustls"], default-features = false }`.
+    - Encounter issue: ``error occurred: Failed to find tool. Is `arm-linux-musleabihf-gcc` installed?``
+      - `brew install FiloSottile/musl-cross/musl-cross`
+      - `brew reinstall musl-cross --without-x86_64 --without-aarch64 --with-arm-hf` (workaround for [brew issue](https://github.com/FiloSottile/homebrew-musl-cross/issues/45) `invalid option: --without-x86_64`)
+      - `cargo build --target armv7-unknown-linux-musleabihf`
+  - 
 
 # TODO
 - [ ] Use semaphores to not request all hashes at once (right now they're all done in a single burst)
@@ -14,3 +26,5 @@ Implements the [duplicates detection agent](https://github.com/SebastianAigner/r
 - [x] Apply early-terminating `mininum_cumulative_sum` to save a bunch of computations (at the expense of tracking state)
 - [x] Use `fold_while` from itertools instead of nested loops and evaluate performance
 - [x] Split implementation into separate files/modules for better separation of concerns
+- [x] Use `num-cpus` to auto-scale worker count
+- [ ] Write a blogpost about cross-compiling from macOS to Raspberry Pi

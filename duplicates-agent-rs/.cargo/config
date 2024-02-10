@@ -1,0 +1,6 @@
+[target.armv7-unknown-linux-musleabihf]
+linker = "arm-linux-gnueabihf-ld"
+ar = "arm-linux-gnueabihf-ar" # optional
+
+[buildpi]
+target = "armv7-unknown-linux-musleabihf"
