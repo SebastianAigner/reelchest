@@ -18,10 +18,15 @@ Implements the [duplicates detection agent](https://github.com/SebastianAigner/r
       - `cargo build --target armv7-unknown-linux-musleabihf`
   - 
 
+...as you can see, it's a little quicker on an M2 Max than it is on a Raspberry Pi 3 (shocking, I know 😱)
+
+https://github.com/SebastianAigner/reelchest/assets/2178959/c71ec022-df56-4eb1-ba1b-68a9df0dcbfe
+
+
 # TODO
 - [ ] Use semaphores to not request all hashes at once (right now they're all done in a single burst)
 - [ ] Integrate with the persisted duplicates API (once it's done)
-- [ ] Cross-compile this for my low-end devices (Raspberry Pi 3 / 4)
+- [x] Cross-compile this for my low-end devices (Raspberry Pi 3 / 4)
 - [x] Apply [`Arc<str>` optimization](https://www.youtube.com/watch?v=A4cKi7PTJSs)
 - [x] Apply early-terminating `mininum_cumulative_sum` to save a bunch of computations (at the expense of tracking state)
 - [x] Use `fold_while` from itertools instead of nested loops and evaluate performance
