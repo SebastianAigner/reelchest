@@ -1,10 +1,6 @@
 package io.sebi.downloader
 
 
-import com.github.michaelbull.retry.policy.constantDelay
-import com.github.michaelbull.retry.policy.limitAttempts
-import com.github.michaelbull.retry.policy.plus
-import com.github.michaelbull.retry.retry
 import io.ktor.client.plugins.*
 import io.ktor.util.logging.*
 import io.sebi.network.NetworkManager
@@ -56,29 +52,25 @@ class DownloadWorker(
             var urls = myTask.getDirectDownloadUrls()
             val results = mutableListOf<File>()
             for (idx in urls.indices) {
-                retry(limitAttempts(3)) {
-                    try {
-                        retry(limitAttempts(5) + constantDelay(5_000)) {
-                            val fragment = urls[idx]
-                            val targetFile = File.createTempFile(
-                                "vid",
-                                ".mp4",
-                                File("downloads").apply { mkdir(); }
-                            ).apply { deleteOnExit() }
-                            Downloader(networkManager).download(fragment, targetFile, absoluteProgressCallback = {
-                                //println("[worker #$id]: ${it.first} / ${it.second}")
-                            }) { progress ->
-                                myTask.progress =
-                                    if (urls.size > 1) idx.toDouble() / urls.size else progress
-                            }
-                            results.add(targetFile)
-                        }
-                    } catch (c: ClientRequestException) {
-                        // probably a 403
-                        logger.error(c)
-                        urls = myTask.getDirectDownloadUrls()
-                        throw c
+                try {
+                    val fragment = urls[idx]
+                    val targetFile = File.createTempFile(
+                        "vid",
+                        ".mp4",
+                        File("downloads").apply { mkdir(); }
+                    ).apply { deleteOnExit() }
+                    Downloader(networkManager).download(fragment, targetFile, absoluteProgressCallback = {
+                        //println("[worker #$id]: ${it.first} / ${it.second}")
+                    }) { progress ->
+                        myTask.progress =
+                            if (urls.size > 1) idx.toDouble() / urls.size else progress
                     }
+                    results.add(targetFile)
+                } catch (c: ClientRequestException) {
+                    // probably a 403
+                    logger.error(c)
+                    urls = myTask.getDirectDownloadUrls()
+                    throw c
                 }
             }
 
