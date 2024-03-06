@@ -3,6 +3,7 @@ package io.sebi.downloader
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+import io.ktor.util.*
 import io.ktor.utils.io.*
 import io.sebi.network.NetworkManager
 import kotlinx.coroutines.coroutineScope
@@ -25,8 +26,7 @@ class Downloader(val networkManager: NetworkManager) {
             while (!chan.isClosedForRead) {
                 yield()
                 chan.read { buf ->
-                    val ba = ByteArray(buf.remaining())
-                    buf.get(ba)
+                    val ba = buf.moveToByteArray()
                     file.appendBytes(ba)
                     ctr += ba.size
                     absoluteProgressCallback(ctr to it.contentLength())
