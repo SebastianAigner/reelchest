@@ -1,16 +1,13 @@
 package io.sebi.api
 
-import io.ktor.server.application.*
 import io.ktor.http.*
+import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.sebi.downloader.*
 import io.sebi.urldecoder.UrlDecoder
 import io.sebi.urldecoder.makeDownloadTask
-import kotlinx.coroutines.async
-import kotlinx.coroutines.selects.select
-import kotlinx.coroutines.withTimeoutOrNull
 import org.slf4j.LoggerFactory
 
 fun Route.downloaderApi(
@@ -29,7 +26,7 @@ fun Route.downloaderApi(
     }
     get("queue") {
         val tasks = downloadManager.getDownloads(
-            DownloadManager.DownloadType.QUEUED, DownloadManager.DownloadType.CURRENT
+            DownloadType.QUEUED, DownloadType.CURRENT
         )
 
         val res = tasks.map {

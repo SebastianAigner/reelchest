@@ -10,6 +10,7 @@ import io.sebi.api.api
 import io.sebi.api.feedApi
 import io.sebi.autoscrape.setupAutoscraper
 import io.sebi.downloader.DownloadManager
+import io.sebi.downloader.DownloadManagerImpl
 import io.sebi.downloader.IntoMediaLibraryDownloader
 import io.sebi.duplicatecalculator.DuplicateCalculator
 import io.sebi.library.MediaLibrary
@@ -71,8 +72,8 @@ fun Application.module() {
     val metadataStorage: MetadataStorage = SqliteMetadataStorage()
     runBlocking { removeFilesScheduledForDeletion(metadataStorage, videoStorage) }
     val mediaLibrary = MediaLibrary(urlDecoder, networkManager, videoStorage, metadataStorage)
-    val downloadManager =
-        DownloadManager(
+    val downloadManager: DownloadManager =
+        DownloadManagerImpl(
             metadataStorage,
             urlDecoder,
             networkManager,
