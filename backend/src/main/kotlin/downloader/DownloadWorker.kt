@@ -54,17 +54,17 @@ class DownloadWorker(
             for (idx in urls.indices) {
                 try {
                     val fragment = urls[idx]
-                    val targetFile = File.createTempFile(
-                        "vid",
-                        ".mp4",
-                        File("downloads").apply { mkdir(); }
-                    ).apply { deleteOnExit() }
-                    Downloader(networkManager).download(fragment, targetFile, absoluteProgressCallback = {
-                        //println("[worker #$id]: ${it.first} / ${it.second}")
-                    }) { progress ->
-                        myTask.progress =
-                            if (urls.size > 1) idx.toDouble() / urls.size else progress
-                    }
+                    val targetFile = File
+                        .createTempFile("vid", ".mp4", File("downloads").apply { mkdir(); })
+                        .apply { deleteOnExit() }
+                    Downloader(networkManager).download(
+                        fragment,
+                        targetFile,
+                        absoluteProgressCallback = {
+                            val progress = it.first.toDouble() / it.second!!
+                            myTask.progress = if (urls.size > 1) idx.toDouble() / urls.size else progress
+                        }
+                    )
                     results.add(targetFile)
                 } catch (c: ClientRequestException) {
                     // probably a 403
@@ -77,8 +77,7 @@ class DownloadWorker(
             logger.info("Completed work on $myTask")
             val postProcessing = myTask.onPostProcess(results)
             val completed = CompletedDownloadTask(
-                targetFile = postProcessing,
-                originUrl = myTask.originUrl
+                targetFile = postProcessing, originUrl = myTask.originUrl
             )
             myTask.onComplete(completed)
             onComplete(
