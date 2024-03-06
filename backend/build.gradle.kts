@@ -22,6 +22,7 @@ plugins {
     kotlin("kapt")
     id("app.cash.sqldelight") version "2.0.0-alpha02"
     id("io.ktor.plugin") version "2.3.1"
+    id("com.google.devtools.ksp") version "1.8.22-1.0.11"
 }
 
 group = "io.sebi"
@@ -85,6 +86,9 @@ dependencies {
 
     implementation(libs.sqlite.jdbc)
     implementation(libs.sqlite.driver)
+
+    ksp("me.tatarka.inject:kotlin-inject-compiler-ksp:0.6.3")
+    implementation("me.tatarka.inject:kotlin-inject-runtime:0.6.3")
 }
 
 tasks.getByName<Copy>("processResources") {

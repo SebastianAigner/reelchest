@@ -20,7 +20,7 @@ class DownloadManagerImpl(
     private val urlDecoder: UrlDecoder,
     private val networkManager: NetworkManager,
     private val defaultOnComplete: suspend (CompletedDownloadTask) -> Unit,
-    private val serverEvents: Events
+    private val serverEvents: Events,
 ) : DownloadManager {
     val scope = CoroutineScope(context = Dispatchers.Default)
     val logger = LoggerFactory.getLogger("Download Manager")
@@ -31,7 +31,6 @@ class DownloadManagerImpl(
         }
 
 
-    @OptIn(ExperimentalStdlibApi::class)
     override fun getDownloads(vararg d: DownloadType): List<DownloadTask> {
         return buildList {
             for (type in d.toSet()) {
@@ -111,34 +110,30 @@ class DownloadManagerImpl(
 
     override fun persistQueue() {
         logger.info("Persisting queue..")
-        val dtos = buildList {
-            for (queued in queuedDownloads.toList()) {
-                add(DownloadTaskDTO.from(queued))
-            }
-            for (problematic in problematicDownloads.toList()) {
-                add(DownloadTaskDTO.from(problematic))
-            }
-        }
+        val dtos =
+            queuedDownloads.map { DownloadTaskDTO.from(it) } + problematicDownloads.map { DownloadTaskDTO.from(it) }
         File("userConfig/queue.json").writeText(
             Json.encodeToString(dtos)
         )
     }
 
     override fun restoreQueue() {
-        val list =
-            Json.runCatching { decodeFromString<List<DownloadTaskDTO>>(File("userConfig/queue.json").readText()).distinctBy { it.originUrl } }
-        list.onFailure {
-            logger.error("Queue restore failed. $it")
-        }.onSuccess {
-            it.reversed().forEach {
-                enqueueTask(urlDecoder.makeDownloadTask(it.originUrl, defaultOnComplete))
-            }
-            logger.info("Re-enqueued ${it.size} tasks.")
+        val list = try {
+            Json
+                .decodeFromString<List<DownloadTaskDTO>>(File("userConfig/queue.json").readText())
+                .distinctBy { it.originUrl }
+        } catch (e: Exception) {
+            logger.error("Queue restore failed. $e")
+            return
         }
+        list.reversed().forEach {
+            enqueueTask(urlDecoder.makeDownloadTask(it.originUrl, defaultOnComplete))
+        }
+        logger.info("Re-enqueued ${list.size} tasks.")
     }
 
-    val workers = mutableListOf<DownloadWorker>()
-    fun CoroutineScope.startWorkers(n: Int = 1) {
+    private val workers = mutableListOf<DownloadWorker>()
+    private fun CoroutineScope.startWorkers(n: Int = 1) {
         repeat(n) {
             val newWorker = DownloadWorker(networkManager = networkManager, provideDownload = {
                 queuedDownloads.remove()
