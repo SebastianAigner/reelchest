@@ -29,7 +29,10 @@ class Downloader(val networkManager: NetworkManager) {
             withContext(Dispatchers.IO) {
                 while (!chan.isClosedForRead) {
                     yield()
-                    chan.read { buf ->
+                    // TODO: It will fail with EOFException if not enough bytes (availableForRead < min) available in the channel after it is closed.
+                    // TODO: We could alternatively use readAvailable, but that one is entirely synchronous.
+                    // we actively set min to 0 (it's 1 by default) to avoid throwing that EOFException. Let's see how it plays out!
+                    chan.read(min = 0) { buf ->
                         val rem = buf.remaining()
                         fileOutputChannel.write(buf) // This is a synchronous operation
                         ctr += rem
