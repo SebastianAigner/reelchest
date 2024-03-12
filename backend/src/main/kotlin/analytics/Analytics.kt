@@ -38,10 +38,11 @@ class AnalyticsDatabase {
         }
     }
 
+    val statement = connection.prepareStatement(
+        "INSERT INTO events (event) VALUES (?)"
+    )
+
     suspend fun log(msg: String) {
-        val statement = connection.prepareStatement(
-            "INSERT INTO events (event) VALUES (?)"
-        )
         mutex.withLock {
             statement?.setString(1, msg)
             statement.execute()
