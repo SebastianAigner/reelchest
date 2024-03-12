@@ -5,6 +5,7 @@ import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.sebi.InMemoryAppender
+import io.sebi.analytics.analyticsApi
 import io.sebi.downloader.DownloadManager
 import io.sebi.downloader.DownloadTaskDTO
 import io.sebi.duplicatecalculator.DuplicateCalculator
@@ -34,6 +35,7 @@ fun Route.api(
 ) {
 
     route("api") {
+        analyticsApi()
         get("log") {
             call.respond(InMemoryAppender.getSerializableRepresentation())
         }

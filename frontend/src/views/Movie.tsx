@@ -9,6 +9,7 @@ import {mutate} from "swr";
 import EdiText from "react-editext";
 import {INPUT_ACTION, SimpleInputField} from "../components/SimpleInputField";
 import {AutoTaggedMediaLibraryEntry} from "../models/AutoTaggedMediaLibraryEntry";
+import * as _ from "underscore";
 import DuplicatesDTO = IoSebi.DuplicatesDTO;
 
 interface Identifiable {
@@ -49,6 +50,14 @@ function useMediaLibraryEntry(id) {
     }
 }
 
+let throttledApiEvent = _.throttle((id, time) => {
+    console.log("running throttled function!")
+    axios.post("/api/event", {
+        id: id,
+        timestamp: time
+    })
+}, 1000)
+
 export function Movie() {
     const {id} = useParams<Identifiable>();
     const [clicked, setClicked] = useState(false);
@@ -67,6 +76,11 @@ export function Movie() {
                 setClicked(true)
                 axios.get(`/api/mediaLibrary/${id}/hit`)
             }
+        }
+        } onTimeUpdate={(event) => {
+            let time = event.currentTarget.currentTime
+            console.log(`updating time! ${time}`)
+            throttledApiEvent(id, time)
         }
         }/>
 

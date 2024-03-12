@@ -27,6 +27,8 @@
     "react-lazy-load-image-component": "^1.5.1",
     "react-router-dom": "^5.2.0",
     "swr": "^0.4.2",
-    "vite": "^2.9.5"
+    "vite": "^2.9.5",
+    "underscore": "^1.13.6",
+    "@types/underscore": "^1.11.15"
   }
 }
