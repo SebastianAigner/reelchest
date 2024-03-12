@@ -4,13 +4,15 @@
 
 io-ktor-plugin = { id = "io.ktor.plugin", version = "2.3.1" }
 
-org-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version = "1.8.22" }
+org-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 
-org-jetbrains-kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version = "1.8.22" }
+org-jetbrains-kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
-org-jetbrains-kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version = "1.8.22" }
+org-jetbrains-kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
 
 app-cash-sqldelight = { id = "app.cash.sqldelight", version = "2.0.0-rc02" }
+
+com-google-devtools-ksp = { id = "com.google.devtools.ksp", version = "1.8.22-1.0.11" }
 
 [versions]
 
@@ -115,3 +117,13 @@ kotlin-annotation-processing-gradle = { group = "org.jetbrains.kotlin", name = "
 kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
 
 ktor-server-tests = { module = "io.ktor:ktor-server-tests" }
+
+kotlin-inject-runtime = "me.tatarka.inject:kotlin-inject-runtime:0.6.3"
+
+symbol-processing = "com.google.devtools.ksp:symbol-processing:1.8.22-1.0.11"
+
+kotlin-inject-compiler-ksp = "me.tatarka.inject:kotlin-inject-compiler-ksp:0.6.3"
+
+symbol-processing-api = "com.google.devtools.ksp:symbol-processing-api:1.8.22-1.0.11"
+
+symbol-processing-cmdline = "com.google.devtools.ksp:symbol-processing-cmdline:1.8.22-1.0.11"

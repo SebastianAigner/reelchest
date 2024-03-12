@@ -1,17 +1,9 @@
-val ktor_version: String by project
-val kotlin_version: String by project
-val logback_version: String by project
-val coroutines_version: String by project
-val serialization_json_version: String by project
-val jtsgen_Version: String by project
-
-
 buildscript {
     repositories {
         mavenCentral()
     }
     dependencies {
-        classpath("app.cash.sqldelight:gradle-plugin:_")
+        classpath(CashApp.sqlDelight.gradlePlugin)
     }
 }
 
@@ -21,7 +13,7 @@ plugins {
     kotlin("plugin.serialization")
     kotlin("kapt")
     id("app.cash.sqldelight") version "2.0.0-alpha02"
-    id("io.ktor.plugin") version "2.3.1"
+    id("io.ktor.plugin")
     id("com.google.devtools.ksp") version "1.8.22-1.0.11"
 }
 
@@ -59,12 +51,11 @@ dependencies {
     implementation(libs.quartz)
     implementation(libs.reflections)
 
-
-    implementation(Ktor.server.statusPages)
-    implementation(Ktor.server.cors)
-    implementation(Ktor.server.partialContent)
-    implementation(Ktor.server.callLogging)
-    implementation(Ktor.server.contentNegotiation)
+    implementation(libs.ktor.server.status.pages)
+    implementation(libs.ktor.server.cors)
+    implementation(libs.ktor.server.partial.content)
+    implementation(libs.ktor.server.call.logging)
+    implementation(libs.ktor.server.content.negotiation)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.serialization)
     implementation(libs.ktor.client.content.negotiation)
@@ -73,8 +64,8 @@ dependencies {
     implementation(libs.xodus.entity.store)
     implementation(libs.xodus.environment)
     implementation(libs.ktor.client.cio)
-    implementation(Ktor.client.contentNegotiation)
-    implementation(Ktor.plugins.serialization.kotlinx.json)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
 
     testImplementation(libs.ktor.server.tests)
     compileOnly(libs.jtsgen.annotations)
@@ -87,8 +78,8 @@ dependencies {
     implementation(libs.sqlite.jdbc)
     implementation(libs.sqlite.driver)
 
-    ksp("me.tatarka.inject:kotlin-inject-compiler-ksp:0.6.3")
-    implementation("me.tatarka.inject:kotlin-inject-runtime:0.6.3")
+    ksp(libs.kotlin.inject.compiler.ksp)
+    implementation(libs.kotlin.inject.runtime)
 }
 
 tasks.getByName<Copy>("processResources") {
@@ -121,8 +112,8 @@ sqldelight {
     databases {
         create("MediaDatabase") {
             packageName.set("io.sebi.database")
-            dialect("app.cash.sqldelight:sqlite-3-25-dialect:_")
-            module("app.cash.sqldelight:sqlite-json-module:_")
+            dialect(libs.sqlite.get3().get25().dialect)
+            module(libs.sqlite.json.module.get())
         }
     }
 }

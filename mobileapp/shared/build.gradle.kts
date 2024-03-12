@@ -42,7 +42,7 @@ kotlin {
 
                 val voyagerVersion = "1.0.0-rc06"
                 implementation(libs.voyager.navigator)
-//                implementation("cafe.adriel.voyager:voyager-transitions:$voyagerVersion")
+//                implementation("cafe.adriel.voyager:voyager-transitions:_")
                 // BottomSheetNavigator
                 implementation(libs.voyager.bottom.sheet.navigator)
                 // TabNavigator
