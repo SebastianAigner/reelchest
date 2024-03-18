@@ -14,6 +14,9 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 
 val uploadPool = newFixedThreadPoolContext(2, "Uploader")
 
@@ -75,11 +78,10 @@ fun Route.addUpload(mediaLibrary: MediaLibrary) {
                         File("downloads").apply { mkdir(); }
                     ).apply { deleteOnExit() }
                     logger.info("Starting non-blocking copy.")
-                    it.streamProvider().use { partstream ->
-                        // TODO: Is this already the most elegant version to copy? (https://ryanharrison.co.uk/2018/09/20/ktor-file-upload-download.html)
-                        targetFile.outputStream().buffered().use {
-                            partstream.copyToSuspend(it, dispatcher = uploadPool)
-                        }
+
+                    it.streamProvider().let { stream ->
+                        val targetPath = targetFile.toPath()
+                        stream.copyToNIO(targetPath)
                     }
                     uploadedFile = targetFile
                     uploadedFileName = it.originalFileName
@@ -103,12 +105,26 @@ fun Route.addUpload(mediaLibrary: MediaLibrary) {
                 name = name ?: "unknown upload"
             )
         }
-
         call.respondRedirect("/")
     }
 }
 
+suspend fun InputStream.copyToNIO(
+    out: Path,
+    dispatcher: CoroutineDispatcher = Dispatchers.IO,
+) {
+    val instr = this
+    withContext(dispatcher) {
+        Files.copy(
+            instr,
+            out,
+            StandardCopyOption.REPLACE_EXISTING
+        )
+    }
+}
 
+
+// TODO: Is this already the most elegant version to copy? (https://ryanharrison.co.uk/2018/09/20/ktor-file-upload-download.html)
 suspend fun InputStream.copyToSuspend(
     out: OutputStream,
     bufferSize: Int = DEFAULT_BUFFER_SIZE,
