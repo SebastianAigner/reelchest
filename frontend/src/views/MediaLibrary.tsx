@@ -34,7 +34,7 @@ export function MediaLibrary() {
     const [searchBarContent, setSearchBarContent] = useState(query ? query : "")
     useEffect(() => {
         const fetchData = async () => {
-            const result = await axios.get<Array<AutoTaggedMediaLibraryEntry>>("/api/mediaLibrary?auto");
+            const result = await axios.get<Array<AutoTaggedMediaLibraryEntry>>("/api/mediaLibrary?auto=true");
             console.log(result.data);
             setData(result.data);
         }
