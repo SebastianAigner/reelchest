@@ -67,27 +67,27 @@ fun Route.addUpload(mediaLibrary: MediaLibrary) {
             logger.info("Done.")
             var uploadedFile: File? = null
             var uploadedFileName: String? = null
-            multipart.forEachPart {
-                if (it is PartData.FileItem) {
-                    logger.info("Got FileItem ${it.originalFileName}.")
-                    logger.info(it.headers.entries().joinToString(", ") { it.key + " " + it.value })
+            multipart.forEachPart { part: PartData ->
+                if (part is PartData.FileItem) {
+                    logger.info("Got FileItem ${part.originalFileName}.")
+                    logger.info(part.headers.entries().joinToString(", ") { it.key + " " + it.value })
 
                     val targetFile = File.createTempFile(
                         "vid",
                         ".mp4",
                         File("downloads").apply { mkdir(); }
                     ).apply { deleteOnExit() }
-                    logger.info("Starting non-blocking copy.")
+                    logger.info("Starting copy.")
 
-                    it.streamProvider().let { stream ->
+                    part.streamProvider().let { stream ->
                         val targetPath = targetFile.toPath()
                         stream.copyToNIO(targetPath)
                     }
                     uploadedFile = targetFile
-                    uploadedFileName = it.originalFileName
+                    uploadedFileName = part.originalFileName
                 }
                 logger.info("Disposing part.")
-                it.dispose()
+                part.dispose()
             }
             uploadedFile!! to uploadedFileName
         }
