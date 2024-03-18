@@ -23,11 +23,36 @@ fun Route.addUpload(mediaLibrary: MediaLibrary) {
     get("/upload") {
         call.respondHtml {
             commonLayout("upload file") {
-                form(action = "/ul", method = FormMethod.post, encType = FormEncType.multipartFormData) {
+                form {
+                    id = "form"
+                    attributes["hx-encoding"] = "multipart/form-data"
+                    attributes["hx-post"] = "/ul"
+
                     input(type = InputType.file, name = "file") {
                     }
-                    input(type = InputType.submit)
+                    //input(type = InputType.submit)
+                    button {
+                        +"upload"
+                    }
+                    progress {
+                        id = "progress"
+                        value = "0"
+                        max = "100"
+                    }
+                    script {
+                        //language=JavaScript
+                        +"""
+                                    htmx.on('#form', 'htmx:xhr:progress', function(evt) {
+                                      htmx.find('#progress').setAttribute('value', evt.detail.loaded/evt.detail.total * 100)
+                                    });
+                        """.trimIndent()
+                    }
                 }
+//                form(action = "/ul", method = FormMethod.post, encType = FormEncType.multipartFormData) {
+//                    input(type = InputType.file, name = "file") {
+//                    }
+//                    input(type = InputType.submit)
+//                }
             }
         }
     }
@@ -79,7 +104,7 @@ fun Route.addUpload(mediaLibrary: MediaLibrary) {
             )
         }
 
-        call.respondRedirect("/lib")
+        call.respondRedirect("/")
     }
 }
 

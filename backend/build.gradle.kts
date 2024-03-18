@@ -36,7 +36,7 @@ repositories {
 dependencies {
     implementation(kotlin("stdlib", "1.9.23"))
     implementation(libs.logback.classic)
-    implementation(libs.ktor.server.cio)
+    implementation(libs.ktor.server.netty)
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.host.common)
 

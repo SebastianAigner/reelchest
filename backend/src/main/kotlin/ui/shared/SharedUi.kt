@@ -14,6 +14,7 @@ fun HEAD.commonStyles() {
 fun HTML.commonLayout(title: String, head: (HEAD.() -> Unit)? = null, body: BODY.() -> Unit) {
     head {
         commonStyles()
+        script { src = "https://unpkg.com/htmx.org@1.9.11" }
         head?.invoke(this)
     }
     body {

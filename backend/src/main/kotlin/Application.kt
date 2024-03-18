@@ -34,7 +34,8 @@ import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.minutes
 
 fun main(args: Array<String>) {
-    io.ktor.server.cio.EngineMain.main(args)
+    // Switch to CIO last blocked by https://youtrack.jetbrains.com/issue/KTOR-6851.
+    io.ktor.server.netty.EngineMain.main(args)
 }
 
 fun setup(
