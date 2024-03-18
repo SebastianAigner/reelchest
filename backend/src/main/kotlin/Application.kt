@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.minutes
 
 fun main(args: Array<String>) {
-    io.ktor.server.netty.EngineMain.main(args)
+    io.ktor.server.cio.EngineMain.main(args)
 }
 
 fun setup(

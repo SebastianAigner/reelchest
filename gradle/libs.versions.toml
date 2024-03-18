@@ -54,6 +54,8 @@ logback-classic = "ch.qos.logback:logback-classic:1.4.8"
 
 ktor-server-netty = { module = "io.ktor:ktor-server-netty" }
 
+ktor-server-cio = { module = "io.ktor:ktor-server-cio" }
+
 ktor-server-core = { module = "io.ktor:ktor-server-core" }
 
 ktor-server-host-common = { module = "io.ktor:ktor-server-host-common" }

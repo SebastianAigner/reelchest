@@ -21,7 +21,7 @@ group = "io.sebi"
 version = "0.0.1"
 
 application {
-    mainClass.set("io.ktor.server.netty.EngineMain")
+    mainClass.set("io.sebi.ApplicationKt")
 }
 
 repositories {
@@ -34,8 +34,9 @@ repositories {
 }
 
 dependencies {
+    implementation(kotlin("stdlib", "1.9.23"))
     implementation(libs.logback.classic)
-    implementation(libs.ktor.server.netty)
+    implementation(libs.ktor.server.cio)
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.host.common)
 
@@ -91,7 +92,7 @@ tasks.getByName<Copy>("processResources") {
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     kotlinOptions {
-        freeCompilerArgs = listOf("-Xopt-in=kotlin.RequiresOptIn", "-Xcontext-receivers")
+        freeCompilerArgs = listOf("-Xcontext-receivers")
     }
 }
 
