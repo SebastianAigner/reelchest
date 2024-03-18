@@ -13,6 +13,7 @@ import io.sebi.downloader.DownloadManager
 import io.sebi.downloader.DownloadManagerImpl
 import io.sebi.downloader.IntoMediaLibraryDownloader
 import io.sebi.duplicatecalculator.DuplicateCalculator
+import io.sebi.feed.Feed
 import io.sebi.library.MediaLibrary
 import io.sebi.network.NetworkManager
 import io.sebi.phash.ensureDHashes

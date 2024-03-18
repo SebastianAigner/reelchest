@@ -1,4 +1,4 @@
-package io.sebi
+package io.sebi.utils
 
 import java.io.File
 import java.nio.file.Files

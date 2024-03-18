@@ -4,13 +4,13 @@ import dz.jtsgen.annotations.TypeScript
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.sebi.InMemoryAppender
 import io.sebi.analytics.analyticsApi
 import io.sebi.downloader.DownloadManager
 import io.sebi.downloader.DownloadTaskDTO
 import io.sebi.duplicatecalculator.DuplicateCalculator
 import io.sebi.library.MediaLibrary
 import io.sebi.library.MediaLibraryEntry
+import io.sebi.logging.InMemoryAppender
 import io.sebi.network.NetworkManager
 import io.sebi.storage.MetadataStorage
 import io.sebi.tagging.Tagger

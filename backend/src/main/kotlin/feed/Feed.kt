@@ -1,4 +1,4 @@
-package io.sebi
+package io.sebi.feed
 
 import jetbrains.exodus.entitystore.Entity
 import jetbrains.exodus.entitystore.PersistentEntityStore
@@ -7,7 +7,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.serialization.Serializable
-import java.util.UUID
+import java.util.*
 
 @Serializable
 data class FeedEntry(
