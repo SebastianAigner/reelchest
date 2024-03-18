@@ -65,31 +65,32 @@ fun Route.addUpload(mediaLibrary: MediaLibrary) {
             logger.info("Receiving multipart data...")
             val multipart = call.receiveMultipart()
             logger.info("Done.")
-            var uploadedFile: File? = null
-            var uploadedFileName: String? = null
-            multipart.forEachPart { part: PartData ->
-                if (part is PartData.FileItem) {
-                    logger.info("Got FileItem ${part.originalFileName}.")
-                    logger.info(part.headers.entries().joinToString(", ") { it.key + " " + it.value })
+            // TODO: Why can I not MAP EACH PART :CRY:
+            val fileItem = multipart
+                .readAllParts()
+                .asSequence()
+                .filterIsInstance<PartData.FileItem>().single()
 
-                    val targetFile = File.createTempFile(
-                        "vid",
-                        ".mp4",
-                        File("downloads").apply { mkdir(); }
-                    ).apply { deleteOnExit() }
-                    logger.info("Starting copy.")
+            logger.info("Got FileItem ${fileItem.originalFileName}.")
+            logger.info(fileItem.headers.entries().joinToString(", ") { it.key + " " + it.value })
+            val targetFile = File.createTempFile(
+                "vid",
+                ".mp4",
+                File("downloads").apply { mkdir(); }
+            ).apply { deleteOnExit() }
+            logger.info("Starting copy.")
 
-                    part.streamProvider().let { stream ->
-                        val targetPath = targetFile.toPath()
-                        stream.copyToNIO(targetPath)
-                    }
-                    uploadedFile = targetFile
-                    uploadedFileName = part.originalFileName
-                }
-                logger.info("Disposing part.")
-                part.dispose()
+            fileItem.streamProvider().let { stream ->
+                val targetPath = targetFile.toPath()
+                stream.copyToNIO(targetPath)
             }
-            uploadedFile!! to uploadedFileName
+            val result = ProcessUploadedFilePartResult(
+                targetFile!!,
+                fileItem.originalFileName!!
+            )
+            logger.info("Disposing part.")
+            fileItem.dispose()
+            result
         }
         if (uploadResult.isFailure) {
             call.respondText(
@@ -102,12 +103,17 @@ fun Route.addUpload(mediaLibrary: MediaLibrary) {
             val (targetFile, name) = uploadResult.getOrNull()!!
             mediaLibrary.addUpload(
                 targetFile,
-                name = name ?: "unknown upload"
+                name = name
             )
         }
         call.respondRedirect("/")
     }
 }
+
+data class ProcessUploadedFilePartResult(
+    val file: File,
+    val name: String
+)
 
 suspend fun InputStream.copyToNIO(
     out: Path,
