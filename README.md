@@ -23,3 +23,4 @@ Requests to endpoints under `/api/` are automatically proxied to the backend run
 - [ ] Allow mobile clients to store media offline (e.g. to watch during flights)
 - [ ] merge add and download pages
 - [ ] reset download form after submission
+- [ ] Play around with some server-side chaos engineering
