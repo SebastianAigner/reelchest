@@ -5,15 +5,18 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import java.sql.DriverManager
 
-private val adb = AnalyticsDatabase()
+private val analyticsDatabase = AnalyticsDatabase()
 fun Route.analyticsApi() {
     post("event") {
         val eventText = call.receiveText()
-        adb.log(eventText)
+        analyticsDatabase.log(eventText)
         call.respond(HttpStatusCode.OK)
     }
 }
@@ -42,10 +45,12 @@ class AnalyticsDatabase {
         "INSERT INTO events (event) VALUES (?)"
     )
 
-    suspend fun log(msg: String) {
+    suspend fun log(msg: String, dispatcher: CoroutineDispatcher = Dispatchers.IO) {
         mutex.withLock {
-            statement?.setString(1, msg)
-            statement.execute()
+            withContext(dispatcher) {
+                statement?.setString(1, msg)
+                statement.execute()
+            }
         }
     }
 }
