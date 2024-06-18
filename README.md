@@ -24,3 +24,4 @@ Requests to endpoints under `/api/` are automatically proxied to the backend run
 - [ ] merge add and download pages
 - [ ] reset download form after submission
 - [ ] Play around with some server-side chaos engineering
+- [ ] Stop reading file timestamps from disk; use information stored in DB instead
