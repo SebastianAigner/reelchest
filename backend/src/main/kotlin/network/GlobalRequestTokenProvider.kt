@@ -4,8 +4,12 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import org.slf4j.LoggerFactory
 
-// TODO: It's a singleton. Singletons are meh.
-object GlobalRequestTokenProvider {
+interface RequestTokenProvider {
+    suspend fun takeToken()
+}
+
+// TODO: It's used as a singleton. Singletons are meh.
+object GlobalRequestTokenProvider : RequestTokenProvider {
     val logger = LoggerFactory.getLogger("Request Token Provider")
     val requestTokenChannel = Channel<Unit>()
 
@@ -19,5 +23,9 @@ object GlobalRequestTokenProvider {
                 requestTokenChannel.send(Unit)
             }
         }
+    }
+
+    override suspend fun takeToken() {
+        requestTokenChannel.receive()
     }
 }

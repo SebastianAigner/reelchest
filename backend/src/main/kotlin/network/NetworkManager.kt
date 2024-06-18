@@ -1,14 +1,14 @@
 package io.sebi.network
 
 import io.ktor.client.*
-import io.ktor.client.call.body
+import io.ktor.client.call.*
 import io.ktor.client.engine.apache.*
 import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import org.slf4j.LoggerFactory
 
-class NetworkManager {
+class NetworkManager(val requestTokenProvider: RequestTokenProvider = GlobalRequestTokenProvider) {
 
     val logger = LoggerFactory.getLogger("Network Manager")
 
@@ -40,7 +40,7 @@ class NetworkManager {
     }
 
     suspend fun getFreshPage(url: String, contentType: String = "text/html"): String {
-        GlobalRequestTokenProvider.requestTokenChannel.receive()
+        requestTokenProvider.takeToken()
         val res = client.head(url).body<HttpResponse>()
         val actualCT = res.headers["Content-Type"]
         if (actualCT?.contains(contentType) == false) {
