@@ -94,6 +94,7 @@ export function Movie() {
             </li>
             <li><a href={`vlc://${window.location.host}/api/video/${id}`}>Open in VLC</a></li>
             <li><a href={`/api/video/${id}.mp4`}>Direct link</a></li>
+            <li><a href={`/api/file/${entry?.mediaLibraryEntry.name}`}>Direct link (by name)</a></li>
         </ul>
         <h3 className={"text-2xl"}>Tags</h3>
         <ul>
