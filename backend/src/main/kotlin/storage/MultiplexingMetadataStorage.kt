@@ -21,7 +21,7 @@ class MultiplexingMetadataStorage(val metadataStorages: List<MetadataStorage>, v
         return single ?: error("Mismatching metadata between multiplexed storages: ${metadatas.zip(storageNames)}")
     }
 
-    override fun deleteMetadata(id: String) {
+    override suspend fun deleteMetadata(id: String) {
         metadataStorages.forEach { it.deleteMetadata(id) }
     }
 
@@ -39,11 +39,11 @@ class MultiplexingMetadataStorage(val metadataStorages: List<MetadataStorage>, v
         return allMetadatas.first()
     }
 
-    override fun addDuplicate(id: String, dup: String, dist: Int) {
+    override suspend fun addDuplicate(id: String, dup: String, dist: Int) {
         TODO("Not yet implemented")
     }
 
-    override fun getDuplicate(id: String): Duplicates? {
+    override suspend fun getDuplicate(id: String): Duplicates? {
         TODO("Not yet implemented")
     }
 }

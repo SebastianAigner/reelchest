@@ -24,7 +24,7 @@ class FileSystemMetadataStorage : MetadataStorage {
         return MetadataResult.Just(entry.copy(uid = entry.id))
     }
 
-    override fun deleteMetadata(id: String) {
+    override suspend fun deleteMetadata(id: String) {
         try {
             File("./mediaLibrary/${id}/${id}.json").delete()
         } catch (f: FileNotFoundException) {
@@ -39,11 +39,11 @@ class FileSystemMetadataStorage : MetadataStorage {
         }
     }
 
-    override fun addDuplicate(id: String, dup: String, dist: Int) {
+    override suspend fun addDuplicate(id: String, dup: String, dist: Int) {
         TODO("Not yet implemented")
     }
 
-    override fun getDuplicate(id: String): Duplicates? {
+    override suspend fun getDuplicate(id: String): Duplicates? {
         TODO("Not yet implemented")
     }
 }

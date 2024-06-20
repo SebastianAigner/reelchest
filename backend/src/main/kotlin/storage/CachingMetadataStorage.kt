@@ -20,7 +20,7 @@ class CachingMetadataStorage(private val delegate: MetadataStorage) : MetadataSt
         return delegateHit
     }
 
-    override fun deleteMetadata(id: String) {
+    override suspend fun deleteMetadata(id: String) {
         map.remove(id)
         delegate.deleteMetadata(id)
     }
@@ -36,11 +36,11 @@ class CachingMetadataStorage(private val delegate: MetadataStorage) : MetadataSt
         return getAllRealEntries()
     }
 
-    override fun addDuplicate(id: String, dup: String, dist: Int) {
+    override suspend fun addDuplicate(id: String, dup: String, dist: Int) {
         return delegate.addDuplicate(id, dup, dist)
     }
 
-    override fun getDuplicate(id: String): Duplicates? {
+    override suspend fun getDuplicate(id: String): Duplicates? {
         return delegate.getDuplicate(id)
     }
 

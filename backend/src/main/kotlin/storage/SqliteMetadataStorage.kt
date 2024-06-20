@@ -6,8 +6,10 @@ import io.sebi.library.MediaLibraryEntry
 import io.sebi.sqldelight.mediametadata.Duplicates
 import io.sebi.sqldelight.mediametadata.SelectAllWithTags
 import io.sebi.sqldelight.mediametadata.SelectById
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import org.sqlite.SQLiteConfig
@@ -65,58 +67,71 @@ class SqliteMetadataStorage : MetadataStorage {
 
     override suspend fun storeMetadata(id: String, metadata: MediaLibraryEntry) {
         // todo: this writer lock should probably be everywhere.
-        roomEmpty.withLock {
-            database.mediaMetadataQueries.insertOrReplaceEntry(
-                unique_id = id,
-                title = metadata.name,
-                origin_url = metadata.originUrl,
-                hits = metadata.hits.toLong(),
-                marked_for_deletion = if (metadata.markedForDeletion) 1 else 0,
-                creation_date = metadata.creationDate
-            )
-            metadata.tags.forEach {
-                database.tagsQueries.addTag(it) // TODO: This does a lot of `ON CONFLICT DO NOTHING`. Maybe there's a nicer way?
-                database.tagsQueries.addTagForLibraryEntryByName(id, it)
+        withContext(Dispatchers.IO) {
+            roomEmpty.withLock {
+                database.mediaMetadataQueries.insertOrReplaceEntry(
+                    unique_id = id,
+                    title = metadata.name,
+                    origin_url = metadata.originUrl,
+                    hits = metadata.hits.toLong(),
+                    marked_for_deletion = if (metadata.markedForDeletion) 1 else 0,
+                    creation_date = metadata.creationDate
+                )
+                metadata.tags.forEach {
+                    database.tagsQueries.addTag(it) // TODO: This does a lot of `ON CONFLICT DO NOTHING`. Maybe there's a nicer way?
+                    database.tagsQueries.addTagForLibraryEntryByName(id, it)
+                }
             }
         }
     }
 
-    override fun addDuplicate(id: String, dup: String, dist: Int) {
-        database.duplicatesQueries.addDuplicate(id, dup, dist.toLong())
-    }
-
-    override fun getDuplicate(id: String): Duplicates? {
-        val foo = database.duplicatesQueries.selectDuplicateForId(id).executeAsOneOrNull()
-        return foo
-    }
-
-    override suspend fun retrieveMetadata(id: String): MetadataResult {
-        withReaderLock {
-            val metadataForId = database.mediaMetadataQueries.selectById(id).executeAsOneOrNull()
-            if (metadataForId != null) return MetadataResult.Just(metadataForId.toMediaLibraryEntry())
-
-            val tombstoneForId = database.mediaMetadataQueries.getTombstoneForId(id).executeAsOneOrNull()
-            if (tombstoneForId != null) return MetadataResult.Tombstone
-            return MetadataResult.None
+    override suspend fun addDuplicate(id: String, dup: String, dist: Int) {
+        withContext(Dispatchers.IO) {
+            database.duplicatesQueries.addDuplicate(id, dup, dist.toLong())
         }
     }
 
-    override fun deleteMetadata(id: String) {
-        database.mediaMetadataQueries.deleteById(id)
+    override suspend fun getDuplicate(id: String): Duplicates? {
+        return withContext(Dispatchers.IO) {
+            database.duplicatesQueries.selectDuplicateForId(id).executeAsOneOrNull()
+        }
+    }
+
+    override suspend fun retrieveMetadata(id: String): MetadataResult {
+        val result = withContext(Dispatchers.IO) {
+            withReaderLock {
+                val metadataForId = database.mediaMetadataQueries.selectById(id).executeAsOneOrNull()
+                if (metadataForId != null) return@withContext MetadataResult.Just(metadataForId.toMediaLibraryEntry())
+
+                val tombstoneForId = database.mediaMetadataQueries.getTombstoneForId(id).executeAsOneOrNull()
+                if (tombstoneForId != null) return@withContext MetadataResult.Tombstone
+                return@withContext MetadataResult.None
+            }
+        }
+        return result
+    }
+
+    override suspend fun deleteMetadata(id: String) {
+        withContext(Dispatchers.IO) {
+            database.mediaMetadataQueries.deleteById(id)
+        }
     }
 
     @OptIn(ExperimentalTime::class)
     override suspend fun listAllMetadata(): List<MediaLibraryEntry> {
-        val (mediaMetadata, time) = measureTimedValue {
-            database.mediaMetadataQueries.selectAllWithTags().executeAsList()
-        }
-        val (entries, entriesTime) = measureTimedValue {
-            mediaMetadata.map {
-                it.toMediaLibraryEntry()
+        val list = withContext(Dispatchers.IO) {
+            val (mediaMetadata, time) = measureTimedValue {
+                database.mediaMetadataQueries.selectAllWithTags().executeAsList()
             }
+            val (entries, entriesTime) = measureTimedValue {
+                mediaMetadata.map {
+                    it.toMediaLibraryEntry()
+                }
+            }
+            logger.info("Selected all metadata in $time, converted to entries in $entriesTime (total ${time + entriesTime})")
+            entries
         }
-        logger.info("Selected all metadata in $time, converted to entries in $entriesTime (total ${time + entriesTime})")
-        return entries
+        return list
     }
 
     fun SelectAllWithTags.toMediaLibraryEntry(): MediaLibraryEntry {

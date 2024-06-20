@@ -22,8 +22,8 @@ sealed class MetadataResult {
 interface MetadataStorage {
     suspend fun storeMetadata(id: String, metadata: MediaLibraryEntry)
     suspend fun retrieveMetadata(id: String): MetadataResult
-    fun deleteMetadata(id: String)
+    suspend fun deleteMetadata(id: String)
     suspend fun listAllMetadata(): List<MediaLibraryEntry>
-    fun addDuplicate(id: String, dup: String, dist: Int)
-    fun getDuplicate(id: String): Duplicates?
+    suspend fun addDuplicate(id: String, dup: String, dist: Int)
+    suspend fun getDuplicate(id: String): Duplicates?
 }
