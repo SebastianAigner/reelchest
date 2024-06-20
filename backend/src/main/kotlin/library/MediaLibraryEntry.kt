@@ -4,7 +4,6 @@ import io.sebi.datastructures.shaHashed
 import io.sebi.phash.readULongs
 import io.sebi.storage.MetadataStorage
 import io.sebi.tagging.Tagger
-import io.sebi.utils.creationTime
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import java.io.File
@@ -14,18 +13,15 @@ data class MediaLibraryEntry(
     var name: String,
     val originUrl: String,
     var tags: Set<String> = emptySet(),
+    val creationDate: Long,
     var originPage: String? = null,
     val uid: String? = null,
     var hits: Int = 0,
-    var markedForDeletion: Boolean = false
+    var markedForDeletion: Boolean = false,
 ) {
     val id: String = uid ?: originUrl.shaHashed()
 
     val file: File? by lazy { File("./mediaLibrary/${id}/${id}.mp4") }
-    val creationDate by lazy {
-        if (file?.exists() == false) null
-        else file?.creationTime?.toMillis()
-    }
 
     fun withoutPage(): MediaLibraryEntry {
         return if (originPage != null) this.copy(originPage = null) else this

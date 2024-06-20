@@ -67,11 +67,12 @@ class SqliteMetadataStorage : MetadataStorage {
         // todo: this writer lock should probably be everywhere.
         roomEmpty.withLock {
             database.mediaMetadataQueries.insertOrReplaceEntry(
-                id,
-                metadata.name,
-                metadata.originUrl,
-                metadata.hits.toLong(),
-                if (metadata.markedForDeletion) 1 else 0
+                unique_id = id,
+                title = metadata.name,
+                origin_url = metadata.originUrl,
+                hits = metadata.hits.toLong(),
+                marked_for_deletion = if (metadata.markedForDeletion) 1 else 0,
+                creation_date = metadata.creationDate
             )
             metadata.tags.forEach {
                 database.tagsQueries.addTag(it) // TODO: This does a lot of `ON CONFLICT DO NOTHING`. Maybe there's a nicer way?
@@ -123,6 +124,7 @@ class SqliteMetadataStorage : MetadataStorage {
             title,
             origin_url,
             Json.decodeFromString(tags),
+            creation_date,
             null,
             unique_id,
             hits.toInt(),
@@ -135,6 +137,7 @@ class SqliteMetadataStorage : MetadataStorage {
             title,
             origin_url,
             Json.decodeFromString(tags),
+            creation_date,
             null,
             unique_id,
             hits.toInt(),

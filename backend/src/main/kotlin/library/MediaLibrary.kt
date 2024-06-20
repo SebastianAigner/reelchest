@@ -45,7 +45,8 @@ class MediaLibrary(
             originUrl = "file://${Random.nextLong().toString().shaHashed()}}",
             tags = emptySet(),
             uid = uid,
-            originPage = null
+            originPage = null,
+            creationDate = System.currentTimeMillis() / 1000,
         )
         entry.persist(metadataStorage)
         f.delete()
@@ -64,6 +65,7 @@ class MediaLibrary(
         val entry = MediaLibraryEntry(
             name = metadata?.title ?: c.originUrl,
             originUrl = c.originUrl,
+            creationDate = System.currentTimeMillis() / 1000,
             tags = metadata?.tags?.toSet() ?: emptySet(),
         )
 

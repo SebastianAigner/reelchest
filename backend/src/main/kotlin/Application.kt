@@ -27,6 +27,7 @@ import io.sebi.tagging.Tagger
 import io.sebi.ui.*
 import io.sebi.urldecoder.UrlDecoder
 import io.sebi.urldecoder.UrlDecoderImpl
+import io.sebi.utils.creationTime
 import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -57,6 +58,30 @@ fun setup(
     setupAutoscraper(mediaLibrary, downloadManager, networkManager, tagger, urlDecoder)
 
     downloadManager.restoreQueue()
+    setFileDates(metadataStorage)
+}
+
+fun setFileDates(metadataStorage: MetadataStorage) {
+    val logger = LoggerFactory.getLogger("File Dates")
+    runBlocking {
+        val totalUpdated = metadataStorage.listAllMetadata().count {
+            val creationDate = it.creationDate
+            if (creationDate == 0L) {
+                val file = it.file ?: return@count false
+                val unixEpoch = file.creationTime.toMillis() / 1000
+                metadataStorage.storeMetadata(
+                    it.id,
+                    it.copy(creationDate = unixEpoch)
+                )
+                logger.warn("Updated timestamp for ${it.id} on startup.")
+                return@count true
+            }
+            false
+        }
+        if (totalUpdated > 0) {
+            logger.warn("Updated $totalUpdated file timestamps.")
+        }
+    }
 }
 
 
