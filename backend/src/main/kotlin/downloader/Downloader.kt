@@ -6,7 +6,6 @@ import io.ktor.http.*
 import io.ktor.utils.io.*
 import io.sebi.network.NetworkManager
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import org.slf4j.LoggerFactory
@@ -20,7 +19,7 @@ class Downloader(val networkManager: NetworkManager) {
         url: String,
         file: File = File("temp.jpg"),
         absoluteProgressCallback: ((Pair<Long, Long?>) -> Unit),
-    ) = coroutineScope {
+    ) {
         val fileOutputChannel = FileOutputStream(file).channel
         networkManager.getRawClient(noReallyItsOkay = true).prepareGet(url).execute {
             val chan = it.body<ByteReadChannel>()
