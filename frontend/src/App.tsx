@@ -44,11 +44,11 @@ export default function App() {
                 {/* A <Switch> looks through its children <Route>s and
             renders the first one that matches the current URL. */}
                 <Switch>
-                    <Route path="/add">
-                        <Add/>
-                    </Route>
                     <Route path="/downloads">
-                        <Downloads/>
+                        <>
+                            <Add/>
+                            <Downloads/>
+                        </>
                     </Route>
                     <Route path="/mediaLibrary/:query">
                         <MediaLibrary/>

@@ -7,6 +7,7 @@ export function Add() {
     let submit = (e: FormEvent<HTMLFormElement>) => {
         console.log(urlField)
         addToDownloadList(urlField);
+        setUrlField("");
         e.preventDefault()
     }
 
