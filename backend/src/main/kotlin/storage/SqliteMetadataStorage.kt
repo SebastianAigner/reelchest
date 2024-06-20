@@ -125,7 +125,6 @@ class SqliteMetadataStorage : MetadataStorage {
             origin_url,
             Json.decodeFromString(tags),
             creation_date,
-            null,
             unique_id,
             hits.toInt(),
             marked_for_deletion.asSqlBoolean()
@@ -138,7 +137,6 @@ class SqliteMetadataStorage : MetadataStorage {
             origin_url,
             Json.decodeFromString(tags),
             creation_date,
-            null,
             unique_id,
             hits.toInt(),
             marked_for_deletion.asSqlBoolean()

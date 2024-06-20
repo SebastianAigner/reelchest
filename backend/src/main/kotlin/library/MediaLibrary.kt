@@ -45,7 +45,6 @@ class MediaLibrary(
             originUrl = "file://${Random.nextLong().toString().shaHashed()}}",
             tags = emptySet(),
             uid = uid,
-            originPage = null,
             creationDate = System.currentTimeMillis() / 1000,
         )
         entry.persist(metadataStorage)

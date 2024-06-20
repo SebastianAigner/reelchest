@@ -51,7 +51,6 @@ fun Route.mediaLibraryApi(
         val mediaLib =
             mediaLibrary
                 .entries
-                .map { it.withoutPage() }
                 .sortedByDescending {
                     it.creationDate
                 }
@@ -106,7 +105,7 @@ fun Route.mediaLibraryApi(
         post("/hash/{id}") {
             val id = call.parameters["id"]!!
             val ba = call.receive<ByteArray>()
-            val individual = metadataStorage.retrieveMetadata(id).just()?.withoutPage()
+            val individual = metadataStorage.retrieveMetadata(id).just()
                 ?: return@post call.respond("Not found")
             File(individual.file!!.parentFile, "dhashes.bin").writeBytes(ba)
             call.respond("OK")
@@ -116,7 +115,7 @@ fun Route.mediaLibraryApi(
         get {
             val id = call.parameters["id"]!!
             val auto = call.parameters["auto"] != null
-            val individual = metadataStorage.retrieveMetadata(id).just()?.withoutPage() ?: return@get call.respond(
+            val individual = metadataStorage.retrieveMetadata(id).just() ?: return@get call.respond(
                 HttpStatusCode.NotFound
             )
             call.respond(if (auto) individual.withAutoTags(tagger) else individual)
@@ -194,8 +193,6 @@ fun Route.mediaLibraryApi(
         }
         post {
             val newEntry = call.receive<MediaLibraryEntry>()
-            val existingEntry = mediaLibrary.findById(newEntry.id)!!
-            newEntry.originPage = existingEntry.originPage // todo: refactor
             newEntry.persist(metadataStorage)
             call.respond(HttpStatusCode.OK)
         }

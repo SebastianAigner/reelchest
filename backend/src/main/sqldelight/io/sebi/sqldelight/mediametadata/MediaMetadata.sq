@@ -18,7 +18,7 @@ createTombstoneForId:
 INSERT INTO media_library_tombstones (unique_id) VALUES (?);
 
 selectAll:
-SELECT * FROM media_library_entries;
+SELECT * FROM media_library_entries ORDER BY creation_date DESC;
 
 selectAllWithTags:
 SELECT *, CASE WHEN t.name ISNULL THEN json_array() ELSE json_group_array(t.name) END AS tags

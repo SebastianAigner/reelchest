@@ -20,7 +20,7 @@ class FileSystemMetadataStorage : MetadataStorage {
         val meta = File(dir, "$id.json")
         if (!meta.exists()) return MetadataResult.Tombstone
         val entry = json.decodeFromString<MediaLibraryEntry>(meta.readText())
-        return MetadataResult.Just(entry.copy(originPage = null, uid = entry.id))
+        return MetadataResult.Just(entry.copy(uid = entry.id))
     }
 
     override fun deleteMetadata(id: String) {

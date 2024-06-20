@@ -14,7 +14,6 @@ data class MediaLibraryEntry(
     val originUrl: String,
     var tags: Set<String> = emptySet(),
     val creationDate: Long,
-    var originPage: String? = null,
     val uid: String? = null,
     var hits: Int = 0,
     var markedForDeletion: Boolean = false,
@@ -22,10 +21,6 @@ data class MediaLibraryEntry(
     val id: String = uid ?: originUrl.shaHashed()
 
     val file: File? by lazy { File("./mediaLibrary/${id}/${id}.mp4") }
-
-    fun withoutPage(): MediaLibraryEntry {
-        return if (originPage != null) this.copy(originPage = null) else this
-    }
 
     fun withAutoTags(tagger: Tagger): AutoTaggedMediaLibraryEntry {
         return AutoTaggedMediaLibraryEntry(this, tagger.tag(this.name, this.tags).toList())
