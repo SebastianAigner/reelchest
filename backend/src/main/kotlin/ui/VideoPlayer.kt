@@ -7,6 +7,8 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.sebi.library.MediaLibrary
+import io.sebi.library.file
+import io.sebi.library.id
 
 fun Route.videoPlayer(mediaLibrary: MediaLibrary) {
     get("/api/file/{filename}") {
@@ -20,7 +22,7 @@ fun Route.videoPlayer(mediaLibrary: MediaLibrary) {
 
         call.respond(
             LocalFileContent(
-                entry.file!!,
+                entry.file,
                 contentType = type
             )
         )

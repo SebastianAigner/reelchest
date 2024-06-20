@@ -10,6 +10,7 @@ import io.sebi.downloader.DownloadTaskDTO
 import io.sebi.duplicatecalculator.DuplicateCalculator
 import io.sebi.library.MediaLibrary
 import io.sebi.library.MediaLibraryEntry
+import io.sebi.library.withAutoTags
 import io.sebi.logging.InMemoryAppender
 import io.sebi.network.NetworkManager
 import io.sebi.storage.MetadataStorage

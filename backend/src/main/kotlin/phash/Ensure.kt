@@ -2,6 +2,7 @@ package io.sebi.phash
 
 import io.sebi.ffmpeg.generateDHashes
 import io.sebi.library.MediaLibrary
+import io.sebi.library.file
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File

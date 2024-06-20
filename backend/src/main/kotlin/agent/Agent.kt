@@ -9,6 +9,7 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.sebi.api.DuplicatesDTO
 import io.sebi.library.MediaLibraryEntry
+import io.sebi.library.id
 import io.sebi.phash.DHash
 import io.sebi.phash.getMinimalDistance
 import kotlinx.coroutines.*

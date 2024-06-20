@@ -9,8 +9,7 @@ import io.ktor.server.routing.*
 import io.sebi.datastructures.shaHashed
 import io.sebi.downloader.DownloadManager
 import io.sebi.duplicatecalculator.DuplicateCalculator
-import io.sebi.library.MediaLibrary
-import io.sebi.library.MediaLibraryEntry
+import io.sebi.library.*
 import io.sebi.phash.DHash
 import io.sebi.phash.getMinimalDistance
 import io.sebi.sqldelight.mediametadata.Duplicates
@@ -88,7 +87,7 @@ fun Route.mediaLibraryApi(
     route("hashing") {
         get("unhashed") {
             val entry =
-                mediaLibrary.entries.first { it.getDHashes() == null && it !in hashingInProgress }
+                mediaLibrary.entries.first { it.getDHashesFromDisk() == null && it !in hashingInProgress }
             hashingInProgress += entry
             call.respond(entry)
         }
@@ -97,7 +96,7 @@ fun Route.mediaLibraryApi(
                 yield()
                 buildJsonObject {
                     put("id", it.id)
-                    put("hashes", Json.encodeToJsonElement(it.getDHashes()))
+                    put("hashes", Json.encodeToJsonElement(it.getDHashesFromDisk()))
                 }
             }
             call.respond(res)
@@ -123,7 +122,7 @@ fun Route.mediaLibraryApi(
         get("hash.{format}") {
             val id = call.parameters["id"]!!
             val format = call.parameters["format"]!!
-            val dhashes = metadataStorage.retrieveMetadata(id).just()?.getDHashes() ?: return@get call.respond(
+            val dhashes = metadataStorage.retrieveMetadata(id).just()?.getDHashesFromDisk() ?: return@get call.respond(
                 HttpStatusCode.NotFound
             )
             when (format) {
@@ -166,12 +165,12 @@ fun Route.mediaLibraryApi(
             val restLibrary = mediaLibrary.entries
                 .filterNot { it.id == id }
                 .mapNotNull { curr ->
-                    val dhash = curr.getDHashes() ?: return@mapNotNull null
+                    val dhash = curr.getDHashesFromDisk() ?: return@mapNotNull null
                     yield()
                     curr to dhash
                 }
             // we randomly pick a handful of hashes from our candidate.
-            val entryHashes = entry.getDHashes()
+            val entryHashes = entry.getDHashesFromDisk()
             val handful = entryHashes?.shuffled()?.take(100).orEmpty()
             // we find the global minimum: which of the other library entries has the lowest cumulative distance?
             val mostLikelyDuplicate = restLibrary.minByOrNull { (_, dhashes) ->

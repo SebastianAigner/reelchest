@@ -5,8 +5,8 @@ import io.sebi.phash.readULongs
 import io.sebi.storage.MetadataStorage
 import io.sebi.tagging.Tagger
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import java.io.File
+
 
 @Serializable
 data class MediaLibraryEntry(
@@ -17,51 +17,44 @@ data class MediaLibraryEntry(
     val uid: String? = null,
     var hits: Int = 0,
     var markedForDeletion: Boolean = false,
-) {
-    val id: String = uid ?: originUrl.shaHashed()
+)
 
-    val file: File? by lazy { File("./mediaLibrary/${id}/${id}.mp4") }
-
-    fun withAutoTags(tagger: Tagger): AutoTaggedMediaLibraryEntry {
-        return AutoTaggedMediaLibraryEntry(this, tagger.tag(this.name, this.tags).toList())
-    }
-
-    fun getThumbnails(): List<File>? {
-        return this.file
-            ?.parentFile
-            ?.listFiles()
-            ?.filter { it.name.startsWith("thumb") }
-    }
-
-    @OptIn(ExperimentalUnsignedTypes::class)
-    @Transient
-    private var _dhashes: ULongArray? = null
-
-    @OptIn(ExperimentalUnsignedTypes::class)
-    fun getDHashes(): ULongArray? {
-        if (_dhashes != null) return _dhashes
-
-        val hashFile = File(file!!.parent, "dhashes.bin")
-        if (!hashFile.exists()) return null
-        val dhashes = hashFile.readULongs()
-        return if (dhashes.count() > 10) {
-            _dhashes = dhashes
-            dhashes
-        } else {
-            hashFile.delete() // less than ten hashes means something went wrong. maybe some interruption et al
-            null
-        }
-    }
-
-    suspend fun addHitAndPersist(metadataStorage: MetadataStorage) {
-        hits++
-        persist(metadataStorage)
-    }
-
-    suspend fun persist(metadataStorage: MetadataStorage) {
-        metadataStorage.storeMetadata(id, this)
+@OptIn(ExperimentalUnsignedTypes::class)
+fun MediaLibraryEntry.getDHashesFromDisk(): ULongArray? {
+    val hashFile = File(file!!.parent, "dhashes.bin")
+    if (!hashFile.exists()) return null
+    val dhashes = hashFile.readULongs()
+    return if (dhashes.count() > 10) {
+        dhashes
+    } else {
+        hashFile.delete() // less than ten hashes means something went wrong. maybe some interruption et al
+        null
     }
 }
+
+suspend fun MediaLibraryEntry.addHitAndPersist(metadataStorage: MetadataStorage) {
+    hits++
+    persist(metadataStorage)
+}
+
+suspend fun MediaLibraryEntry.persist(metadataStorage: MetadataStorage) {
+    metadataStorage.storeMetadata(id, this)
+}
+
+fun MediaLibraryEntry.getThumbnails(): List<File>? {
+    return this.file
+        ?.parentFile
+        ?.listFiles()
+        ?.filter { it.name.startsWith("thumb") }
+}
+
+fun MediaLibraryEntry.withAutoTags(tagger: Tagger): AutoTaggedMediaLibraryEntry {
+    return AutoTaggedMediaLibraryEntry(this, tagger.tag(this.name, this.tags).toList())
+}
+
+val MediaLibraryEntry.id: String get() = uid ?: originUrl.shaHashed()
+val MediaLibraryEntry.file: File get() = File("./mediaLibrary/${id}/${id}.mp4")
+
 
 @Serializable
 data class AutoTaggedMediaLibraryEntry(val mediaLibraryEntry: MediaLibraryEntry, val autoTags: List<String>)

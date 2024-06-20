@@ -1,6 +1,7 @@
 package io.sebi.setup
 
 import io.sebi.library.MediaLibraryEntry
+import io.sebi.library.id
 import io.sebi.storage.MetadataStorage
 import io.sebi.storage.VideoStorage
 import org.slf4j.LoggerFactory

@@ -15,6 +15,8 @@ import io.sebi.downloader.IntoMediaLibraryDownloader
 import io.sebi.duplicatecalculator.DuplicateCalculator
 import io.sebi.feed.Feed
 import io.sebi.library.MediaLibrary
+import io.sebi.library.file
+import io.sebi.library.id
 import io.sebi.network.NetworkManager
 import io.sebi.phash.ensureDHashes
 import io.sebi.setup.cleanupDownloadDirectory
@@ -67,7 +69,7 @@ fun setFileDates(metadataStorage: MetadataStorage) {
         val totalUpdated = metadataStorage.listAllMetadata().count {
             val creationDate = it.creationDate
             if (creationDate == 0L) {
-                val file = it.file ?: return@count false
+                val file = it.file
                 val unixEpoch = file.creationTime.toMillis() / 1000
                 metadataStorage.storeMetadata(
                     it.id,

@@ -2,6 +2,8 @@ package io.sebi.duplicatecalculator
 
 import io.sebi.library.MediaLibrary
 import io.sebi.library.MediaLibraryEntry
+import io.sebi.library.getDHashesFromDisk
+import io.sebi.library.id
 import io.sebi.phash.DHash
 import io.sebi.phash.getMinimalDistance
 import kotlinx.coroutines.Dispatchers
@@ -45,7 +47,7 @@ class DuplicateCalculator(val mediaLibrary: MediaLibrary) {
     @OptIn(ExperimentalUnsignedTypes::class)
     val mediaLibWithHashes: Sequence<Pair<MediaLibraryEntry, ULongArray>> by lazy {
         mediaLibrary.entries.mapNotNull { curr ->
-            curr.getDHashes()
+            curr.getDHashesFromDisk()
                 ?.let { dhash ->
                     return@mapNotNull curr to dhash
                 }
@@ -66,7 +68,7 @@ class DuplicateCalculator(val mediaLibrary: MediaLibrary) {
     fun calculateDuplicateForEntry(entry: MediaLibraryEntry): EntryWithDistance? {
         val restLibrary = getRestLibrary(entry)
         // we randomly pick a handful of hashes from our candidate.
-        val entryHashes = entry.getDHashes() ?: return null
+        val entryHashes = entry.getDHashesFromDisk() ?: return null
         val handful = ULongArray(100) { entryHashes.random() }
         // we find the global minimum: which of the other library entries has the lowest cumulative distance?
 
