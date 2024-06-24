@@ -13,14 +13,7 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import cafe.adriel.voyager.core.model.StateScreenModel
@@ -30,8 +23,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.get
 import io.ktor.client.call.body
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
+import io.ktor.client.request.*
 import io.ktor.client.utils.buildHeaders
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
@@ -65,15 +57,22 @@ class SearchScreenModel() : StateScreenModel<SearchScreenModel.SearchScreenState
         val results: List<SearchResult>,
         val offset: Int = 0,
         val currentQuery: String = "",
+        val currentSearcher: String = "",
         val mostRecentSearch: String
     )
 
-    fun search(query: String) {
+    fun setSearcher(s: String) {
+        mutableState.update {
+            it.copy(currentSearcher = s)
+        }
+    }
+
+    fun search(query: String, searcher: String) {
         Settings().putString("recentsearch", query)
         mutableState.update { it.copy(currentQuery = query, mostRecentSearch = query) }
         screenModelScope.launch {
             val res =
-                globalHttpClient.post(Settings().get<String>("endpoint")!! + "/api/search/http://localhost:9091/search") {
+                globalHttpClient.post(Settings().get<String>("endpoint")!! + "/api/search/$searcher") {
                     buildHeaders {
                         contentType(ContentType.Application.Json)
                     }
@@ -111,7 +110,7 @@ class SearchScreenModel() : StateScreenModel<SearchScreenModel.SearchScreenState
         mutableState.update {
             it.copy(offset = it.offset + it.results.size)
         }
-        search(state.value.currentQuery)
+        search(state.value.currentQuery, state.value.currentSearcher)
     }
 }
 
@@ -123,6 +122,17 @@ class SearchScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
         var query by remember { mutableStateOf("") }
         val model = rememberScreenModel { SearchScreenModel() }
         val state by model.state.collectAsState()
+        val coroutineScope = rememberCoroutineScope()
+        val searchers = remember { mutableStateListOf<String>() }
+        val searcher = state.currentSearcher
+        LaunchedEffect(Unit) {
+            val res = globalHttpClient.get(Settings().get<String>("endpoint")!! + "/api/searchers").body<List<String>>()
+            searchers.clear()
+            searchers.addAll(res)
+            if (searcher == "") {
+                model.setSearcher(searchers.first())
+            }
+        }
 
         Column(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize().weight(1f)) {
@@ -133,26 +143,29 @@ class SearchScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
                     val focusManager = LocalFocusManager.current
                     Button(onClick = {
                         focusManager.clearFocus()
-                        model.search(query)
+                        model.search(query, searcher)
                     }) {
                         Text("Search!")
                     }
                     if (state.mostRecentSearch.isNotBlank()) {
                         Button(onClick = {
                             focusManager.clearFocus()
-                            model.search(state.mostRecentSearch)
+                            model.search(state.mostRecentSearch, searcher)
                         }) {
                             Text(state.mostRecentSearch)
+                        }
+                    }
+                    for (possibleSearcher in searchers) {
+                        Button(enabled = possibleSearcher != searcher, onClick = {
+                            model.setSearcher(possibleSearcher)
+                        }) {
+                            Text(possibleSearcher)
                         }
                     }
                     NextPageButton(model)
                 }
 
                 val lazyGridState = rememberLazyGridState()
-                //            LaunchedEffect(state.results) {
-                //                println("I'm scrolling up! ${state.results.take(2)}")
-                //                lazyGridState.scrollToItem(0)
-                //            }
                 LaunchedEffect(Unit) {
 
                     snapshotFlow { state.results }.drop(1).collect {

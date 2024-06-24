@@ -25,31 +25,31 @@ import org.jetbrains.compose.resources.painterResource
 @OptIn(ExperimentalResourceApi::class)
 @Composable
 fun Launcher(wm: WindowManager, icons: List<Pair<String, () -> XPWindow>>) {
-    val background = painterResource("bliss.png")
-
-    Image(
-        background,
-        null,
-        contentScale = ContentScale.FillBounds,
-        modifier = Modifier.fillMaxSize()
-    )
+//    val background = painterResource("bliss.png")
+//
+//    Image(
+//        background,
+//        null,
+//        contentScale = ContentScale.FillBounds,
+//        modifier = Modifier.fillMaxSize()
+//    )
 
     Box(Modifier.padding(20.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
             for ((title, windowCreator) in icons) {
-                LauncherIcon(text = title) {
-                    wm.spawnWindow(windowCreator())
-                }
+//                LauncherIcon(text = title) {
+//                    wm.spawnWindow(windowCreator())
+//                }
             }
         }
     }
 }
-
-@OptIn(ExperimentalResourceApi::class)
-@Composable
-fun LauncherIcon(image: Painter = painterResource("exe.jpeg"), text: String, onClick: () -> Unit) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Image(image, null, Modifier.size(45.dp).clickable { onClick() })
-        Text(text, color = Color.White)
-    }
-}
+//
+//@OptIn(ExperimentalResourceApi::class)
+//@Composable
+//fun LauncherIcon(image: Painter = painterResource("exe.jpeg"), text: String, onClick: () -> Unit) {
+//    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+//        Image(image, null, Modifier.size(45.dp).clickable { onClick() })
+//        Text(text, color = Color.White)
+//    }
+//}
