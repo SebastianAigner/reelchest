@@ -15,6 +15,7 @@ import io.sebi.downloader.IntoMediaLibraryDownloader
 import io.sebi.duplicatecalculator.DuplicateCalculator
 import io.sebi.feed.Feed
 import io.sebi.library.MediaLibrary
+import io.sebi.library.MediaLibraryEntry
 import io.sebi.library.file
 import io.sebi.library.id
 import io.sebi.network.NetworkManager
@@ -166,9 +167,11 @@ fun Routing.setupStaticPaths() {
 }
 
 private fun generateThumbnails(mediaLibrary: MediaLibrary) {
-    println("starting thumbnail generation")
-    mediaLibrary.entries.forEach {
-        it.file?.let {
+    val logger = LoggerFactory.getLogger("Thumbnail Generation")
+    logger.info("starting thumbnail generation")
+    mediaLibrary.entries.forEach { mediaLibraryEntry: MediaLibraryEntry ->
+        mediaLibraryEntry.file?.let {
+            logger.info("Generating thumbniail for ${mediaLibraryEntry.id}")
             if (it.parentFile?.list()?.none { it.startsWith("thumb") } == true) {
                 val proc = ProcessBuilder(
                     "ffmpeg",

@@ -4,6 +4,7 @@ import io.sebi.datastructures.shaHashed
 import io.sebi.phash.readULongs
 import io.sebi.storage.MetadataStorage
 import io.sebi.tagging.Tagger
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.io.File
 
@@ -17,7 +18,10 @@ data class MediaLibraryEntry(
     val uid: String? = null,
     var hits: Int = 0,
     var markedForDeletion: Boolean = false,
-)
+) {
+    @SerialName("id")
+    val unifiedId: String = this.id
+}
 
 @OptIn(ExperimentalUnsignedTypes::class)
 fun MediaLibraryEntry.getDHashesFromDisk(): ULongArray? {
