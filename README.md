@@ -25,3 +25,5 @@ Requests to endpoints under `/api/` are automatically proxied to the backend run
 - [x] reset download form after submission
 - [ ] Play around with some server-side chaos engineering
 - [x] Stop reading file timestamps from disk; use information stored in DB instead
+- [ ] Centralize ffmpeg handling,
+  including [process introspection](https://stackoverflow.com/questions/43978018/ffmpeg-get-machine-readable-output)
