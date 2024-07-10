@@ -15,6 +15,7 @@ plugins {
     id("app.cash.sqldelight")
     id("io.ktor.plugin")
     id("com.google.devtools.ksp")
+    id("org.jetbrains.kotlinx.rpc.plugin") version "0.2.1"
 }
 
 group = "io.sebi"
@@ -81,6 +82,18 @@ dependencies {
 
     ksp(libs.kotlin.inject.compiler.ksp)
     implementation(libs.kotlin.inject.runtime)
+
+    // client API
+    implementation("org.jetbrains.kotlinx:kotlinx-rpc-krpc-client")
+    // server API
+    implementation("org.jetbrains.kotlinx:kotlinx-rpc-krpc-server")
+    // serialization module. also, protobuf and cbor are available
+    implementation("org.jetbrains.kotlinx:kotlinx-rpc-krpc-serialization-json")
+
+    // transport implementation for Ktor
+    implementation("org.jetbrains.kotlinx:kotlinx-rpc-krpc-ktor-client")
+    implementation("org.jetbrains.kotlinx:kotlinx-rpc-krpc-ktor-server")
+
 }
 
 tasks.getByName<Copy>("processResources") {
