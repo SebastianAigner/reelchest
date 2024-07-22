@@ -7,9 +7,9 @@ import androidx.compose.ui.Modifier
 actual fun VideoPlayer(
     url: String,
     modifier: Modifier,
-    videoPlayerState: VideoPlayerState
+    videoPlayerState: VideoPlayerState,
 ) {
-    if (false) {
+    if (false) { // todo: provide a better selection mechanism
         VLCVideoPlayer(url, modifier, videoPlayerState)
     } else {
         AVKitPlayer(url, modifier, videoPlayerState)

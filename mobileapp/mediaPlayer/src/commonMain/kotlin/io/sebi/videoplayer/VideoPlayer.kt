@@ -54,5 +54,5 @@ fun rememberVideoPlayerState() = remember { VideoPlayerState() }
 expect fun VideoPlayer(
     url: String,
     modifier: Modifier,
-    videoPlayerState: VideoPlayerState
+    videoPlayerState: VideoPlayerState,
 )

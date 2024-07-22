@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.Button
 import androidx.compose.material.Checkbox
+import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -19,6 +20,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.coroutines.toSuspendSettings
 import com.russhwolf.settings.set
+import io.sebi.videoplayer.VideoPlayer
 
 class SettingsScreenModel() : StateScreenModel<SettingsScreenModel.SettingsScreenState>(
     SettingsScreenState(

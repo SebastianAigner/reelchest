@@ -111,9 +111,11 @@ fun VideoPageControls(videoPlayerState: VideoPlayerState) {
         }
         Button(
             onClick = {
-                if (videoPlayerState.isPlaying.value)
+                if (videoPlayerState.isPlaying.value) {
                     videoPlayerState.pause()
-                else videoPlayerState.play()
+                } else {
+                    videoPlayerState.play()
+                }
             }) {
             Text(
                 if (videoPlayerState.isPlaying.value) "Pause" else "Play"
