@@ -47,52 +47,55 @@ fun AVKitPlayer(
         }
     }
 
-    
-    val player = remember {
-        object : ControllableVideoPlayer {
-            override fun play() {
-                mediaPlayer.play()
-            }
-
-            override fun stop() {
-                mediaPlayer.pause()
-            }
-
-            override fun pause() {
-                mediaPlayer.rate = 0.0f
-                mediaPlayer.pause()
-            }
-
-            override fun jumpBackward(seconds: Int) {
-                val currSeconds =
-                    CMTimeGetSeconds(mediaPlayer.currentTime()) // TODO: This seems like unnecessary rounding
-                val newTime = (currSeconds - seconds).coerceAtLeast(0.0)
-                val cmTime = CMTimeMake(((newTime * 1000).toLong()), 1000)
-                mediaPlayer.seekToTime(cmTime)
-            }
-
-            override fun jumpForward(seconds: Int) {
-                val currSeconds =
-                    CMTimeGetSeconds(mediaPlayer.currentTime()) // TODO: This seems like unnecessary rounding
-                val newTime = currSeconds + seconds
-                val cmTime = CMTimeMake(((newTime * 1000).toLong()), 1000)
-                mediaPlayer.seekToTime(cmTime)
-            }
-
-            override fun setPosition(f: Float) {
-                // TODO: I assume this doesn't work for live content, and should probably be handled for streaming media accordingly.
-                // Further investigation required.
-                val dur = mediaPlayer.currentItem?.duration ?: return
-                val totalSeconds = CMTimeGetSeconds(dur)
-                val partialSeconds = totalSeconds * f
-                val cmTime = CMTimeMake((partialSeconds * 1000).toLong(), 1000)
-                mediaPlayer.seekToTime(cmTime)
-            }
-        }
-    }
+    val player = remember(mediaPlayer) { mediaPlayer.toControllableVideoPlayer() }
     videoPlayerState.controlledPlayer = player
 
     AvView(uiView, mediaPlayer, avPlayerLayer)
+}
+
+@OptIn(ExperimentalForeignApi::class)
+fun AVPlayer.toControllableVideoPlayer(): ControllableVideoPlayer {
+    val mediaPlayer = this
+    return object : ControllableVideoPlayer {
+        override fun play() {
+            mediaPlayer.play()
+        }
+
+        override fun stop() {
+            mediaPlayer.pause()
+        }
+
+        override fun pause() {
+            mediaPlayer.rate = 0.0f
+            mediaPlayer.pause()
+        }
+
+        override fun jumpBackward(seconds: Int) {
+            val currSeconds =
+                CMTimeGetSeconds(mediaPlayer.currentTime()) // TODO: This seems like unnecessary rounding
+            val newTime = (currSeconds - seconds).coerceAtLeast(0.0)
+            val cmTime = CMTimeMake(((newTime * 1000).toLong()), 1000)
+            mediaPlayer.seekToTime(cmTime)
+        }
+
+        override fun jumpForward(seconds: Int) {
+            val currSeconds =
+                CMTimeGetSeconds(mediaPlayer.currentTime()) // TODO: This seems like unnecessary rounding
+            val newTime = currSeconds + seconds
+            val cmTime = CMTimeMake(((newTime * 1000).toLong()), 1000)
+            mediaPlayer.seekToTime(cmTime)
+        }
+
+        override fun setPosition(f: Float) {
+            // TODO: I assume this doesn't work for live content, and should probably be handled for streaming media accordingly.
+            // Further investigation required.
+            val dur = mediaPlayer.currentItem?.duration ?: return
+            val totalSeconds = CMTimeGetSeconds(dur)
+            val partialSeconds = totalSeconds * f
+            val cmTime = CMTimeMake((partialSeconds * 1000).toLong(), 1000)
+            mediaPlayer.seekToTime(cmTime)
+        }
+    }
 }
 
 @OptIn(ExperimentalForeignApi::class)
@@ -105,7 +108,7 @@ private fun AvView(
     Box(Modifier.fillMaxSize()) {
         var inflated by remember { mutableStateOf(false) }
         LaunchedEffect(inflated) {
-            if(inflated) {
+            if (inflated) {
                 mediaPlayer.play()
             }
         }
