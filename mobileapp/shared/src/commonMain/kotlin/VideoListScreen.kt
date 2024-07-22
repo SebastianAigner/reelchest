@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -87,8 +88,8 @@ class VideoListScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
     override fun Content() {
         val screenModel = rememberScreenModel { VideoListScreenModel() }
         val state by screenModel.state.collectAsState()
-        var searchQuery by remember { mutableStateOf("") }
-        val sorting = remember { mutableStateOf(screenModel.getAvailableSortingNames().first()) }
+        var searchQuery by rememberSaveable { mutableStateOf("") }
+        val sorting = rememberSaveable { mutableStateOf(screenModel.getAvailableSortingNames().first()) }
         val scope = rememberCoroutineScope()
         DisposableEffect(searchQuery) {
             val job = scope.launch {
