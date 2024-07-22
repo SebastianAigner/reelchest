@@ -11,7 +11,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 actual fun VideoPlayer(
     url: String,
     modifier: Modifier,
-    videoPlayerState: VideoPlayerState
+    videoPlayerState: VideoPlayerState,
+    implementationMapping: ImplementationMapping
 ) {
     // Adds view to Compose
 

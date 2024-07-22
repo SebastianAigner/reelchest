@@ -55,4 +55,5 @@ expect fun VideoPlayer(
     url: String,
     modifier: Modifier,
     videoPlayerState: VideoPlayerState,
+    implementationMapping: ImplementationMapping = ImplementationMapping.DefaultMapping
 )

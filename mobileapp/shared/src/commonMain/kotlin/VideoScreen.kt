@@ -25,9 +25,8 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import io.sebi.videoplayer.VideoPlayer
-import io.sebi.videoplayer.VideoPlayerState
-import io.sebi.videoplayer.rememberVideoPlayerState
+import com.russhwolf.settings.Settings
+import io.sebi.videoplayer.*
 import kotlinx.coroutines.delay
 
 class VideoScreen(
@@ -38,6 +37,7 @@ class VideoScreen(
     @Composable
     override fun Content() {
         val videoPlayerState = rememberVideoPlayerState()
+        var isVlc by remember { mutableStateOf(Settings().getBoolean("vlc", false)) }
         var currentTime by remember { mutableStateOf(0) }
         var shouldShowUI by remember { mutableStateOf(true) }
         LaunchedEffect(Unit) {
@@ -49,10 +49,16 @@ class VideoScreen(
                 .background(Color.Black), // TODO: This "Black" is Placebo: It seems the Color doesn't actually punch through when not set in the AVPlayer. Report this.
             contentAlignment = Alignment.BottomStart
         ) {
+            val mapping = remember(isVlc) { ImplementationMapping(
+                ImplementationMapping.DefaultMapping.toMutableMap().apply {
+                    this[Ios] = if(isVlc) VLC else AVKit
+                }
+            ) }
             VideoPlayer(
                 url = videoUrl,
-                Modifier.fillMaxSize().background(Color.Black),
-                videoPlayerState
+                modifier = Modifier.fillMaxSize().background(Color.Black),
+                videoPlayerState = videoPlayerState,
+                implementationMapping = mapping
             )
             var pos by remember { mutableStateOf<Offset>(Offset(0.0f, 0.0f)) }
             Box(Modifier.fillMaxSize().pointerInput(Unit) {
