@@ -27,3 +27,4 @@ Requests to endpoints under `/api/` are automatically proxied to the backend run
 - [x] Stop reading file timestamps from disk; use information stored in DB instead
 - [ ] Centralize ffmpeg handling,
   including [process introspection](https://stackoverflow.com/questions/43978018/ffmpeg-get-machine-readable-output)
+- [ ] Concurrency issue: "Add to queue" may accidentally allow duplicate URLs to be added if done so in rapid succession
