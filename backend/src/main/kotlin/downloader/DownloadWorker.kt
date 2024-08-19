@@ -8,6 +8,7 @@ import kotlinx.coroutines.CancellationException
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.IOException
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.random.Random
 
 class DownloadWorker(
@@ -20,22 +21,28 @@ class DownloadWorker(
     val logger = LoggerFactory.getLogger("Download Worker $id")
     var currentTask: DownloadTask? = null // currentTask is for introspecting the worker.
         private set
+    val status = AtomicReference<String>("created")
 
     suspend fun run() {
         while (true) {
+            status.set("awaiting")
             logger.info("Awaiting tasks")
             try {
-                provideDownload().let {
-                    currentTask = it
-                    downloadSingleItem(it)
-                }
+                status.set("providing download")
+                val download = provideDownload()
+                currentTask = download
+                status.set("downloading single item")
+                downloadSingleItem(download)
+                status.set("downloaded single item")
             } catch (jc: CancellationException) {
-                logger.info("Cancellation! $jc ${jc.localizedMessage}")
+                status.set("cancelled")
+                logger.error("Cancellation! $jc ${jc.localizedMessage}")
                 currentTask?.let {
                     onError(it, jc)
                 }
-                return
+                throw jc
             } catch (e: Exception) {
+                status.set("exception")
                 logger.error("Firing onError and hoping for the best. Reason:")
                 logger.error(e)
                 currentTask?.let {
@@ -61,11 +68,16 @@ class DownloadWorker(
                         fragment,
                         targetFile,
                         absoluteProgressCallback = {
-                            val progress = it.first.toDouble() / it.second!!
+                            val progress = it.first.toDouble() / (it.second ?: Long.MAX_VALUE)
                             myTask.progress = if (urls.size > 1) idx.toDouble() / urls.size else progress
                         }
                     )
                     results.add(targetFile)
+                } catch (nfe: HttpNotFoundException) {
+                    logger.error("404: Couldn't find ${urls[idx]}")
+                    onError(myTask, nfe)
+                    currentTask = null
+                    break
                 } catch (c: ClientRequestException) {
                     // probably a 403
                     logger.error(c)

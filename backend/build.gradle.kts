@@ -11,7 +11,7 @@ plugins {
     application
     kotlin("jvm")
     kotlin("plugin.serialization")
-    kotlin("kapt")
+//    kotlin("kapt")
     id("app.cash.sqldelight")
     id("io.ktor.plugin")
     id("com.google.devtools.ksp")
@@ -72,7 +72,7 @@ dependencies {
     testImplementation(libs.ktor.server.tests)
     compileOnly(libs.jtsgen.annotations)
     compileOnly(libs.jtsgen.processor)
-    kapt(libs.jtsgen.processor)
+//    kapt(libs.jtsgen.processor)
     implementation(libs.minio)
     implementation(libs.kotlin.process)
     implementation(libs.kotlin.retry)
@@ -94,6 +94,10 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-rpc-krpc-ktor-client")
     implementation("org.jetbrains.kotlinx:kotlinx-rpc-krpc-ktor-server")
 
+}
+
+tasks.getByName("compileKotlin") {
+    dependsOn(":frontend:build")
 }
 
 tasks.getByName<Copy>("processResources") {
@@ -132,12 +136,12 @@ sqldelight {
     }
 }
 
-kapt {
-    correctErrorTypes = true
-    arguments {
-        arg("jtsgenModuleVersion", version)
-    }
-}
+//kapt {
+//    correctErrorTypes = true
+//    arguments {
+//        arg("jtsgenModuleVersion", version)
+//    }
+//}
 
 kotlin {
     jvmToolchain(11)

@@ -7,6 +7,7 @@ import io.sebi.sqldelight.mediametadata.Duplicates
 import io.sebi.sqldelight.mediametadata.SelectAllWithTags
 import io.sebi.sqldelight.mediametadata.SelectById
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -77,9 +78,12 @@ class SqliteMetadataStorage : MetadataStorage {
                     marked_for_deletion = if (metadata.markedForDeletion) 1 else 0,
                     creation_date = metadata.creationDate
                 )
-                metadata.tags.forEach {
-                    database.tagsQueries.addTag(it) // TODO: This does a lot of `ON CONFLICT DO NOTHING`. Maybe there's a nicer way?
-                    database.tagsQueries.addTagForLibraryEntryByName(id, it)
+                // https://slack-chats.kotlinlang.org/t/497361/with-sqldelight-is-there-any-way-for-a-bulk-insert-beyond-a-
+                database.tagsQueries.transaction {
+                    metadata.tags.forEach {
+                        database.tagsQueries.addTag(it) // TODO: This does a lot of `ON CONFLICT DO NOTHING`. Maybe there's a nicer way?
+                        database.tagsQueries.addTagForLibraryEntryByName(id, it)
+                    }
                 }
             }
         }
@@ -125,6 +129,7 @@ class SqliteMetadataStorage : MetadataStorage {
             }
             val (entries, entriesTime) = measureTimedValue {
                 mediaMetadata.map {
+                    ensureActive()
                     it.toMediaLibraryEntry()
                 }
             }

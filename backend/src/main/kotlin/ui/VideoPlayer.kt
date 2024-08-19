@@ -13,7 +13,7 @@ import io.sebi.library.id
 fun Route.videoPlayer(mediaLibrary: MediaLibrary) {
     get("/api/file/{filename}") {
         val filename = call.parameters["filename"]!!
-        val entry = mediaLibrary.entries.first { it.name == filename }
+        val entry = mediaLibrary.getEntries().first { it.name == filename }
         call.response.header(
             HttpHeaders.ContentDisposition,
             ContentDisposition.Attachment.withParameter(ContentDisposition.Parameters.FileName, entry.name).toString()
@@ -34,7 +34,7 @@ fun Route.videoPlayer(mediaLibrary: MediaLibrary) {
         val id = rawId.removeSuffix(".mp4")
         val type = ContentType.fromFileExtension("mp4").first()
 
-        val entry = mediaLibrary.entries.first { it.id == id }
+        val entry = mediaLibrary.getEntries().first { it.id == id }
         if(shouldDownloadFile) {
             call.response.header(
                 HttpHeaders.ContentDisposition,

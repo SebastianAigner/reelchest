@@ -132,6 +132,10 @@ class DownloadManagerImpl(
         logger.info("Re-enqueued ${list.size} tasks.")
     }
 
+    override fun workerStatus(): List<String> {
+        return workers.map { it.status.get() }
+    }
+
     private val workers = mutableListOf<DownloadWorker>()
     private fun CoroutineScope.startWorkers(n: Int = 1) {
         repeat(n) {

@@ -6,10 +6,7 @@ import io.sebi.library.getDHashesFromDisk
 import io.sebi.library.id
 import io.sebi.phash.DHash
 import io.sebi.phash.getMinimalDistance
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
 import kotlin.time.ExperimentalTime
 
@@ -29,7 +26,7 @@ class DuplicateCalculator(val mediaLibrary: MediaLibrary) {
 
         val calculated =
             coroutineScope {
-                mediaLibrary.entries.toList().map {
+                mediaLibrary.getEntries().toList().map {
                     async(dispatcher) {
                         val duplicateForEntry = calculateDuplicateForEntry(it)
                         it to (duplicateForEntry ?: return@async null)
@@ -46,13 +43,15 @@ class DuplicateCalculator(val mediaLibrary: MediaLibrary) {
 
     @OptIn(ExperimentalUnsignedTypes::class)
     val mediaLibWithHashes: Sequence<Pair<MediaLibraryEntry, ULongArray>> by lazy {
-        mediaLibrary.entries.mapNotNull { curr ->
-            curr.getDHashesFromDisk()
-                ?.let { dhash ->
-                    return@mapNotNull curr to dhash
-                }
-            null
-        }.asSequence()
+        runBlocking {
+            mediaLibrary.getEntries().mapNotNull { curr ->
+                curr.getDHashesFromDisk()
+                    ?.let { dhash ->
+                        return@mapNotNull curr to dhash
+                    }
+                null
+            }.asSequence()
+        }
     }
 
     @OptIn(ExperimentalUnsignedTypes::class)

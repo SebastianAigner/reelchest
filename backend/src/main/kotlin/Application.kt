@@ -32,9 +32,11 @@ import io.sebi.urldecoder.UrlDecoder
 import io.sebi.urldecoder.UrlDecoderImpl
 import io.sebi.utils.creationTime
 import kotlinx.coroutines.*
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 
 fun main(args: Array<String>) {
@@ -123,13 +125,13 @@ fun Application.module() {
         setup(metadataStorage, mediaLibrary, downloadManager, networkManager, tagger, urlDecoder)
     }
 
-    launch(Dispatchers.Default) {
-        delay(50.minutes)
-        duplicateCalculator.calculateDuplicates()
-    }
+//    launch(Dispatchers.Default) {
+//        delay(50.minutes)
+//        duplicateCalculator.calculateDuplicates()
+//    }
 
     launch(Dispatchers.IO) {
-        delay(0.minutes)
+        delay(3.hours)
         generateThumbnails(mediaLibrary)
     }
 
@@ -166,31 +168,35 @@ fun Routing.setupStaticPaths() {
     staticResources("/", "frontend")
 }
 
-private fun generateThumbnails(mediaLibrary: MediaLibrary) {
+private suspend fun generateThumbnails(mediaLibrary: MediaLibrary) {
     val logger = LoggerFactory.getLogger("Thumbnail Generation")
     logger.info("starting thumbnail generation")
-    mediaLibrary.entries.forEach { mediaLibraryEntry: MediaLibraryEntry ->
-        mediaLibraryEntry.file?.let {
-            logger.info("Generating thumbniail for ${mediaLibraryEntry.id}")
-            if (it.parentFile?.list()?.none { it.startsWith("thumb") } == true) {
-                val proc = ProcessBuilder(
-                    "ffmpeg",
-                    "-y",
-                    "-i",
-                    it.name,
-                    "-q:v",
-                    "5",
-                    "-vf",
-                    "fps=1/60",
-                    "thumb%04d.jpg",
-                ).directory(it.parentFile)
-                    .inheritIO()
-                    .start()
+    mediaLibrary.getEntries().forEach { mediaLibraryEntry: MediaLibraryEntry ->
+        createThumbnail(mediaLibraryEntry, logger)
+    }
+}
 
-                proc.waitFor(60, TimeUnit.SECONDS)
-                proc.destroy()
-                proc.waitFor()
-            }
+private fun createThumbnail(mediaLibraryEntry: MediaLibraryEntry, logger: Logger) {
+    mediaLibraryEntry.file?.let {
+        logger.info("Generating thumbnail for ${mediaLibraryEntry.id}")
+        if (it.parentFile?.list()?.none { it.startsWith("thumb") } == true) {
+            val proc = ProcessBuilder(
+                "ffmpeg",
+                "-y",
+                "-i",
+                it.name,
+                "-q:v",
+                "5",
+                "-vf",
+                "fps=1/10",
+                "thumb%04d.jpg",
+            ).directory(it.parentFile)
+                .inheritIO()
+                .start()
+
+            proc.waitFor(60, TimeUnit.SECONDS)
+            proc.destroy()
+            proc.waitFor()
         }
     }
 }

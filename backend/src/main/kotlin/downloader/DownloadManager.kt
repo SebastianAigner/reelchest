@@ -7,6 +7,7 @@ interface DownloadManager {
     fun enqueueTask(d: DownloadTask, skipDuplicatesCheck: Boolean = false)
     fun persistQueue()
     fun restoreQueue()
+    fun workerStatus(): List<String>
     val finishedDownloads: Iterable<CompletedDownloadTask>
     val problematicDownloads: MutableList<ProblematicTask>
     val queuedDownloads: Iterable<DownloadTask>

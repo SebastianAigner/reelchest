@@ -16,7 +16,7 @@ tasks.register<Exec>("installReactFrontendDeps") {
 
 tasks.register<Copy>("build") {
     dependsOn("buildReactFrontend")
-    dependsOn(":backend:kaptKotlin")
+//    dependsOn(":backend:kaptKotlin")
     destinationDir = rootDir
     from("../backend/build/generated/source/kapt/main/") {
         into("frontend/src/generated")

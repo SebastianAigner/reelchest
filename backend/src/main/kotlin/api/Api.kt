@@ -12,6 +12,7 @@ import io.sebi.library.MediaLibrary
 import io.sebi.library.MediaLibraryEntry
 import io.sebi.library.withAutoTags
 import io.sebi.logging.InMemoryAppender
+import io.sebi.logging.getSerializableRepresentation
 import io.sebi.network.NetworkManager
 import io.sebi.storage.MetadataStorage
 import io.sebi.tagging.Tagger
@@ -40,6 +41,11 @@ fun Route.api(
         get("log") {
             call.respond(InMemoryAppender.getSerializableRepresentation())
         }
+        get("status") {
+            call.respond(
+                downloadManager.workerStatus()
+            )
+        }
         route("mediaLibrary") {
             mediaLibraryApi(mediaLibrary, duplicateCalculator, tagger, downloadManager, metadataStorage)
         }
@@ -51,7 +57,7 @@ fun Route.api(
             get("/popular") {
                 val popular =
                     mediaLibrary
-                        .entries
+                        .getEntries()
                         .flatMap { it.withAutoTags(tagger).autoTags }
                         .groupingBy { it }
                         .eachCount()

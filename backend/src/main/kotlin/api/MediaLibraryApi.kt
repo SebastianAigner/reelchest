@@ -49,7 +49,7 @@ fun Route.mediaLibraryApi(
     get {
         val mediaLib =
             mediaLibrary
-                .entries
+                .getEntries()
                 .sortedByDescending {
                     it.creationDate
                 }
@@ -87,12 +87,12 @@ fun Route.mediaLibraryApi(
     route("hashing") {
         get("unhashed") {
             val entry =
-                mediaLibrary.entries.first { it.getDHashesFromDisk() == null && it !in hashingInProgress }
+                mediaLibrary.getEntries().first { it.getDHashesFromDisk() == null && it !in hashingInProgress }
             hashingInProgress += entry
             call.respond(entry)
         }
         get("/all") {
-            val res = mediaLibrary.entries.map {
+            val res = mediaLibrary.getEntries().map {
                 yield()
                 buildJsonObject {
                     put("id", it.id)
@@ -162,7 +162,7 @@ fun Route.mediaLibraryApi(
             )
             val id = call.parameters["id"]!!
             val entry = mediaLibrary.findById(id) ?: return@get call.respond(HttpStatusCode.NotFound)
-            val restLibrary = mediaLibrary.entries
+            val restLibrary = mediaLibrary.getEntries()
                 .filterNot { it.id == id }
                 .mapNotNull { curr ->
                     val dhash = curr.getDHashesFromDisk() ?: return@mapNotNull null

@@ -10,7 +10,6 @@ import io.sebi.urldecoder.UrlDecoder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -25,7 +24,7 @@ class MediaLibrary(
     private val videoStorage: VideoStorage,
     private val metadataStorage: MetadataStorage
 ) {
-    val entries get() = runBlocking { metadataStorage.listAllMetadata() }
+    suspend fun getEntries() = metadataStorage.listAllMetadata()
     val logger = LoggerFactory.getLogger("Media Library")
 
     suspend fun findById(id: String): MediaLibraryEntry? {
@@ -74,7 +73,7 @@ class MediaLibrary(
         c.targetFile.delete()
         entry.file?.let {
             logger.info("Starting thumbnail generation.")
-            generateThumbnails(it)
+//            generateThumbnails(it)
         }
     }
 }

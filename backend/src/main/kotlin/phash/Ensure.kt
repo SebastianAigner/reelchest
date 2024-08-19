@@ -9,7 +9,7 @@ import java.io.File
 
 suspend fun ensureDHashes(mediaLibrary: MediaLibrary) {
     val entriesWithFiles = mediaLibrary
-        .entries
+        .getEntries()
         .asSequence()
         .mapNotNull { it.file }
 
