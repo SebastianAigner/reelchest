@@ -13,7 +13,16 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import cafe.adriel.voyager.core.model.StateScreenModel
@@ -23,7 +32,9 @@ import cafe.adriel.voyager.core.screen.Screen
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.get
 import io.ktor.client.call.body
-import io.ktor.client.request.*
+import io.ktor.client.request.get
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.client.utils.buildHeaders
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
@@ -179,29 +190,31 @@ class SearchScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
                     state = lazyGridState
                 ) {
                     items(state.results) {
-                        GenericImageCell(
-                            it.thumbUrl,
-                            it.title,
-                            Modifier.combinedClickable(
-                                onClick = {
-
-                                    navigator.goNewWindow(
-                                        VideoScreen(
-                                            model.loadVideoFor(it), navigator
-                                        ) {
-                                            Button(onClick = {
-                                                model.queueDownloadFor(it)
-                                            }) {
-                                                Text("Download!")
+                        Column {
+                            GenericImageCell(
+                                it.thumbUrl,
+                                it.title,
+                                Modifier.combinedClickable(
+                                    onClick = {
+                                        navigator.goNewWindow(
+                                            VideoScreen(
+                                                model.loadVideoFor(it), navigator
+                                            ) {
+                                                Button(onClick = {
+                                                    model.queueDownloadFor(it)
+                                                }) {
+                                                    Text("Download!")
+                                                }
                                             }
-                                        }
-                                    )
-                                },
-                                onLongClick = {
-                                    navigator.goNewWindow(WebScreen(it.url))
-                                }
+                                        )
+                                    },
+                                    onLongClick = {
+                                        navigator.goNewWindow(WebScreen(it.url))
+                                    }
+                                )
                             )
-                        )
+                            DownloadButton(it.url)
+                        }
                     }
                     if (state.results.isNotEmpty()) {
                         item(span = { GridItemSpan(3) }) {
@@ -213,6 +226,18 @@ class SearchScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
                 }
             }
             Button(modifier = Modifier.wrapContentSize(), onClick = { navigator.goBack() }) { Text("Back") }
+        }
+    }
+
+    private @Composable
+    fun DownloadButton(url: String) {
+        Button(
+            onClick = {
+                // TODO: wire up download
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Download")
         }
     }
 

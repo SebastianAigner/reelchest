@@ -1,5 +1,4 @@
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,8 +32,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.get
 import io.kamel.image.KamelImage
@@ -126,23 +123,24 @@ class VideoListScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
                     columns = GridCells.Fixed(4), Modifier.fillMaxSize()
                 ) {
                     items(state.filteredVideos, key = { it.id }) {
-                        MediaLibraryEntryCell(it, Modifier.combinedClickable(
-                            onClick = {
-                                navigateTo(
-                                    VideoScreen(
-                                        Settings().get<String>("endpoint")!! + "/api/video/${it.id}",
-                                        navigator
+                        MediaLibraryEntryCell(
+                            it, Modifier.combinedClickable(
+                                onClick = {
+                                    navigateTo(
+                                        VideoScreen(
+                                            Settings().get<String>("endpoint")!! + "/api/video/${it.id}",
+                                            navigator
+                                        )
                                     )
-                                )
-                            },
-                            onLongClick = {
-                                navigateTo(
-                                    WebScreen(
-                                        Settings().get<String>("endpoint")!! + "/#/movie/${it.id}"
+                                },
+                                onLongClick = {
+                                    navigateTo(
+                                        WebScreen(
+                                            Settings().get<String>("endpoint")!! + "/#/movie/${it.id}"
+                                        )
                                     )
-                                )
-                            }
-                        ))
+                                }
+                            ))
                     }
                 }
             }

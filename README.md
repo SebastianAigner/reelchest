@@ -20,6 +20,7 @@ Requests to endpoints under `/api/` are automatically proxied to the backend run
 
 ## TODO
 
+- [ ] Improve ffmpeg thumbnail generation to use seeking instead of fps filter
 - [ ] Allow mobile clients to store media offline (e.g. to watch during flights)
 - [x] merge add and download pages
 - [x] reset download form after submission
