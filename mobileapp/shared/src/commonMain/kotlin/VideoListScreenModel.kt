@@ -35,10 +35,11 @@ class VideoListScreenModel() : StateScreenModel<VideoListScreenModel.VideoListSt
         val loadingState: String = ""
     ) {
         val filteredVideos: List<MediaLibraryEntry> =
-            videos.filter { it.name.contains(query, ignoreCase = true) }.run { sorting.sort(this) }
+            videos
+                .filter { it.name.contains(query, ignoreCase = true) }
+                .run { sorting.sort(this) }
     }
 
-    val mySettings = Settings()
     val myStore: Store<Any, List<MediaLibraryEntry>> = StoreBuilder.from(
         Fetcher.of { fetchMediaLibraryEntries() },
         SourceOfTruth.Companion.of(

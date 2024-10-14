@@ -1,5 +1,4 @@
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -20,11 +19,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import com.russhwolf.settings.Settings
 import io.sebi.videoplayer.*
 import kotlinx.coroutines.delay
@@ -49,11 +45,13 @@ class VideoScreen(
                 .background(Color.Black), // TODO: This "Black" is Placebo: It seems the Color doesn't actually punch through when not set in the AVPlayer. Report this.
             contentAlignment = Alignment.BottomStart
         ) {
-            val mapping = remember(isVlc) { ImplementationMapping(
-                ImplementationMapping.DefaultMapping.toMutableMap().apply {
-                    this[Ios] = if(isVlc) VLC else AVKit
-                }
-            ) }
+            val mapping = remember(isVlc) {
+                ImplementationMapping(
+                    ImplementationMapping.DefaultMapping.toMutableMap().apply {
+                        this[Ios] = if (isVlc) VLC else AVKit
+                    }
+                )
+            }
             VideoPlayer(
                 url = videoUrl,
                 modifier = Modifier.fillMaxSize().background(Color.Black),
