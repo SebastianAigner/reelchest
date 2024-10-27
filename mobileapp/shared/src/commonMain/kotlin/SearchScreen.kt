@@ -176,7 +176,7 @@ class SearchScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
                                 Modifier.combinedClickable(
                                     onClick = {
                                         navigator.goNewWindow(
-                                            VideoScreen(
+                                            VideoPlayerScreen(
                                                 model.loadVideoFor(it), navigator, cta = {
                                                     Button(onClick = {
                                                         model.queueDownloadFor(it)

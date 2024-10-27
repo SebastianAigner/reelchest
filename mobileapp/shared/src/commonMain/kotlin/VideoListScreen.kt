@@ -110,7 +110,7 @@ class VideoListScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
                             it, Modifier.combinedClickable(
                                 onClick = {
                                     navigateTo(
-                                        VideoScreen(
+                                        VideoPlayerScreen(
                                             Settings().get<String>("endpoint")!! + "/api/video/${it.id}",
                                             navigator,
                                             videoId = it.id
@@ -149,7 +149,7 @@ class VideoListScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
                     }
                     val demoUrl =
                         "https://v.redd.it/wvv8jgjksuo71/HLSPlaylist.m3u8?a=1698935975%2CNTQ0ZDUzZWU4NWZjZDdkN2RkOTdiZDhiZGEzMjVmMWNmYTVlOThhMDU2ZjRmMGUzYmI0ZGVlOGMyNDc4MmFkNg%3D%3D&amp;v=1&amp;f=sd"
-                    Button(onClick = { navigateTo(VideoScreen(demoUrl, navigator)) }) {
+                    Button(onClick = { navigateTo(VideoPlayerScreen(demoUrl, navigator)) }) {
                         Text("M3U8 Test")
                     }
                     Button(onClick = { navigateTo(QueueScreen()) }) {

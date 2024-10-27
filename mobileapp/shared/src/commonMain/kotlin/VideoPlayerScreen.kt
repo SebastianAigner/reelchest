@@ -17,7 +17,7 @@ import com.russhwolf.settings.Settings
 import io.sebi.videoplayer.*
 import kotlinx.coroutines.delay
 
-class VideoScreen(
+class VideoPlayerScreen(
     val videoUrl: String,
     val navigator: WindowCapableNavigator<Screen>,
     val cta: @Composable (() -> Unit)? = null,
