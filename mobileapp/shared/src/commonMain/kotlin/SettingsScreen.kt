@@ -12,6 +12,7 @@ import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.russhwolf.settings.ExperimentalSettingsApi
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.coroutines.toSuspendSettings
 import com.russhwolf.settings.set
@@ -25,6 +26,7 @@ class SettingsScreenModel() : StateScreenModel<SettingsScreenModel.SettingsScree
         val foo: String
     )
 
+    @OptIn(ExperimentalSettingsApi::class)
     val settings = Settings().toSuspendSettings()
 
 }

@@ -11,6 +11,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import io.sebi.webview.WebKitBrowserView
 import io.sebi.windowmanager.ExampleXPWindow
 import io.sebi.windowmanager.Launcher
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -37,6 +38,7 @@ class WindowManaScreen() : Screen {
 
     val wm = WindowManager()
 
+    @OptIn(DelicateCoroutinesApi::class)
     @Composable
     override fun Content() {
         val currentNavigator = LocalNavigator.currentOrThrow
@@ -57,7 +59,7 @@ class WindowManaScreen() : Screen {
                 },
                 "Videos" to {
                     val vwindow = VideoListScreen(navigator = wm.toMyNavigator()).toXpWindow(wm)
-                    GlobalScope.launch {
+                    GlobalScope.launch { // TODO: No more globalscope, please :)
                         delay(500)
                         wm.setFullScreen(vwindow)
                     }
