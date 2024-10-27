@@ -18,7 +18,17 @@ import platform.UIKit.UIView
 import platform.darwin.NSObject
 
 @OptIn(ExperimentalForeignApi::class)
-class MediaPlayerDelegate : NSObject(), VLCMediaPlayerDelegateProtocol {
+class MediaPlayerDelegate() : NSObject(), VLCMediaPlayerDelegateProtocol {
+    override fun mediaPlayerTitleChanged(aNotification: NSNotification?) {
+
+    }
+
+    override fun mediaPlayerStateChanged(aNotification: NSNotification?) {
+        val obj = aNotification!!.`object`() as VLCMediaPlayer
+        println("New state ${obj.state()}")
+
+    }
+
     override fun mediaPlayerTimeChanged(aNotification: NSNotification?) {
         println(aNotification)
     }
