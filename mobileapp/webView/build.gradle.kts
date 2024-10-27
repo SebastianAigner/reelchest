@@ -3,6 +3,7 @@ plugins {
     kotlin("native.cocoapods")
     alias(libs.plugins.androidLib)
     alias(libs.plugins.jetbrainsCompose)
+    alias(libs.plugins.compose.compiler)
 }
 
 kotlin {

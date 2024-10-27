@@ -2,16 +2,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.Button
-import androidx.compose.material.Slider
-import androidx.compose.material.SliderDefaults
-import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -28,7 +20,8 @@ import kotlinx.coroutines.delay
 class VideoScreen(
     val videoUrl: String,
     val navigator: WindowCapableNavigator<Screen>,
-    val cta: @Composable (() -> Unit)? = null
+    val cta: @Composable (() -> Unit)? = null,
+    val videoId: String? = null,
 ) : Screen {
     @Composable
     override fun Content() {
@@ -36,6 +29,14 @@ class VideoScreen(
         var isVlc by remember { mutableStateOf(Settings().getBoolean("vlc", false)) }
         var currentTime by remember { mutableStateOf(0) }
         var shouldShowUI by remember { mutableStateOf(true) }
+        var shouldShowSnippetForm: Boolean by remember { mutableStateOf(false) }
+        val snippetState = remember { SnippetState(mutableStateOf(0.0f), mutableStateOf(0.0f)) }
+
+        fun saveSnippet(beginning: Double, end: Double) {
+            val id = videoId ?: error("Trying to save snippet for a video without an ID!")
+            navigator.goNewWindow(SnippetScreen(id, beginning, end, navigator))
+        }
+
         LaunchedEffect(Unit) {
             delay(3000)
             shouldShowUI = false
@@ -71,17 +72,30 @@ class VideoScreen(
             if (shouldShowUI) {
 
                 Box(Modifier.fillMaxSize()) {
-                    StickyControlPanel(pos, { shouldShowUI = !shouldShowUI }, listOf("-10", "P/P", "+10"), {
-                        when (it) {
-                            0 -> videoPlayerState.jumpBackward(10)
-                            1 -> if (videoPlayerState.isPlaying.value) videoPlayerState.pause() else videoPlayerState.play()
-                            2 -> videoPlayerState.jumpForward(10)
-                            else -> println("huh?")
-                        }
-                    }, videoPlayerState.position.value, {
-                        videoPlayerState.setPosition(it)
-                    })
-                    VideoPageControls(videoPlayerState)
+                    StickyControlPanel(
+                        pos,
+                        { shouldShowUI = !shouldShowUI },
+                        listOf("-10", "P/P", "+10", "IN", "OUT", "💾"),
+                        {
+                            when (it) {
+                                0 -> videoPlayerState.jumpBackward(10)
+                                1 -> if (videoPlayerState.isPlaying.value) videoPlayerState.pause() else videoPlayerState.play()
+                                2 -> videoPlayerState.jumpForward(10)
+                                3 -> snippetState.beginning.value = videoPlayerState.position.value
+                                4 -> snippetState.end.value = videoPlayerState.position.value
+                                5 -> saveSnippet(
+                                    snippetState.beginning.value.toDouble(),
+                                    snippetState.end.value.toDouble()
+                                )
+
+                                else -> println("huh?")
+                            }
+                        },
+                        videoPlayerState.position.value,
+                        {
+                            videoPlayerState.setPosition(it)
+                        })
+                    VideoPageControls(videoPlayerState, snippetState)
                 }
                 Row {
                     Button(onClick = {
@@ -96,8 +110,10 @@ class VideoScreen(
     }
 }
 
+
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun VideoPageControls(videoPlayerState: VideoPlayerState) {
+fun VideoPageControls(videoPlayerState: VideoPlayerState, snippetState: SnippetState) {
     Row(Modifier.fillMaxWidth()) {
         Button(
             onClick = {
@@ -125,12 +141,18 @@ fun VideoPageControls(videoPlayerState: VideoPlayerState) {
                 if (videoPlayerState.isPlaying.value) "Pause" else "Play"
             )
         }
-        Slider(
-            videoPlayerState.position.value,
-            onValueChange = { value ->
-                videoPlayerState.setPosition(value)
-            }
-        )
+        Column {
+            Slider(
+                videoPlayerState.position.value,
+                onValueChange = { value ->
+                    videoPlayerState.setPosition(value)
+                }
+            )
+            RangeSlider(
+                snippetState.beginning.value..snippetState.end.value,
+                onValueChange = {},
+            )
+        }
     }
 }
 
@@ -152,14 +174,14 @@ fun StickyControlPanel(
         val topRowOffset = centerElementTopLeft + DpOffset(-CENTER_LEN, -CENTER_LEN) - centerShift
         val bottomRowOffset = centerElementTopLeft + DpOffset(-CENTER_LEN * 2, CENTER_LEN) - centerShift
 
-        val ROW_WIDTH = CENTER_LEN * 3
+        val ROW_WIDTH = CENTER_LEN * topRowLabels.size
         val ROW_HEIGHT = CENTER_LEN
         println("offset $topRowOffset")
         Row(
             Modifier.absoluteOffset(topRowOffset.x, topRowOffset.y).width(ROW_WIDTH).height(ROW_HEIGHT)
                 .background(Color.Blue)
         ) {
-            repeat(3) {
+            repeat(topRowLabels.size) {
                 Box(modifier = Modifier.width(CENTER_LEN).height(CENTER_LEN).clickable { onTopRowPressed(it) }) {
                     Text(topRowLabels.getOrNull(it) ?: "", color = Color.White)
                 }
@@ -183,3 +205,8 @@ fun StickyControlPanel(
     }
 
 }
+
+class SnippetState(
+    val beginning: MutableState<Float>,
+    val end: MutableState<Float>,
+)

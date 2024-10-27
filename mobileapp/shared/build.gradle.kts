@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.serialization)
     alias(libs.plugins.realm.kotlin)
+    alias(libs.plugins.compose.compiler)
 }
 
 kotlin {
@@ -33,7 +34,6 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-
                 implementation(project(":mediaPlayer"))
                 implementation(project(":windowManager"))
                 implementation(project(":webView"))
@@ -59,7 +59,7 @@ kotlin {
                 implementation(libs.store5)
 
                 implementation(libs.library.base)
-                implementation(libs.library.sync) // If using Device Sync
+//                implementation(libs.library.sync) // If using Device Sync
                 implementation(libs.kotlinx.coroutines.core) // If using coroutines with the SDK
 
                 implementation(compose.runtime)

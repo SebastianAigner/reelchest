@@ -2,8 +2,8 @@ import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.get
-import io.ktor.client.call.body
-import io.ktor.client.request.get
+import io.ktor.client.call.*
+import io.ktor.client.request.*
 import io.realm.kotlin.Realm
 import io.realm.kotlin.RealmConfiguration
 import io.realm.kotlin.UpdatePolicy
@@ -12,13 +12,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.mobilenativefoundation.store.store5.ExperimentalStoreApi
-import org.mobilenativefoundation.store.store5.Fetcher
-import org.mobilenativefoundation.store.store5.SourceOfTruth
-import org.mobilenativefoundation.store.store5.Store
-import org.mobilenativefoundation.store.store5.StoreBuilder
-import org.mobilenativefoundation.store.store5.StoreReadRequest
-import org.mobilenativefoundation.store.store5.StoreReadResponse
+import org.mobilenativefoundation.store.store5.*
 import org.mobilenativefoundation.store.store5.impl.extensions.fresh
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
@@ -50,7 +44,7 @@ class VideoListScreenModel() : StateScreenModel<VideoListScreenModel.VideoListSt
             },
             writer = { key, local ->
                 val realmObjs = local.map { it.toRealmObject() }
-                println("Storing $realmObjs")
+                println("Storing Realm objects...")
                 realm.write {
                     for (obj in realmObjs) {
                         copyToRealm(obj, UpdatePolicy.ALL)

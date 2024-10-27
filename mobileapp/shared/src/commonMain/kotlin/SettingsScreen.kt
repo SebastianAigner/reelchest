@@ -4,14 +4,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.Button
 import androidx.compose.material.Checkbox
-import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.TextField
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.screen.Screen
@@ -20,7 +15,6 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.coroutines.toSuspendSettings
 import com.russhwolf.settings.set
-import io.sebi.videoplayer.VideoPlayer
 
 class SettingsScreenModel() : StateScreenModel<SettingsScreenModel.SettingsScreenState>(
     SettingsScreenState(
@@ -50,6 +44,11 @@ object SettingsScreen : Screen {
                 Row {
                     Checkbox(isVlc, onCheckedChange = { isVlc = it })
                     Text("Use VLC")
+                }
+                Row {
+                    var snippetEndpoint by remember { mutableStateOf(settings.getString("snippetEndpoint", "")) }
+                    TextField(snippetEndpoint, onValueChange = { snippetEndpoint = it })
+                    Button(onClick = { settings.putString("snippetEndpoint", snippetEndpoint) }) { Text("Set") }
                 }
                 Button(onClick = { navigator.pop() }) {
                     Text("Back")

@@ -8,7 +8,7 @@ Pod::Spec.new do |spec|
     spec.summary                  = 'CocoaPods test library'
     spec.vendored_frameworks      = 'build/cocoapods/framework/mediaPlayer.framework'
     spec.libraries                = 'c++'
-    spec.ios.deployment_target = '13.5'
+    spec.ios.deployment_target    = '13.5'
     spec.dependency 'MobileVLCKit', '~>3.3.0'
                 
     if !Dir.exist?('build/cocoapods/framework/mediaPlayer.framework') || Dir.empty?('build/cocoapods/framework/mediaPlayer.framework')
@@ -21,6 +21,10 @@ Pod::Spec.new do |spec|
 
         Alternatively, proper pod installation is performed during Gradle sync in the IDE (if Podfile location is set)"
     end
+                
+    spec.xcconfig = {
+        'ENABLE_USER_SCRIPT_SANDBOXING' => 'NO',
+    }
                 
     spec.pod_target_xcconfig = {
         'KOTLIN_PROJECT_PATH' => ':mediaPlayer',
