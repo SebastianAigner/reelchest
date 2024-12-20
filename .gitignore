@@ -2,6 +2,7 @@
 /.idea
 /out
 /build
+.kotlin
 *.iml
 *.ipr
 *.iws
@@ -13,6 +14,8 @@ migrations
 .gradle
 remote_install
 deploy.sh
+dockerPush.sh
+analytics.sqlite
 *.xd
 *.cq4
 local.properties
@@ -22,3 +25,4 @@ xd.lck
 backend/.idea
 **/.DS_Store
 .DS_Store
+node_modules

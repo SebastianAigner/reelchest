@@ -16,7 +16,11 @@ import kotlinx.rpc.serialization.json
 import kotlinx.rpc.transport.ktor.client.installRPC
 import kotlinx.rpc.transport.ktor.client.rpc
 import kotlinx.rpc.transport.ktor.client.rpcConfig
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.jsonPrimitive
 import org.slf4j.LoggerFactory
+import java.io.File
 import kotlin.time.Duration.Companion.seconds
 
 fun Route.searcherApi() {
@@ -28,7 +32,11 @@ fun Route.searcherApi() {
                 HttpClient(CIO) {
                     installRPC()
                 }.rpc {
-                    url("ws://localhost:9091/rpc")
+                    url(
+                        Json
+                            .decodeFromString<JsonArray>(File("userConfig/wsSearcher.json").readText())
+                            .first().jsonPrimitive.content
+                    ) // TODO: Allow more than one searcher
                     rpcConfig {
                         serialization {
                             json()
