@@ -127,7 +127,7 @@ sqldelight {
     databases {
         create("MediaDatabase") {
             packageName.set("io.sebi.database")
-            dialect(libs.sqlite.get3().get25().dialect)
+            dialect(libs.sqlite325dialect)
             module(libs.sqlite.json.module.get())
         }
     }
