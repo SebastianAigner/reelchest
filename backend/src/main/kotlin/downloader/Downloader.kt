@@ -11,6 +11,8 @@ import kotlinx.coroutines.yield
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.FileOutputStream
+import java.net.URI
+import java.net.URL
 
 class HttpNotFoundException : Exception()
 
@@ -24,6 +26,7 @@ class Downloader(val networkManager: NetworkManager) {
         val fileOutputChannel = FileOutputStream(file).channel
         networkManager.getRawClient(noReallyItsOkay = true).prepareGet(url).execute {
             if (it.status == HttpStatusCode.NotFound) {
+                logger.error("404 on $url")
                 throw HttpNotFoundException() // TODO: this shouldn't be an exception
             }
             logger.info("Content length is ${it.contentLength()}")

@@ -7,13 +7,11 @@ import io.ktor.server.engine.*
 import io.ktor.server.http.content.*
 import io.ktor.server.routing.*
 import io.sebi.api.api
-import io.sebi.api.feedApi
 import io.sebi.autoscrape.setupAutoscraper
 import io.sebi.downloader.DownloadManager
 import io.sebi.downloader.DownloadManagerImpl
 import io.sebi.downloader.IntoMediaLibraryDownloader
 import io.sebi.duplicatecalculator.DuplicateCalculator
-import io.sebi.feed.Feed
 import io.sebi.library.MediaLibrary
 import io.sebi.library.MediaLibraryEntry
 import io.sebi.library.file
@@ -140,7 +138,6 @@ fun Application.module() {
     routing {
         api(urlDecoder, mediaLibrary, duplicateCalculator, downloadManager, networkManager, tagger, metadataStorage)
         addDownload(intoMediaLibraryDownloader)
-        feedApi(Feed(), intoMediaLibraryDownloader)
         addUpload(mediaLibrary)
         decryptEndpointRoute(urlDecoder)
         progressList(downloadManager)
