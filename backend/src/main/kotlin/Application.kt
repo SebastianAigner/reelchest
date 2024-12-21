@@ -169,11 +169,11 @@ private suspend fun generateThumbnails(mediaLibrary: MediaLibrary) {
     val logger = LoggerFactory.getLogger("Thumbnail Generation")
     logger.info("starting thumbnail generation")
     mediaLibrary.getEntries().forEach { mediaLibraryEntry: MediaLibraryEntry ->
-        createThumbnail(mediaLibraryEntry, logger)
+        createThumbnails(mediaLibraryEntry, logger)
     }
 }
 
-private fun createThumbnail(mediaLibraryEntry: MediaLibraryEntry, logger: Logger) {
+private fun createThumbnails(mediaLibraryEntry: MediaLibraryEntry, logger: Logger) {
     mediaLibraryEntry.file?.let {
         logger.info("Generating thumbnail for ${mediaLibraryEntry.id}")
         if (it.parentFile?.list()?.none { it.startsWith("thumb") } == true) {
