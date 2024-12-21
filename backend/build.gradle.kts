@@ -67,6 +67,7 @@ dependencies {
     implementation(libs.ktor.serialization.kotlinx.json)
 
     testImplementation(libs.ktor.server.tests)
+    testImplementation(kotlin("test"))
     compileOnly(libs.jtsgen.annotations)
     compileOnly(libs.jtsgen.processor)
 //    kapt(libs.jtsgen.processor)
