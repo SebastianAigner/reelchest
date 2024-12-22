@@ -112,6 +112,8 @@ sqlite-jdbc = "org.xerial:sqlite-jdbc:3.45.1.0"
 
 sqlite-driver = { group = "app.cash.sqldelight", name = "sqlite-driver", version.ref = "app-cash-sqldelight" }
 
+kotlinx-datetime = "org.jetbrains.kotlinx:kotlinx-datetime:0.6.1"
+
 kotlin-scripting-compiler-embeddable = { group = "org.jetbrains.kotlin", name = "kotlin-scripting-compiler-embeddable", version.ref = "kotlin" }
 
 kotlin-serialization = { group = "org.jetbrains.kotlin", name = "kotlin-serialization", version.ref = "kotlin" }

@@ -91,6 +91,7 @@ dependencies {
     // transport implementation for Ktor
     implementation("org.jetbrains.kotlinx:kotlinx-rpc-krpc-ktor-client")
     implementation("org.jetbrains.kotlinx:kotlinx-rpc-krpc-ktor-server")
+    implementation(libs.kotlinx.datetime)
 
 }
 
