@@ -60,7 +60,9 @@ fun setup(
 
     setupAutoscraper(mediaLibrary, downloadManager, networkManager, tagger, urlDecoder)
 
-    downloadManager.restoreQueue()
+    runBlocking {
+        downloadManager.restoreQueue()
+    }
     setFileDates(metadataStorage)
 }
 

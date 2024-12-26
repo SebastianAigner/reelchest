@@ -9,7 +9,7 @@ class IntoMediaLibraryDownloader(
     private val urlDecoder: UrlDecoder,
     private val mediaLibrary: MediaLibrary
 ) {
-    fun download(url: String) {
+    suspend fun download(url: String) {
         downloadManager.enqueueTask(
             urlDecoder.makeDownloadTask(url, mediaLibrary::addCompletedDownload)
         )

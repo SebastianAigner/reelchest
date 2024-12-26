@@ -20,12 +20,12 @@ Requests to endpoints under `/api/` are automatically proxied to the backend run
 
 ## TODO
 
-- [ ] Improve ffmpeg thumbnail generation to use seeking instead of fps filter
+- [ ] Improve hash generation with seeking instead of FPS filter
 - [ ] Allow mobile clients to store media offline (e.g. to watch during flights)
-- [x] merge add and download pages
-- [x] reset download form after submission
-- [ ] Play around with some server-side chaos engineering
-- [x] Stop reading file timestamps from disk; use information stored in DB instead
 - [ ] Centralize ffmpeg handling,
   including [process introspection](https://stackoverflow.com/questions/43978018/ffmpeg-get-machine-readable-output)
-- [ ] Concurrency issue: "Add to queue" may accidentally allow duplicate URLs to be added if done so in rapid succession
+- [x] Improve ffmpeg thumbnail generation to use seeking instead of fps filter
+- [x] reset download form after submission
+- [x] Stop reading file timestamps from disk; use information stored in DB instead
+- [x] merge add and download pages
+- [x] Concurrency issue: "Add to queue" may accidentally allow duplicate URLs to be added if done so in rapid succession

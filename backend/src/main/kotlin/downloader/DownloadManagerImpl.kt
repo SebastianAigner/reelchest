@@ -10,6 +10,8 @@ import io.sebi.storage.MetadataStorage
 import io.sebi.urldecoder.UrlDecoder
 import io.sebi.urldecoder.makeDownloadTask
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
@@ -24,6 +26,7 @@ class DownloadManagerImpl(
 ) : DownloadManager {
     val scope = CoroutineScope(context = Dispatchers.Default)
     val logger = LoggerFactory.getLogger("Download Manager")
+    val queueMutex = Mutex()
 
     override val allDownloads: List<WithOriginUrl>
         get() {
@@ -88,7 +91,8 @@ class DownloadManagerImpl(
         return null
     }
 
-    override fun enqueueTask(d: DownloadTask, skipDuplicatesCheck: Boolean) {
+    override suspend fun enqueueTask(d: DownloadTask, skipDuplicatesCheck: Boolean) {
+        queueMutex.withLock {
         if (skipDuplicatesCheck) {
             logger.info("Adding job with skipped duplicates check.")
             queuedDownloads.add(d)
@@ -106,6 +110,7 @@ class DownloadManagerImpl(
 
         logger.info("Adding download job.")
         queuedDownloads.add(d)
+        }
     }
 
     override fun persistQueue() {
@@ -117,7 +122,7 @@ class DownloadManagerImpl(
         )
     }
 
-    override fun restoreQueue() {
+    override suspend fun restoreQueue() {
         val list = try {
             Json
                 .decodeFromString<List<DownloadTaskDTO>>(File("userConfig/queue.json").readText())

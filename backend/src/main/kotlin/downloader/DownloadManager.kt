@@ -4,9 +4,9 @@ package io.sebi.downloader
 interface DownloadManager {
     fun getDownloads(vararg d: DownloadType): List<DownloadTask>
     fun downloadProgressForId(id: String): Double?
-    fun enqueueTask(d: DownloadTask, skipDuplicatesCheck: Boolean = false)
+    suspend fun enqueueTask(d: DownloadTask, skipDuplicatesCheck: Boolean = false)
     fun persistQueue()
-    fun restoreQueue()
+    suspend fun restoreQueue()
     fun workerStatus(): List<String>
     val finishedDownloads: Iterable<CompletedDownloadTask>
     val problematicDownloads: MutableList<ProblematicTask>
