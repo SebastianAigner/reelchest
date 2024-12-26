@@ -2,6 +2,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
@@ -102,6 +103,13 @@ class SearchScreenModel() : StateScreenModel<SearchScreenModel.SearchScreenState
         }
         search(state.value.currentQuery, state.value.currentSearcher)
     }
+
+    fun prevPage() {
+        mutableState.update {
+            it.copy(offset = maxOf(it.offset - it.results.size, 0))
+        }
+        search(state.value.currentQuery, state.value.currentSearcher)
+    }
 }
 
 class SearchScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
@@ -152,7 +160,10 @@ class SearchScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
                             Text(possibleSearcher)
                         }
                     }
-                    NextPageButton(model)
+                    Row {
+                        PrevPageButton(model)
+                        NextPageButton(model)
+                    }
                 }
 
                 val lazyGridState = rememberLazyGridState()
@@ -197,7 +208,8 @@ class SearchScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
                     }
                     if (state.results.isNotEmpty()) {
                         item(span = { GridItemSpan(3) }) {
-                            Row(Modifier.fillMaxWidth()) {
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                                PrevPageButton(model)
                                 NextPageButton(model)
                             }
                         }
@@ -222,10 +234,19 @@ class SearchScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
 
     @Composable
     private fun NextPageButton(model: SearchScreenModel) {
-        Button(modifier = Modifier.fillMaxWidth(), onClick = {
+        Button(onClick = {
             model.nextPage()
         }) {
             Text("Next page!")
+        }
+    }
+
+    @Composable
+    private fun PrevPageButton(model: SearchScreenModel) {
+        Button(onClick = {
+            model.prevPage()
+        }) {
+            Text("Prev page!")
         }
     }
 }
