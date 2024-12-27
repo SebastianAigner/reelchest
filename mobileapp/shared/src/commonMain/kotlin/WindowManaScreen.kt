@@ -73,6 +73,10 @@ class WindowManaScreen() : Screen {
                 },
                 "Logs" to {
                     LogWindow(wm)
+                },
+                "Close" to {
+                    currentNavigator.pop()
+                    LogWindow(wm) // todo: this is a hack because our icons are expected to return an XPWindow, but here we just want to leave.
                 }
             )
         )
