@@ -12,6 +12,8 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
+import com.russhwolf.settings.Settings
+import com.russhwolf.settings.get
 
 class LogWindow(wm: WindowManager) : XPWindow(title = "Logs", wm = wm) {
     @Composable
@@ -19,7 +21,7 @@ class LogWindow(wm: WindowManager) : XPWindow(title = "Logs", wm = wm) {
         var contents by remember { mutableStateOf<List<LogMessage>>(emptyList()) }
         LaunchedEffect(Unit) {
             while (true) {
-                val messages = globalHttpClient.get("http://192.168.178.165:8080/api/log").body<List<LogMessage>>()
+                val messages = globalHttpClient.get(Settings().get<String>("endpoint")!! + "/api/log").body<List<LogMessage>>()
                 contents = messages
                 delay(500)
             }
