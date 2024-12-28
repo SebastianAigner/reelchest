@@ -9,6 +9,7 @@ import io.ktor.server.routing.*
 import io.sebi.library.MediaLibrary
 import io.sebi.ui.shared.commonLayout
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import kotlinx.html.*
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -32,6 +33,7 @@ fun Route.addUpload(mediaLibrary: MediaLibrary) {
                     attributes["hx-post"] = "/ul"
 
                     input(type = InputType.file, name = "file") {
+                        attributes["multiple"] = "true"
                     }
                     //input(type = InputType.submit)
                     button {
@@ -61,58 +63,66 @@ fun Route.addUpload(mediaLibrary: MediaLibrary) {
     }
     post("/ul") {
         logger.info("Starting upload handler.")
-        val uploadResult = kotlin.runCatching {
-            logger.info("Receiving multipart data...")
-            val multipart = call.receiveMultipart()
-            logger.info("Done.")
-            // TODO: Why can I not MAP EACH PART :CRY:
-            val fileItem = multipart
-                .readAllParts()
-                .asSequence()
-                .filterIsInstance<PartData.FileItem>().single()
+        logger.info("Receiving multipart data...")
+        val multipart = call.receiveMultipart()
+        logger.info("Done.")
+        // TODO: Why can I not MAP EACH PART :CRY:
+        multipart
+            .readAllPartsAsFlow()
+            .filterIsInstance<PartData.FileItem>().map { fileItem ->
+                val uploadResult = runCatching {
+                    logger.info("Got FileItem ${fileItem.originalFileName}.")
+                    logger.info(fileItem.headers.entries().joinToString(", ") { it.key + " " + it.value })
+                    val targetFile = File.createTempFile(
+                        "vid",
+                        ".mp4",
+                        File("downloads").apply { mkdir(); }
+                    ).apply { deleteOnExit() }
+                    logger.info("Starting copy.")
 
-            logger.info("Got FileItem ${fileItem.originalFileName}.")
-            logger.info(fileItem.headers.entries().joinToString(", ") { it.key + " " + it.value })
-            val targetFile = File.createTempFile(
-                "vid",
-                ".mp4",
-                File("downloads").apply { mkdir(); }
-            ).apply { deleteOnExit() }
-            logger.info("Starting copy.")
-
-            fileItem.streamProvider().let { stream ->
-                val targetPath = targetFile.toPath()
-                stream.copyToNIO(targetPath)
-            }
-            val result = ProcessUploadedFilePartResult(
-                targetFile!!,
-                fileItem.originalFileName!!
-            )
-            logger.info("Disposing part.")
-            fileItem.dispose()
-            result
-        }
-        if (uploadResult.isFailure) {
-            call.respondText(
-                "an error has happened: ${uploadResult.exceptionOrNull()?.message}" +
-                        "\n${uploadResult.exceptionOrNull()?.stackTraceToString()}"
-            )
-            return@post
-        }
-        if (uploadResult.isSuccess) {
-            val (targetFile, name) = uploadResult.getOrNull()!!
-            mediaLibrary.addUpload(
-                targetFile,
-                name = name
-            )
-        }
+                    fileItem.streamProvider().let { stream ->
+                        val targetPath = targetFile.toPath()
+                        stream.copyToNIO(targetPath)
+                    }
+                    val result = ProcessUploadedFilePartResult(
+                        targetFile!!,
+                        fileItem.originalFileName!!
+                    )
+                    logger.info("Disposing part.")
+                    fileItem.dispose()
+                    result
+                }
+                if (uploadResult.isFailure) {
+                    call.respondText(
+                        "an error has happened: ${uploadResult.exceptionOrNull()?.message}" +
+                                "\n${uploadResult.exceptionOrNull()?.stackTraceToString()}"
+                    )
+                    error("Upload failed with ${uploadResult.exceptionOrNull()}")
+                }
+                if (uploadResult.isSuccess) {
+                    val (targetFile, name) = uploadResult.getOrNull()!!
+                    mediaLibrary.addUpload(
+                        targetFile,
+                        name = name
+                    )
+                }
+            }.collect()
         call.respondRedirect("/")
+    }
+}
+
+fun MultiPartData.readAllPartsAsFlow(): Flow<PartData> {
+    return flow {
+        while (true) {
+            val part = readPart() ?: break
+            emit(part)
+        }
     }
 }
 
 data class ProcessUploadedFilePartResult(
     val file: File,
-    val name: String
+    val name: String,
 )
 
 suspend fun InputStream.copyToNIO(
