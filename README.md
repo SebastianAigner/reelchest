@@ -22,8 +22,7 @@ Requests to endpoints under `/api/` are automatically proxied to the backend run
 
 - [ ] Improve hash generation with seeking instead of FPS filter
 - [ ] Allow mobile clients to store media offline (e.g. to watch during flights)
-- [ ] Centralize ffmpeg handling,
-  including [process introspection](https://stackoverflow.com/questions/43978018/ffmpeg-get-machine-readable-output)
+- [ ] Centralize ffmpeg handling. Mutexify calls so as to not saturate the CPU
 - [x] Improve ffmpeg thumbnail generation to use seeking instead of fps filter
 - [x] reset download form after submission
 - [x] Stop reading file timestamps from disk; use information stored in DB instead
