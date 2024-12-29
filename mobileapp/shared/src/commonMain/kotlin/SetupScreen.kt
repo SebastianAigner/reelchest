@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -70,7 +71,7 @@ object SetupScreen : Screen {
                 println("Oh no! $e")
             }
         }
-        Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
+        Box(Modifier.fillMaxSize().background(Color.Black).padding(20.dp), contentAlignment = Alignment.Center) {
             Box() {
                 Box(
                     Modifier
@@ -94,8 +95,12 @@ object SetupScreen : Screen {
                         .padding(20.dp)
 
                 ) {
-                    Text(" リールチェスト", fontSize = MaterialTheme.typography.h3.fontSize, lineHeight = MaterialTheme.typography.h3.lineHeight)
-                    Text("(Reelchest)", fontSize = MaterialTheme.typography.h5.fontSize, lineHeight = MaterialTheme.typography.h5.lineHeight)
+                    Text(" リール\nチェスト", style = MaterialTheme.typography.h3)
+                    Text(
+                        "(Reelchest)",
+                        fontSize = MaterialTheme.typography.h5.fontSize,
+                        lineHeight = MaterialTheme.typography.h5.lineHeight
+                    )
                     Text("Enter the URL of your Reelchest server")
                     TextField(configuration ?: "", onValueChange = {
                         configuration = it
@@ -111,7 +116,7 @@ object SetupScreen : Screen {
                         })
                         Icon(Icons.Filled.Home, contentDescription = "PlayArrow", modifier = Modifier.clickable {
                             navigator.push(WindowManaScreen())
-                        })  
+                        })
                     }
                     if (showInstances) {
                         var newEndpointText by remember { mutableStateOf("") }
