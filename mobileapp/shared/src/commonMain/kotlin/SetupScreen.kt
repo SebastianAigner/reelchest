@@ -14,10 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.unit.dp
@@ -74,71 +71,84 @@ object SetupScreen : Screen {
             }
         }
         Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
+            Box() {
+                Box(
+                    Modifier
+                        .scale(1.02f)
+                        .blur(
+                            30.dp,
+                            edgeTreatment = BlurredEdgeTreatment.Unbounded
+                        ) // neon glow effect! (wish there was a better way to do this)
+                        .matchParentSize()
+                        .background(Color.Green)
+                        .padding(10.dp)
+                        .scale(1.3f)
+                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .clip(
+                            RoundedCornerShape(20.dp)
+                        )
+                        .background(Color.White)
+                        .padding(20.dp)
 
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .clip(
-                        RoundedCornerShape(20.dp)
-                    )
-                    .background(Color.White)
-                    .padding(20.dp)
-
-            ) {
-                Text(" リールチェスト", fontSize = MaterialTheme.typography.h1.fontSize)
-                Text("(Reelchest)", fontSize = MaterialTheme.typography.h3.fontSize)
-                Text("Enter the URL of your Reelchest server")
-                TextField(configuration ?: "", onValueChange = {
-                    configuration = it
-                })
-                Button(onClick = {
-                    navigator.push(TikTokScreen())
-                }) {
-                    Text("Go directly to TikTok")
-                }
-                Button(onClick = {
-                    navigator.push(WindowManaScreen())
-                }) {
-                    Text("Go to WM")
-                }
-                Text(statusFieldText, modifier = Modifier.clickable {
-                    showInstances = !showInstances
-                    isValid = false
-                    statusFieldText = "Waiting for instance."
-                })
-                if (showInstances) {
-                    var newEndpointText by remember { mutableStateOf("") }
-                    Column {
-                        val allEndpoints = Settings().get<String>("allEndpoints")
-                        Text(allEndpoints ?: "")
-                        allEndpoints?.split(",")?.forEach {
+                ) {
+                    Text(" リールチェスト", fontSize = MaterialTheme.typography.h1.fontSize)
+                    Text("(Reelchest)", fontSize = MaterialTheme.typography.h3.fontSize)
+                    Text("Enter the URL of your Reelchest server")
+                    TextField(configuration ?: "", onValueChange = {
+                        configuration = it
+                    })
+                    Button(onClick = {
+                        navigator.push(TikTokScreen())
+                    }) {
+                        Text("Go directly to TikTok")
+                    }
+                    Button(onClick = {
+                        navigator.push(WindowManaScreen())
+                    }) {
+                        Text("Go to WM")
+                    }
+                    Text(statusFieldText, modifier = Modifier.clickable {
+                        showInstances = !showInstances
+                        isValid = false
+                        statusFieldText = "Waiting for instance."
+                    })
+                    if (showInstances) {
+                        var newEndpointText by remember { mutableStateOf("") }
+                        Column {
+                            val allEndpoints = Settings().get<String>("allEndpoints")
+                            Text(allEndpoints ?: "")
+                            allEndpoints?.split(",")?.forEach {
+                                Row {
+                                    Text(it, modifier = Modifier.clickable {
+                                        configuration = it
+                                    })
+                                    Button(onClick = {
+                                        Settings().set(
+                                            "allEndpoints",
+                                            (Settings().get<String>("allEndpoints") ?: "")
+                                                .replace(it, "")
+                                                .replace(",,", "")
+                                        )
+                                    }) {
+                                        Text("Remove")
+                                    }
+                                }
+                            }
                             Row {
-                                Text(it, modifier = Modifier.clickable {
-                                    configuration = it
+                                TextField(newEndpointText, onValueChange = {
+                                    newEndpointText = it
                                 })
                                 Button(onClick = {
                                     Settings().set(
                                         "allEndpoints",
-                                        (Settings().get<String>("allEndpoints") ?: "")
-                                            .replace(it, "")
-                                            .replace(",,", "")
+                                        Settings().get<String>("allEndpoints") + "," + newEndpointText
                                     )
                                 }) {
-                                    Text("Remove")
+                                    Text("Add")
                                 }
-                            }
-                        }
-                        Row {
-                            TextField(newEndpointText, onValueChange = {
-                                newEndpointText = it
-                            })
-                            Button(onClick = {
-                                Settings().set(
-                                    "allEndpoints",
-                                    Settings().get<String>("allEndpoints") + "," + newEndpointText
-                                )
-                            }) {
-                                Text("Add")
                             }
                         }
                     }
