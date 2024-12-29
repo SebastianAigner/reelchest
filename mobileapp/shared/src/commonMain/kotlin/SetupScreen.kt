@@ -43,7 +43,7 @@ object SetupScreen : Screen {
         }
         var showInstances by remember { mutableStateOf(false) }
         var isValid by remember { mutableStateOf(false) }
-        var statusFieldText by remember { mutableStateOf("Checking connectivity...") }
+        var statusFieldText by remember { mutableStateOf("") }
         LaunchedEffect(isValid) {
             if (isValid) {
                 statusFieldText = "Valid connection! Connecting..."
@@ -94,8 +94,8 @@ object SetupScreen : Screen {
                         .padding(20.dp)
 
                 ) {
-                    Text(" リールチェスト", fontSize = MaterialTheme.typography.h1.fontSize)
-                    Text("(Reelchest)", fontSize = MaterialTheme.typography.h3.fontSize)
+                    Text(" リールチェスト", fontSize = MaterialTheme.typography.h3.fontSize, lineHeight = MaterialTheme.typography.h3.lineHeight)
+                    Text("(Reelchest)", fontSize = MaterialTheme.typography.h5.fontSize, lineHeight = MaterialTheme.typography.h5.lineHeight)
                     Text("Enter the URL of your Reelchest server")
                     TextField(configuration ?: "", onValueChange = {
                         configuration = it
@@ -163,6 +163,7 @@ class CacheInvalidator {
     val realm: Realm = Realm.open(config)
     fun invalidate() {
         // todo: this is kind of a hack, would love to do this cleaner
+        // todo: one cache per instance rather than a global-to-be-deleted cache
         realm.writeBlocking {
             this.deleteAll()
         }
