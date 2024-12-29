@@ -2,10 +2,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Button
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
+import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -100,21 +100,19 @@ object SetupScreen : Screen {
                     TextField(configuration ?: "", onValueChange = {
                         configuration = it
                     })
-                    Button(onClick = {
-                        navigator.push(TikTokScreen())
-                    }) {
-                        Text("Go directly to TikTok")
-                    }
-                    Button(onClick = {
-                        navigator.push(WindowManaScreen())
-                    }) {
-                        Text("Go to WM")
-                    }
                     Text(statusFieldText, modifier = Modifier.clickable {
                         showInstances = !showInstances
                         isValid = false
                         statusFieldText = "Waiting for instance."
                     })
+                    Row {
+                        Icon(Icons.Filled.PlayArrow, contentDescription = "PlayArrow", modifier = Modifier.clickable {
+                            navigator.push(TikTokScreen())
+                        })
+                        Icon(Icons.Filled.Home, contentDescription = "PlayArrow", modifier = Modifier.clickable {
+                            navigator.push(WindowManaScreen())
+                        })  
+                    }
                     if (showInstances) {
                         var newEndpointText by remember { mutableStateOf("") }
                         Column {
