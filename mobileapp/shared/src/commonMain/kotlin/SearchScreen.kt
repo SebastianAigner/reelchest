@@ -1,4 +1,5 @@
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
@@ -8,7 +9,9 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
@@ -19,10 +22,13 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.client.utils.*
 import io.ktor.http.*
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 @Serializable
 data class SearchResult(
@@ -88,12 +94,16 @@ class SearchScreenModel() : StateScreenModel<SearchScreenModel.SearchScreenState
 
     fun queueDownloadFor(searchResult: SearchResult) {
         screenModelScope.launch {
-            globalHttpClient.post(Settings().get<String>("endpoint")!! + "/api/download") {
-                buildHeaders {
-                    contentType(ContentType.Application.Json)
-                }
-                this.setBody(DownloadRequest(searchResult.url))
+            queueDownloadWithDeferred(searchResult).await()
+        }
+    }
+
+    fun queueDownloadWithDeferred(searchResult: SearchResult) = screenModelScope.async {
+        globalHttpClient.post(Settings().get<String>("endpoint")!! + "/api/download") {
+            buildHeaders {
+                contentType(ContentType.Application.Json)
             }
+            this.setBody(DownloadRequest(searchResult.url))
         }
     }
 
@@ -112,6 +122,17 @@ class SearchScreenModel() : StateScreenModel<SearchScreenModel.SearchScreenState
     }
 }
 
+suspend fun isUrlInLibraryOrProgress(url: String): Boolean {
+    return globalHttpClient.post(Settings().get<String>("endpoint")!! + "/api/mediaLibrary/isUrlInLibraryOrProgress") {
+        buildHeaders {
+            contentType(ContentType.Application.Json)
+        }
+        this.setBody(buildJsonObject {
+            put("url", url)
+        })
+    }.body<Boolean>()
+}
+
 class SearchScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
 
     @OptIn(ExperimentalFoundationApi::class)
@@ -124,7 +145,8 @@ class SearchScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
         val searchers = remember { mutableStateListOf<String>() }
         val searcher = state.currentSearcher
         LaunchedEffect(Unit) {
-            val res = globalHttpClient.get(Settings().get<String>("endpoint")!! + "/api/searchers").body<List<String>>()
+            val res =
+                globalHttpClient.get(Settings().get<String>("endpoint")!! + "/api/searchers").body<List<String>>()
             searchers.clear()
             searchers.addAll(res)
             if (searcher == "") {
@@ -182,9 +204,9 @@ class SearchScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
                     items(state.results) {
                         Column {
                             GenericImageCell(
-                                it.thumbUrl,
-                                it.title,
-                                Modifier.combinedClickable(
+                                imageUrl = it.thumbUrl,
+                                title = it.title,
+                                modifier = Modifier.combinedClickable(
                                     onClick = {
                                         navigator.goNewWindow(
                                             VideoPlayerScreen(
@@ -203,8 +225,29 @@ class SearchScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
                                     }
                                 )
                             )
+                            
+                            Box(Modifier.fillMaxWidth().background(Color.White).height(8.dp)) {
+                                var shouldBeColor by remember {mutableStateOf(Color.White)}
+                                LaunchedEffect(it.url) {
+                                    if (isUrlInLibraryOrProgress(it.url)) {
+                                        shouldBeColor = Color.Red
+                                    }
+                                }
+                                Box(Modifier.fillMaxSize().background(shouldBeColor)) {
+                                    
+                                }
+                            }
                             DownloadButton(it.url, onClick = {
-                                model.queueDownloadFor(it)
+                                val res = model.queueDownloadWithDeferred(it).await()
+                                when (res.status) {
+                                    HttpStatusCode.OK -> {
+                                        "OK"
+                                    }
+
+                                    else -> {
+                                        "${res.status}"
+                                    }
+                                }
                             })
                         }
                     }
@@ -223,14 +266,20 @@ class SearchScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
     }
 
     private @Composable
-    fun DownloadButton(url: String, onClick: () -> Unit) {
+    fun DownloadButton(url: String, onClick: suspend () -> String) {
+        val coroutineScope = rememberCoroutineScope()
+        var outcome by remember { mutableStateOf<String>("") }
         Button(
             onClick = {
-                onClick()
+                coroutineScope.launch {
+                    outcome = "working..."
+                    val res = onClick()
+                    outcome = res
+                }
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Download")
+            Text(outcome.ifBlank { "Download" })
         }
     }
 
