@@ -203,7 +203,9 @@ class SearchScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
                                     }
                                 )
                             )
-                            DownloadButton(it.url)
+                            DownloadButton(it.url, onClick = {
+                                model.queueDownloadFor(it)
+                            })
                         }
                     }
                     if (state.results.isNotEmpty()) {
@@ -221,10 +223,10 @@ class SearchScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
     }
 
     private @Composable
-    fun DownloadButton(url: String) {
+    fun DownloadButton(url: String, onClick: () -> Unit) {
         Button(
             onClick = {
-                // TODO: wire up download
+                onClick()
             },
             modifier = Modifier.fillMaxWidth()
         ) {
