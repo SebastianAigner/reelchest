@@ -23,7 +23,8 @@ class LogWindow(wm: WindowManager) : XPWindow(title = "Logs", wm = wm) {
         var contents by remember { mutableStateOf<List<LogMessage>>(emptyList()) }
         LaunchedEffect(Unit) {
             while (true) {
-                val messages = globalHttpClient.get(Settings().get<String>("endpoint")!! + "/api/log").body<List<LogMessage>>()
+                val messages =
+                    globalHttpClient.get(Settings().get<String>("endpoint")!! + "/api/log").body<List<LogMessage>>()
                 contents = messages
                 delay(500)
             }
