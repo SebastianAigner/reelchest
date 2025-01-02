@@ -22,7 +22,7 @@ class SqliteMetadataStorage : MetadataStorage {
     val sqliteConfig = SQLiteConfig().apply {
         enforceForeignKeys(true)
     }
-    val driver = JdbcSqliteDriver("jdbc:sqlite:mediaLibrary/db.sqlite", sqliteConfig.toProperties()).also { driver ->
+    val driver = JdbcSqliteDriver("jdbc:sqlite:database/db.sqlite", sqliteConfig.toProperties()).also { driver ->
         fun getVersion(): Int {
             return driver.executeQuery(null, "PRAGMA user_version;", {
                 app.cash.sqldelight.db.QueryResult.Value(it.getLong(0)!!.toInt())

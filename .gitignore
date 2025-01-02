@@ -27,3 +27,4 @@ backend/.idea
 .DS_Store
 node_modules
 playground
+database
