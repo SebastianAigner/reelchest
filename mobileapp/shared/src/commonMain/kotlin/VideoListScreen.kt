@@ -21,9 +21,11 @@ import com.russhwolf.settings.Settings
 import com.russhwolf.settings.get
 import io.kamel.image.KamelImage
 import io.kamel.image.asyncPainterResource
+import io.ktor.client.request.*
 import io.sebi.webview.WebKitBrowserView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 @Composable
 fun GenericImageCell(imageUrl: String, title: String, modifier: Modifier) {
@@ -187,6 +189,9 @@ class VideoListScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
                         "https://v.redd.it/wvv8jgjksuo71/HLSPlaylist.m3u8?a=1698935975%2CNTQ0ZDUzZWU4NWZjZDdkN2RkOTdiZDhiZGEzMjVmMWNmYTVlOThhMDU2ZjRmMGUzYmI0ZGVlOGMyNDc4MmFkNg%3D%3D&amp;v=1&amp;f=sd"
                     Button(onClick = { navigateTo(VideoPlayerScreen(demoUrl, navigator)) }) {
                         Text("M3U8 Test")
+                    }
+                    Button(onClick = { runBlocking { globalHttpClient.get(Settings().get<String>("endpoint")!! + "/shutdown") } }) {
+                        Text("Shutdown")
                     }
                     Button(onClick = { navigateTo(QueueScreen()) }) {
                         Text("Queue")
