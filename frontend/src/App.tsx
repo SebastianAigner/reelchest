@@ -10,36 +10,52 @@ import {Movie} from "./views/Movie";
 import {ConfigurationManager} from "./views/ConfigurationManager";
 import {DuplicatesManager} from "./views/DuplicatesManager";
 
+// Navigation bar supports conditional rendering by setting showNav to false.
+// However, this is part of the actual location, not the react hash router emulated string. So:
+// http://0.0.0.0:8080/?showNav=false#/movie/asdf?showPlayer=false
+
+function NavigationBar() {
+    const queryParams = new URLSearchParams(location.search);
+    const showNav = queryParams.get("showNav") != "false";
+
+    return <nav className={"grid grid-cols-1 sm:grid-cols-7 gap-4 text-center"}>
+        {showNav && (
+            <>
+                <div>
+                    <Link to="/search">Search</Link>
+                </div>
+                <div>
+                    <Link to="/mediaLibrary">Media Library</Link>
+                </div>
+                <div>
+                    <Link to="/add">Add</Link>
+                </div>
+                <div>
+                    <Link to="/downloads">Downloads</Link>
+                </div>
+                <div>
+                    <Link to="/duplicates">Duplicates</Link>
+                </div>
+                <div>
+                    <Link to="/tags">Tags</Link>
+                </div>
+                <div>
+                    <Link to="/queries">Queries</Link>
+                </div>
+                <div>
+                    <Link to="/log">Log</Link>
+                </div>
+            </>
+        )}
+    </nav>
+        ;
+}
+
 export default function App() {
     return (
         <HashRouter>
             <div className={"m-8"}>
-                <nav className={"grid grid-cols-1 sm:grid-cols-7 gap-4 text-center"}>
-                    <div>
-                        <Link to="/search">Search</Link>
-                    </div>
-                    <div>
-                        <Link to="/mediaLibrary">Media Library</Link>
-                    </div>
-                    <div>
-                        <Link to="/add">Add</Link>
-                    </div>
-                    <div>
-                        <Link to="/downloads">Downloads</Link>
-                    </div>
-                    <div>
-                        <Link to="/duplicates">Duplicates</Link>
-                    </div>
-                    <div>
-                        <Link to="/tags">Tags</Link>
-                    </div>
-                    <div>
-                        <Link to="/queries">Queries</Link>
-                    </div>
-                    <div>
-                        <Link to="/log">Log</Link>
-                    </div>
-                </nav>
+                {NavigationBar()}
 
                 {/* A <Switch> looks through its children <Route>s and
             renders the first one that matches the current URL. */}

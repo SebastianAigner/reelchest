@@ -1,4 +1,4 @@
-import {Link, useParams} from "react-router-dom";
+import {Link, useLocation, useParams} from "react-router-dom";
 import * as React from "react";
 import {useState} from "react";
 import {MediaLibraryEntry} from "../models/MediaLibraryEntry";
@@ -60,6 +60,9 @@ let throttledApiEvent = _.throttle((id, time) => {
 
 export function Movie() {
     const {id} = useParams<Identifiable>();
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+    const showPlayer = queryParams.get("showPlayer") != "false";
     const [clicked, setClicked] = useState(false);
     const {entry, isLoading, isError, mutateEntry} = useMediaLibraryEntry(id)
     const {data, error} = useSWR<MediaLibraryEntry>(`/api/mediaLibrary/${id}/possibleDuplicates`, fetcher)
@@ -71,18 +74,18 @@ export function Movie() {
         <h2 className={"text-5xl"}><EdiText value={entry.mediaLibraryEntry.name} type={"text"} onSave={(value) => {
             mutateEntry({name: value})
         }}/></h2>
-        <video src={`/api/video/${id}`} width={"500px"} controls={true} onPlay={() => {
-            if (!clicked) {
-                setClicked(true)
-                axios.get(`/api/mediaLibrary/${id}/hit`)
-            }
-        }
-        } onTimeUpdate={(event) => {
-            let time = event.currentTarget.currentTime
-            console.log(`updating time! ${time}`)
-            throttledApiEvent(id, time)
-        }
-        }/>
+        {showPlayer && (
+            <video src={`/api/video/${id}`} width={"500px"} controls={true} onPlay={() => {
+                if (!clicked) {
+                    setClicked(true)
+                    axios.get(`/api/mediaLibrary/${id}/hit`)
+                }
+            }} onTimeUpdate={(event) => {
+                let time = event.currentTarget.currentTime;
+                console.log(`updating time! ${time}`);
+                throttledApiEvent(id, time);
+            }}/>
+        )}
 
         <h3 className={"text-2xl"}>Operations</h3>
         <ul>
