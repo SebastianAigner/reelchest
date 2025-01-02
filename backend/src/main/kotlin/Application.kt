@@ -12,6 +12,7 @@ import io.sebi.downloader.DownloadManager
 import io.sebi.downloader.DownloadManagerImpl
 import io.sebi.downloader.IntoMediaLibraryDownloader
 import io.sebi.duplicatecalculator.DuplicateCalculator
+import io.sebi.ffmpeg.globalFfmpegMutex
 import io.sebi.library.MediaLibrary
 import io.sebi.library.MediaLibraryEntry
 import io.sebi.library.file
@@ -30,6 +31,7 @@ import io.sebi.urldecoder.UrlDecoder
 import io.sebi.urldecoder.UrlDecoderImpl
 import io.sebi.utils.creationTime
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.withLock
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -175,27 +177,30 @@ private suspend fun generateThumbnails(mediaLibrary: MediaLibrary) {
     }
 }
 
-private fun createThumbnails(mediaLibraryEntry: MediaLibraryEntry, logger: Logger) {
-    mediaLibraryEntry.file?.let {
-        logger.info("Generating thumbnail for ${mediaLibraryEntry.id}")
-        if (it.parentFile?.list()?.none { it.startsWith("thumb") } == true) {
-            val proc = ProcessBuilder(
-                "ffmpeg",
-                "-y",
-                "-i",
-                it.name,
-                "-q:v",
-                "5",
-                "-vf",
-                "fps=1/10",
-                "thumb%04d.jpg",
-            ).directory(it.parentFile)
-                .inheritIO()
-                .start()
+// todo: you should be an ffmpeg task.
+private suspend fun createThumbnails(mediaLibraryEntry: MediaLibraryEntry, logger: Logger) {
+    globalFfmpegMutex.withLock {
+        mediaLibraryEntry.file?.let {
+            logger.info("Generating thumbnail for ${mediaLibraryEntry.id}")
+            if (it.parentFile?.list()?.none { it.startsWith("thumb") } == true) {
+                val proc = ProcessBuilder(
+                    "ffmpeg",
+                    "-y",
+                    "-i",
+                    it.name,
+                    "-q:v",
+                    "5",
+                    "-vf",
+                    "fps=1/10",
+                    "thumb%04d.jpg",
+                ).directory(it.parentFile)
+                    .inheritIO()
+                    .start()
 
-            proc.waitFor(60, TimeUnit.SECONDS)
-            proc.destroy()
-            proc.waitFor()
+                proc.waitFor(60, TimeUnit.SECONDS)
+                proc.destroy()
+                proc.waitFor()
+            }
         }
     }
 }

@@ -10,7 +10,11 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.sebi.downloader.CompletedDownloadTask
 import io.sebi.downloader.DownloadTask
+import io.sebi.ffmpeg.globalFfmpegMutex
 import io.sebi.network.NetworkManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -121,25 +125,27 @@ object DashPostProcessor : PostProcessor() {
     override fun postProcess(l: List<File>): File {
         val vid = DASHVideo(l[0])
         val aud = DASHAudio(l[1])
-        val mp4 = postProcessAudioAndVideo(vid, aud)
+        val mp4 = runBlocking(Dispatchers.IO) { postProcessAudioAndVideo(vid, aud) }
         return mp4.f
     }
 }
 
-fun postProcessAudioAndVideo(vid: DASHVideo, aud: DASHAudio): MP4File {
-    val fileName = UUID.randomUUID().toString()
-    ProcessBuilder(
-        "ffmpeg",
-        "-y",
-        "-i",
-        vid.f.name,
-        "-i",
-        aud.f.name,
-        "-c",
-        "copy",
-        "$fileName.mp4"
-    ).directory(vid.f.parentFile).inheritIO().start().waitFor()
-    return MP4File(File(vid.f.parent, "$fileName.mp4"))
+suspend fun postProcessAudioAndVideo(vid: DASHVideo, aud: DASHAudio): MP4File {
+    return globalFfmpegMutex.withLock {
+        val fileName = UUID.randomUUID().toString()
+        ProcessBuilder(
+            "ffmpeg",
+            "-y",
+            "-i",
+            vid.f.name,
+            "-i",
+            aud.f.name,
+            "-c",
+            "copy",
+            "$fileName.mp4"
+        ).directory(vid.f.parentFile).inheritIO().start().waitFor()
+        MP4File(File(vid.f.parent, "$fileName.mp4"))
+    }
 }
 
 // Concatenates TS files in preparation for remuxing
