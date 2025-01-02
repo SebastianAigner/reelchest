@@ -21,6 +21,7 @@ class VideoPlayerScreen(
     val videoUrl: String,
     val navigator: WindowCapableNavigator<Screen>,
     val cta: @Composable (() -> Unit)? = null,
+    val overlay: @Composable (BoxScope.() -> Unit)? = null,
     val videoId: String? = null,
 ) : Screen {
     @Composable
@@ -43,7 +44,7 @@ class VideoPlayerScreen(
         }
         Box(
             Modifier.fillMaxSize()
-                .background(Color.Black), // TODO: This "Black" is Placebo: It seems the Color doesn't actually punch through when not set in the AVPlayer. Report this.
+                .background(Color.Red), // TODO: This "Red" is Placebo: It seems the Color doesn't actually punch through when not set in the AVPlayer. Report this.
             contentAlignment = Alignment.BottomStart
         ) {
             val mapping = remember(isVlc) {
@@ -70,8 +71,8 @@ class VideoPlayerScreen(
 
             }
             if (shouldShowUI) {
-
                 Box(Modifier.fillMaxSize()) {
+                    overlay?.invoke(this)
                     StickyControlPanel(
                         pos,
                         { shouldShowUI = !shouldShowUI },

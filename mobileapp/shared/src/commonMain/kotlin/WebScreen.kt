@@ -15,7 +15,7 @@ class WebScreen(val url: String) : Screen {
     override fun Content() {
         val currentNavigator = LocalNavigator.currentOrThrow
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomStart) {
-            WebKitBrowserView(url, Modifier)
+            WebKitBrowserView(url, Modifier.fillMaxSize())
 
             Button({
                 currentNavigator.pop()

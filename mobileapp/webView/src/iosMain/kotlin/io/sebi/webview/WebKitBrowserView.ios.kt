@@ -5,8 +5,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.interop.UIKitView
+import androidx.compose.ui.viewinterop.UIKitInteropInteractionMode
+import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.window.ComposeUIViewController
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSMutableURLRequest
@@ -15,40 +18,23 @@ import platform.UIKit.UIColor
 import platform.UIKit.UIView
 import platform.WebKit.WKWebView
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, ExperimentalComposeUiApi::class)
 @Composable
 actual fun WebKitBrowserView(
     url: String,
     modifier: Modifier,
-) {
-
-    val wkView = remember {
-        WKWebView()
-    }
-    LaunchedEffect(url) {
-        val req = NSMutableURLRequest().apply {
-            setURL(URLWithString(url))
-        }
-        wkView.loadRequest(req)
-    }
-
-    Box(Modifier.fillMaxSize()) {
-        UIKitView(
-            factory = {
-                wkView
-            },
-            update = {
-                // View's been inflated or state read in this block has been updated
-                // maybe navigate here?
-            },
-            onResize = { view, rect ->
-                view.setFrame(rect)
-            },
-            onRelease = {
-
-            },
-            modifier = Modifier.fillMaxSize()
-        )
-    }
-
+    ) {
+    println("Browser view with URL $url")
+    androidx.compose.ui.viewinterop.UIKitView(
+        factory = {
+            val req = NSMutableURLRequest().apply {
+                setURL(URLWithString(url))
+            }
+            WKWebView().apply {
+                loadRequest(req)
+            }
+        },
+        modifier = modifier,
+        properties = UIKitInteropProperties(interactionMode = UIKitInteropInteractionMode.NonCooperative),
+    )
 }

@@ -1,4 +1,5 @@
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -11,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.model.rememberScreenModel
@@ -19,6 +21,7 @@ import com.russhwolf.settings.Settings
 import com.russhwolf.settings.get
 import io.kamel.image.KamelImage
 import io.kamel.image.asyncPainterResource
+import io.sebi.webview.WebKitBrowserView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -113,7 +116,40 @@ class VideoListScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
                                         VideoPlayerScreen(
                                             Settings().get<String>("endpoint")!! + "/api/video/${it.id}",
                                             navigator,
-                                            videoId = it.id
+                                            videoId = it.id,
+                                            overlay = {
+                                                val size = remember { mutableStateOf(1) }
+                                                Column(
+                                                    verticalArrangement = Arrangement.Bottom,
+                                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                                    modifier = Modifier.fillMaxSize()
+                                                ) {
+                                                    Row {
+                                                        Button(onClick = { size.value -= 1 }) {
+                                                            Text("-")
+                                                        }
+                                                        Button(onClick = { size.value += 1 }) {
+                                                            Text("+")
+                                                        }
+                                                    }
+                                                    val dpHeight = when (size.value) {
+                                                        0 -> 0.dp
+                                                        1 -> 400.dp
+                                                        2 -> 800.dp
+                                                        else -> 400.dp
+                                                    }
+                                                    Box(
+                                                        modifier = Modifier.size(width = 800.dp, height = dpHeight)
+                                                            .padding(10.dp)
+                                                            .border(1.dp, Color.Black)
+                                                    ) {
+                                                        WebKitBrowserView(
+                                                            Settings().get<String>("endpoint")!! + "?showNav=false#/movie/${it.id}?showPlayer=false",
+                                                            modifier = Modifier.fillMaxSize()
+                                                        )
+                                                    }
+                                                }
+                                            }
                                         )
                                     )
                                 },
