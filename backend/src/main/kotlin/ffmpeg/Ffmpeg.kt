@@ -45,29 +45,27 @@ val logger = LoggerFactory.getLogger("ffmpeg")
 // https://sebi.io/posts/2024-12-21-faster-thumbnail-generation-with-ffmpeg-seeking/
 suspend fun generateThumbnails(videoFile: File) {
     val dur = getVideoDuration(videoFile)
-    globalFfmpegMutex.withLock {
-        val ffmpegParameters = buildList<String> {
-            var streamId = 0
-            add("-y")
-            for (timestamp in 0..dur.inWholeSeconds step 10) {
-                add("-ss")
-                add(timestamp.toString())
-                add("-i")
-                add(videoFile.absolutePath)
-                add("-q:v")
-                add("5")
-                add("-frames:v")
-                add("1")
-                add("-map")
-                add("$streamId:v:0")
-                add("thumb${streamId.toString().padStart(4, '0')}.jpg")
-                streamId++
-            }
+    val ffmpegParameters = buildList<String> {
+        var streamId = 0
+        add("-y")
+        for (timestamp in 0..dur.inWholeSeconds step 10) {
+            add("-ss")
+            add(timestamp.toString())
+            add("-i")
+            add(videoFile.absolutePath)
+            add("-q:v")
+            add("5")
+            add("-frames:v")
+            add("1")
+            add("-map")
+            add("$streamId:v:0")
+            add("thumb${streamId.toString().padStart(4, '0')}.jpg")
+            streamId++
         }
-
-        val (out, err) = FfmpegTask(ffmpegParameters).execute(videoFile.parentFile)
-        if (err.isNotEmpty()) logger.error(err.joinToString("\n"))
     }
+
+    val (out, err) = FfmpegTask(ffmpegParameters).execute(videoFile.parentFile)
+    if (err.isNotEmpty()) logger.error(err.joinToString("\n"))
 }
 
 
