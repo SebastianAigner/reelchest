@@ -1,3 +1,5 @@
+import androidx.compose.animation.animateColor
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -71,6 +73,15 @@ object SetupScreen : Screen {
                 println("Oh no! $e")
             }
         }
+        val animatedColor by rememberInfiniteTransition().animateColor(
+            initialValue = Color(0xFFFF00FF),
+            targetValue = Color(0xFF00FFFF),
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 500, easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse
+            )
+        )
+
         Box(Modifier.fillMaxSize().background(Color.Black).padding(20.dp), contentAlignment = Alignment.Center) {
             Box() {
                 Box(
@@ -81,7 +92,7 @@ object SetupScreen : Screen {
                             edgeTreatment = BlurredEdgeTreatment.Unbounded
                         ) // neon glow effect! (wish there was a better way to do this)
                         .matchParentSize()
-                        .background(Color.Green)
+                        .background(animatedColor)
                         .padding(10.dp)
                         .scale(1.3f)
                 )
