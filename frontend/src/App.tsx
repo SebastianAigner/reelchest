@@ -28,9 +28,6 @@ function NavigationBar() {
                     <Link to="/mediaLibrary">Media Library</Link>
                 </div>
                 <div>
-                    <Link to="/add">Add</Link>
-                </div>
-                <div>
                     <Link to="/downloads">Downloads</Link>
                 </div>
                 <div>
