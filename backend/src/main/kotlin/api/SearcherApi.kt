@@ -11,6 +11,9 @@ import io.ktor.server.routing.*
 import io.sebi.rpc.RPCSearchService
 import io.sebi.search.SearchResult
 import kotlinx.coroutines.async
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.rpc.client.withService
 import kotlinx.rpc.serialization.json
@@ -23,30 +26,49 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.slf4j.LoggerFactory
 import java.io.File
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTimedValue
 
 class RPCSearchServiceProvider() {
-
+    val logger = LoggerFactory.getLogger("RPCSearchServiceProvider")
     val client = HttpClient(CIO) {
         installRPC()
     }
 
+    var currentService: RPCSearchService? = null
+    val serviceCreationMutex = Mutex()
     suspend fun getSearchService(): RPCSearchService {
-        val service = client.rpc {
-            url(
-                Json
-                    .decodeFromString<JsonArray>(File("userConfig/wsSearcher.json").readText())
-                    .first().jsonPrimitive.content
-            ) // TODO: Allow more than one searcher
-            rpcConfig {
-                serialization {
-                    json()
-                }
+        if (currentService != null && currentService?.isActive == true) {
+            logger.info("Reusing existing search service")
+            return currentService!!
+        }
+        // we need to create a new service
+        return serviceCreationMutex.withLock {
+            logger.info("Creating new search service")
+            // we check a second time to avoid creating multiple new services
+            if (currentService != null && currentService?.isActive == true) {
+                return currentService!!
             }
-        }.withService<RPCSearchService>()
-        return service
+            val service = client.rpc {
+                url(
+                    Json
+                        .decodeFromString<JsonArray>(File("userConfig/wsSearcher.json").readText())
+                        .first().jsonPrimitive.content
+                ) // TODO: Allow more than one searcher
+                rpcConfig {
+                    serialization {
+                        json()
+                    }
+                }
+            }.withService<RPCSearchService>()
+            currentService = service
+            logger.info("Created new search service")
+            service
+        }
     }
 }
 
+@OptIn(ExperimentalTime::class)
 fun Route.searcherApi() {
     val logger = LoggerFactory.getLogger("Searcher API")
     val searchServiceProvider = RPCSearchServiceProvider()
@@ -54,8 +76,8 @@ fun Route.searcherApi() {
         val provider = call.parameters["provider"]!!
         val (term, offset) = call.receive<SearchRequest>()
         val searchService = async {
-            logger.info("Obtaining search service...")
-            withTimeoutOrNull(10.seconds) {
+            logger.info("Obtaining search service for \"$provider\"")
+            withTimeoutOrNull(60.seconds) {
                 searchServiceProvider.getSearchService()
             }
         }
@@ -70,7 +92,19 @@ fun Route.searcherApi() {
     }
 
     get("searchers") {
-        val searchService = async { withTimeoutOrNull(10.seconds) { searchServiceProvider.getSearchService() } }
-        call.respond(searchService.await()?.getSearchProviders() ?: emptyList())
+        val searchService = async {
+            logger.info("Obtaining search service for listing searchers...")
+            withTimeoutOrNull(60.seconds) {
+                val (service, duration) = measureTimedValue {
+                    searchServiceProvider.getSearchService()
+                }
+                logger.info("Obtained search service in $duration.")
+                service
+            }
+        }
+        logger.info("Listing searchers...")
+        val (searchProviders, duration) = measureTimedValue { searchService.await()?.getSearchProviders() }
+        logger.info("Searchers obtained in $duration.")
+        call.respond(searchProviders ?: error("Failed to obtain search service."))
     }
 }
