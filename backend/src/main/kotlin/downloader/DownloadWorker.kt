@@ -5,6 +5,8 @@ import io.ktor.client.plugins.*
 import io.ktor.util.logging.*
 import io.sebi.network.NetworkManager
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.IOException
@@ -54,51 +56,53 @@ class DownloadWorker(
     }
 
     private suspend fun downloadSingleItem(myTask: DownloadTask) {
-        logger.info("Starting work on $myTask")
-        try {
-            var urls = myTask.getDirectDownloadUrls()
-            val results = mutableListOf<File>()
-            for (idx in urls.indices) {
-                try {
-                    val fragment = urls[idx]
-                    val targetFile = File
-                        .createTempFile("vid", ".mp4", File("downloads").apply { mkdir(); })
-                        .apply { deleteOnExit() }
-                    Downloader(networkManager).download(
-                        fragment,
-                        targetFile,
-                        absoluteProgressCallback = {
-                            val progress = it.first.toDouble() / (it.second ?: Long.MAX_VALUE)
-                            myTask.progress = if (urls.size > 1) idx.toDouble() / urls.size else progress
-                        }
-                    )
-                    results.add(targetFile)
-                } catch (nfe: HttpNotFoundException) {
-                    logger.error("404: Couldn't find ${urls[idx]}")
-                    onError(myTask, nfe)
-                    currentTask = null
-                    break
-                } catch (c: ClientRequestException) {
-                    // probably a 403
-                    logger.error(c)
-                    urls = myTask.getDirectDownloadUrls()
-                    throw c
+        withContext(Dispatchers.IO) {
+            logger.info("Starting work on $myTask")
+            try {
+                var urls = myTask.getDirectDownloadUrls()
+                val results = mutableListOf<File>()
+                for (idx in urls.indices) {
+                    try {
+                        val fragment = urls[idx]
+                        val targetFile = File
+                            .createTempFile("vid", ".mp4", File("downloads").apply { mkdir(); })
+                            .apply { deleteOnExit() }
+                        Downloader(networkManager).download(
+                            fragment,
+                            targetFile,
+                            absoluteProgressCallback = {
+                                val progress = it.first.toDouble() / (it.second ?: Long.MAX_VALUE)
+                                myTask.progress = if (urls.size > 1) idx.toDouble() / urls.size else progress
+                            }
+                        )
+                        results.add(targetFile)
+                    } catch (nfe: HttpNotFoundException) {
+                        logger.error("404: Couldn't find ${urls[idx]}")
+                        onError(myTask, nfe)
+                        currentTask = null
+                        break
+                    } catch (c: ClientRequestException) {
+                        // probably a 403
+                        logger.error(c)
+                        urls = myTask.getDirectDownloadUrls()
+                        throw c
+                    }
                 }
-            }
 
-            logger.info("Completed work on $myTask")
-            val postProcessing = myTask.onPostProcess(results)
-            val completed = CompletedDownloadTask(
-                targetFile = postProcessing, originUrl = myTask.originUrl
-            )
-            myTask.onComplete(completed)
-            onComplete(
-                completed
-            )
-            currentTask = null
-        } catch (e: IOException) {
-            onError(myTask, e)
-            currentTask = null
+                logger.info("Completed work on $myTask")
+                val postProcessing = myTask.onPostProcess(results)
+                val completed = CompletedDownloadTask(
+                    targetFile = postProcessing, originUrl = myTask.originUrl
+                )
+                myTask.onComplete(completed)
+                onComplete(
+                    completed
+                )
+                currentTask = null
+            } catch (e: IOException) {
+                onError(myTask, e)
+                currentTask = null
+            }
         }
     }
 }

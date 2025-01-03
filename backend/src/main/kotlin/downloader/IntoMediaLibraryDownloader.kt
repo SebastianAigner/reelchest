@@ -11,7 +11,7 @@ class IntoMediaLibraryDownloader(
 ) {
     suspend fun download(url: String) {
         downloadManager.enqueueTask(
-            urlDecoder.makeDownloadTask(url, mediaLibrary::addCompletedDownload)
+            urlDecoder.makeDownloadTask(originUrl = url, onComplete = mediaLibrary::addCompletedDownload)
         )
     }
 }

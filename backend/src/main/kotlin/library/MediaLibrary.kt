@@ -10,6 +10,7 @@ import io.sebi.urldecoder.UrlDecoder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -22,7 +23,7 @@ class MediaLibrary(
     private val urlDecoder: UrlDecoder,
     private val networkManager: NetworkManager,
     private val videoStorage: VideoStorage,
-    private val metadataStorage: MetadataStorage
+    private val metadataStorage: MetadataStorage,
 ) {
     suspend fun getEntries() = metadataStorage.listAllMetadata()
     val logger = LoggerFactory.getLogger("Media Library")
@@ -66,14 +67,15 @@ class MediaLibrary(
             creationDate = System.currentTimeMillis() / 1000,
             tags = metadata?.tags?.toSet() ?: emptySet(),
         )
-
-        videoStorage.storeVideo(uid, c.targetFile.toPath())
-        logger.info("Persisting $entry")
-        entry.persist(metadataStorage)
-        c.targetFile.delete()
-        entry.file?.let {
-            logger.info("Starting thumbnail generation.")
+        withContext(Dispatchers.IO) {
+            videoStorage.storeVideo(uid, c.targetFile.toPath())
+            logger.info("Persisting $entry")
+            entry.persist(metadataStorage)
+            c.targetFile.delete()
+            entry.file?.let {
+                logger.info("Starting thumbnail generation.")
 //            generateThumbnails(it)
+            }
         }
     }
 }
