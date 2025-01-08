@@ -15,6 +15,7 @@ import io.sebi.logging.InMemoryAppender
 import io.sebi.logging.getSerializableRepresentation
 import io.sebi.network.NetworkManager
 import io.sebi.storage.MetadataStorage
+import io.sebi.subtitles.subtitleApi
 import io.sebi.tagging.Tagger
 import io.sebi.urldecoder.UrlDecoder
 import kotlinx.serialization.Serializable
@@ -52,6 +53,7 @@ fun Route.api(
 
         downloaderApi(downloadManager, urlDecoder, mediaLibrary::addCompletedDownload)
         searcherApi()
+        subtitleApi()
 
         route("autotags") {
             get("/popular") {

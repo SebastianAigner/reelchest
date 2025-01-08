@@ -9,6 +9,7 @@ import {Log} from "./views/Log";
 import {Movie} from "./views/Movie";
 import {ConfigurationManager} from "./views/ConfigurationManager";
 import {DuplicatesManager} from "./views/DuplicatesManager";
+import {SubtitleKitchen} from "./views/SubtitleKitchen";
 
 // Navigation bar supports conditional rendering by setting showNav to false.
 // However, this is part of the actual location, not the react hash router emulated string. So:
@@ -41,6 +42,9 @@ function NavigationBar() {
                 </div>
                 <div>
                     <Link to="/log">Log</Link>
+                </div>
+                <div>
+                    <Link to={"/subtitleKitchen"}>Subtitle Kitchen</Link>
                 </div>
             </>
         )}
@@ -86,6 +90,9 @@ export default function App() {
                     </Route>
                     <Route path="/log">
                         <Log/>
+                    </Route>
+                    <Route path="/subtitleKitchen">
+                        <SubtitleKitchen/>
                     </Route>
                 </Switch>
             </div>
