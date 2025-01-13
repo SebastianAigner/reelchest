@@ -49,7 +49,8 @@ object SettingsScreen : Screen {
                 }
                 Row {
                     var snippetEndpoint by remember { mutableStateOf(settings.getString("snippetEndpoint", "")) }
-                    TextField(snippetEndpoint, onValueChange = { snippetEndpoint = it })
+                    Text("Snippet Endpoint: ")
+                    TextField(value = snippetEndpoint, onValueChange = { snippetEndpoint = it })
                     Button(onClick = { settings.putString("snippetEndpoint", snippetEndpoint) }) { Text("Set") }
                 }
                 Button(onClick = { navigator.pop() }) {

@@ -99,7 +99,7 @@ class SnippetScreen(
                         modifier = Modifier.combinedClickable(onLongClick = {
                             cs.launch {
                                 status =
-                                    globalHttpClient
+                                    "[delete${snippet.id}]:" + globalHttpClient
                                         .delete("${Settings().getStringOrNull("snippetEndpoint")!!}/timesnippets/${snippet.id!!}")
                                         .body<String>()
                             }
