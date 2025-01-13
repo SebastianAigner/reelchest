@@ -120,7 +120,7 @@ class VideoListScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
                                             navigator,
                                             videoId = it.id,
                                             overlay = {
-                                                val size = remember { mutableStateOf(1) }
+                                                val size = remember { mutableStateOf(0) }
                                                 Column(
                                                     verticalArrangement = Arrangement.Bottom,
                                                     horizontalAlignment = Alignment.CenterHorizontally,

@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import kotlin.time.Duration
 
 interface ControllableVideoPlayer {
     fun play()
@@ -17,6 +18,8 @@ interface ControllableVideoPlayer {
 
 class VideoPlayerState {
     val position = mutableStateOf(0.0f)
+    var currentTime: Duration? = null
+    var currentItemLength: Duration? = null
     var controlledPlayer: ControllableVideoPlayer? = null
     fun play() {
         controlledPlayer?.play()

@@ -16,6 +16,7 @@ import platform.Foundation.NSNotification
 import platform.Foundation.NSURL
 import platform.UIKit.UIView
 import platform.darwin.NSObject
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalForeignApi::class)
 class MediaPlayerDelegate() : NSObject(), VLCMediaPlayerDelegateProtocol {
@@ -67,10 +68,15 @@ fun VLCVideoPlayer(
     }
 
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(url) {
         while (true) {
             delay(32) // TODO: There is a MediaPlayerDelegate (see above), but from quick tests, I'm not sure how reliable it is.
             videoPlayerState.position.value = mediaPlayer.position
+            mediaPlayer.time?.intValue?.milliseconds?.let {
+                videoPlayerState.currentTime = it
+
+            }
+            videoPlayerState.currentItemLength = mediaPlayer.media?.length?.intValue?.milliseconds
         }
     }
     Box(Modifier.fillMaxSize()) {

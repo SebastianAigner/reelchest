@@ -1,4 +1,5 @@
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -16,6 +17,8 @@ import cafe.adriel.voyager.core.screen.Screen
 import com.russhwolf.settings.Settings
 import io.sebi.videoplayer.*
 import kotlinx.coroutines.delay
+import kotlin.time.Duration
+import kotlin.time.DurationUnit
 
 class VideoPlayerScreen(
     val videoUrl: String,
@@ -111,24 +114,35 @@ class VideoPlayerScreen(
     }
 }
 
+fun Duration?.asColonSeparatedString(): String {
+    if (this == null) return "??:??"
+    val dur = this
+    return buildString {
+        dur.toComponents { hours, minutes, seconds, nanoseconds ->
+            if (hours > 1) {
+                append(dur.toString(DurationUnit.HOURS))
+                append(":")
+            }
+            append(minutes.toString().padStart(2, '0'))
+            append(":")
+            append(seconds.toString().padStart(2, '0'))
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun VideoPageControls(videoPlayerState: VideoPlayerState, snippetState: SnippetState) {
     Row(Modifier.fillMaxWidth()) {
-        Button(
-            onClick = {
-                videoPlayerState.jumpBackward(10)
-            }
-        ) {
-            Text("-10s")
-        }
-        Button(
-            onClick = {
-                videoPlayerState.jumpForward(10)
-            }
-        ) {
-            Text("+10s")
+        Box(Modifier.height(30.dp).border(2.dp, Color.Green)) {
+            val currTime = videoPlayerState.currentTime
+            val currLen = videoPlayerState.currentItemLength
+
+            Text(
+                "${currTime.asColonSeparatedString()}/${currLen.asColonSeparatedString()}",
+                color = Color.White
+            )
+
         }
         Button(
             onClick = {
@@ -154,6 +168,7 @@ fun VideoPageControls(videoPlayerState: VideoPlayerState, snippetState: SnippetS
                 onValueChange = {},
             )
         }
+
     }
 }
 
@@ -173,30 +188,38 @@ fun StickyControlPanel(
         val centerPoint = DpOffset(pos.x.toDp(), pos.y.toDp()) - centerShift
         val centerElementTopLeft = DpOffset(pos.x.toDp(), pos.y.toDp())
         val topRowOffset = centerElementTopLeft + DpOffset(-CENTER_LEN, -CENTER_LEN) - centerShift
-        val bottomRowOffset = centerElementTopLeft + DpOffset(-CENTER_LEN * 2, CENTER_LEN) - centerShift
+        val bottomRowOffset =
+            centerElementTopLeft + DpOffset(-CENTER_LEN * 2, CENTER_LEN) - centerShift
 
         val ROW_WIDTH = CENTER_LEN * topRowLabels.size
         val ROW_HEIGHT = CENTER_LEN
         println("offset $topRowOffset")
         Row(
-            Modifier.absoluteOffset(topRowOffset.x, topRowOffset.y).width(ROW_WIDTH).height(ROW_HEIGHT)
+            Modifier.absoluteOffset(topRowOffset.x, topRowOffset.y).width(ROW_WIDTH)
+                .height(ROW_HEIGHT)
                 .background(Color.Blue)
         ) {
             repeat(topRowLabels.size) {
-                Box(modifier = Modifier.width(CENTER_LEN).height(CENTER_LEN).clickable { onTopRowPressed(it) }) {
+                Box(
+                    modifier = Modifier.width(CENTER_LEN).height(CENTER_LEN)
+                        .clickable { onTopRowPressed(it) }) {
                     Text(topRowLabels.getOrNull(it) ?: "", color = Color.White)
                 }
             }
         }
         Row(
-            Modifier.absoluteOffset(bottomRowOffset.x, bottomRowOffset.y).width(CENTER_LEN * 5).height(ROW_HEIGHT)
+            Modifier.absoluteOffset(bottomRowOffset.x, bottomRowOffset.y).width(CENTER_LEN * 5)
+                .height(ROW_HEIGHT)
                 .background(Color.Blue)
         ) {
             Slider(
                 modifier = Modifier.fillMaxWidth(),
                 onValueChange = { onSliderValueChanged(it) },
                 value = sliderValue,
-                colors = SliderDefaults.colors(thumbColor = Color.White, activeTrackColor = Color.White)
+                colors = SliderDefaults.colors(
+                    thumbColor = Color.White,
+                    activeTrackColor = Color.White
+                )
             )
         }
         Box(
