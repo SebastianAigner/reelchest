@@ -1,6 +1,5 @@
 import * as React from "react";
 import {ChangeEvent, useEffect, useState} from "react";
-import axios from "axios";
 import {useHistory, useParams} from "react-router-dom";
 import {MediaLibraryCard} from "../components/MediaLibraryCard";
 import {StyledButton} from "../components/StyledButton";
@@ -22,6 +21,20 @@ function usePopTags() {
         isLoading: !error && !data,
         isError: error
     }
+}
+
+
+function useMediaLibraryEntries() {
+    const {data, error} = useSWR<Array<AutoTaggedMediaLibraryEntry>>(
+        "/api/mediaLibrary?auto=true",
+        fetcher
+    );
+
+    return {
+        mediaLibraryEntries: data,
+        isLoading: !error && !data,
+        isError: error,
+    };
 }
 
 interface SearchQuery {
@@ -58,7 +71,7 @@ function MediaLibraryEntryGrid({entries}: { entries: AutoTaggedMediaLibraryEntry
     </div>;
 }
 
-function MediaLibraryEntryButton({children, onClick}: { children: React.ReactNode; onClick: () => void }) {
+function MediaLibraryViewChangeButton({children, onClick}: { children: React.ReactNode; onClick: () => void }) {
     return (
         <StyledButton
             className={"my-4 mx-3"}
@@ -74,14 +87,13 @@ export function MediaLibrary() {
     const {popTags} = usePopTags()
 
     const [searchBarContent, setSearchBarContent] = useState(query ? query : "")
+    const {mediaLibraryEntries, isLoading, isError} = useMediaLibraryEntries();
+
     useEffect(() => {
-        const fetchData = async () => {
-            const result = await axios.get<Array<AutoTaggedMediaLibraryEntry>>("/api/mediaLibrary?auto=true");
-            console.log(result.data);
-            setData(result.data);
+        if (mediaLibraryEntries) {
+            setData(mediaLibraryEntries);
         }
-        fetchData()
-    }, [])
+    }, [mediaLibraryEntries]);
 
     let handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         setSearchBarContent(e.target.value)
@@ -108,7 +120,39 @@ export function MediaLibrary() {
         })
     }
 
-    return (<>
+    const handleRandomVideoSelection = () => {
+        const item = videosFilteredBySearchBar[Math.floor(Math.random() * videosFilteredBySearchBar.length)];
+        history.push(`/movie/${item.mediaLibraryEntry.id}`);
+    };
+
+    const handleRandomZeroHitsVideo = () => {
+        const zeroBois = videosFilteredBySearchBar.filter(item => {
+            return item.mediaLibraryEntry.hits == 0;
+        });
+        const item = zeroBois[Math.floor(Math.random() * zeroBois.length)];
+        history.push(`/movie/${item.mediaLibraryEntry.id}`);
+    };
+
+    const handleAlphabeticalSort = () => {
+        console.log("sorting!");
+        const newthing = [...data].sort((a, b) => a.mediaLibraryEntry.name > b.mediaLibraryEntry.name ? 1 : -1);
+        console.log(newthing);
+        setData(newthing);
+    };
+
+    const handleHitSort = () => {
+        console.log("sorting!");
+        const newthing = [...data].sort((a, b) => a.mediaLibraryEntry.hits < b.mediaLibraryEntry.hits ? 1 : -1);
+        console.log(newthing);
+        setData(newthing);
+    };
+
+    const handleShuffle = () => {
+        const newthing = [...data].sort(() => 0.5 - Math.random());
+        setData(newthing);
+    };
+
+    return <>
         <h2 className={"text-5xl"}>Media Lib</h2>
         <form onSubmit={(e) => {
             e?.preventDefault()
@@ -119,52 +163,25 @@ export function MediaLibrary() {
 
         <div className={""}>
             <div className={"flex flex-row overflow-x-scroll"}>
-                <MediaLibraryEntryButton
-                    onClick={() => {
-                        const item = videosFilteredBySearchBar[Math.floor(Math.random() * videosFilteredBySearchBar.length)];
-                        history.push(`/movie/${item.mediaLibraryEntry.id}`)
-                    }}>
+                <MediaLibraryViewChangeButton onClick={handleRandomVideoSelection}>
                     Random video from selection
-                </MediaLibraryEntryButton>
+                </MediaLibraryViewChangeButton>
 
-                <MediaLibraryEntryButton
-                    onClick={() => {
-                        const zeroBois = videosFilteredBySearchBar.filter(item => {
-                            return item.mediaLibraryEntry.hits == 0
-                        })
-                        const item = zeroBois[Math.floor(Math.random() * zeroBois.length)];
-                        history.push(`/movie/${item.mediaLibraryEntry.id}`)
-                    }}>
+                <MediaLibraryViewChangeButton onClick={handleRandomZeroHitsVideo}>
                     Random 0-hit video
-                </MediaLibraryEntryButton>
+                </MediaLibraryViewChangeButton>
 
-                <MediaLibraryEntryButton
-                    onClick={() => {
-                        console.log("sorting!")
-                        const newthing = [...data].sort((a, b) => (a.mediaLibraryEntry.name > b.mediaLibraryEntry.name) ? 1 : -1)
-                        console.log(newthing)
-                        setData(newthing)
-                    }}>
+                <MediaLibraryViewChangeButton onClick={handleAlphabeticalSort}>
                     Alphabetical Sort
-                </MediaLibraryEntryButton>
+                </MediaLibraryViewChangeButton>
 
-                <MediaLibraryEntryButton
-                    onClick={() => {
-                        console.log("sorting!")
-                        const newthing = [...data].sort((a, b) => (a.mediaLibraryEntry.hits < b.mediaLibraryEntry.hits) ? 1 : -1)
-                        console.log(newthing)
-                        setData(newthing)
-                    }}>
+                <MediaLibraryViewChangeButton onClick={handleHitSort}>
                     Hit Sort
-                </MediaLibraryEntryButton>
+                </MediaLibraryViewChangeButton>
 
-                <MediaLibraryEntryButton
-                    onClick={() => {
-                        const newthing = [...data].sort(() => 0.5 - Math.random())
-                        setData(newthing)
-                    }}>
+                <MediaLibraryViewChangeButton onClick={handleShuffle}>
                     Shuffle
-                </MediaLibraryEntryButton>
+                </MediaLibraryViewChangeButton>
             </div>
         </div>
         <div>
@@ -179,6 +196,6 @@ export function MediaLibrary() {
 
         </div>
         <MediaLibraryCards entries={videosFilteredBySearchBar}/>
-    </>);
+    </>;
 }
 
