@@ -14,7 +14,7 @@ interface MyPair {
     second: number
 }
 
-function usePopTags() {
+function usePopularTags() {
     const {data, error} = useSWR<Array<MyPair>>(`/api/autotags/popular`, fetcher)
     return {
         popTags: data,
@@ -84,7 +84,7 @@ function MediaLibraryViewChangeButton({children, onClick}: { children: React.Rea
 export function MediaLibrary() {
     const {query} = useParams<SearchQuery>();
     const [data, setData] = useState<Array<AutoTaggedMediaLibraryEntry>>([])
-    const {popTags} = usePopTags()
+    const {popTags} = usePopularTags()
 
     const [searchBarContent, setSearchBarContent] = useState(query ? query : "")
     const {mediaLibraryEntries, isLoading, isError} = useMediaLibraryEntries();
@@ -134,16 +134,12 @@ export function MediaLibrary() {
     };
 
     const handleAlphabeticalSort = () => {
-        console.log("sorting!");
         const newthing = [...data].sort((a, b) => a.mediaLibraryEntry.name > b.mediaLibraryEntry.name ? 1 : -1);
-        console.log(newthing);
         setData(newthing);
     };
 
     const handleHitSort = () => {
-        console.log("sorting!");
         const newthing = [...data].sort((a, b) => a.mediaLibraryEntry.hits < b.mediaLibraryEntry.hits ? 1 : -1);
-        console.log(newthing);
         setData(newthing);
     };
 
