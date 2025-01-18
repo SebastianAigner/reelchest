@@ -19,7 +19,7 @@ function NavigationBar() {
     const queryParams = new URLSearchParams(location.search);
     const showNav = queryParams.get("showNav") != "false";
 
-    return <nav className={"grid grid-cols-1 sm:grid-cols-7 gap-4 text-center"}>
+    return <nav className={"grid grid-cols-2 sm:grid-cols-8 gap-4 text-center"}>
         {showNav && (
             <>
                 <div>
