@@ -55,46 +55,48 @@ function NavigationBar() {
 export default function App() {
     return (
         <HashRouter>
-            <div className={"m-8"}>
-                {NavigationBar()}
+            <div className={""}>
+                <div className={"flex flex-col h-screen p-8"}>
+                    {NavigationBar()}
 
-                {/* A <Switch> looks through its children <Route>s and
+                    {/* A <Switch> looks through its children <Route>s and
             renders the first one that matches the current URL. */}
-                <Switch>
-                    <Route path="/downloads">
-                        <>
-                            <Add/>
-                            <Downloads/>
-                        </>
-                    </Route>
-                    <Route path="/mediaLibrary/:query">
-                        <MediaLibrary/>
-                    </Route>
-                    <Route path="/mediaLibrary">
-                        <MediaLibrary/>
-                    </Route>
-                    <Route path="/movie/:id">
-                        <Movie/>
-                    </Route>
-                    <Route path="/search">
-                        <Search/>
-                    </Route>
-                    <Route path="/duplicates">
-                        <DuplicatesManager/>
-                    </Route>
-                    <Route path="/tags">
-                        <ConfigurationManager endpoint={"autotags"}/>
-                    </Route>
-                    <Route path="/queries">
-                        <ConfigurationManager endpoint={"queries"}/>
-                    </Route>
-                    <Route path="/log">
-                        <Log/>
-                    </Route>
-                    <Route path="/subtitleKitchen">
-                        <SubtitleKitchen/>
-                    </Route>
-                </Switch>
+                    <Switch>
+                        <Route path="/downloads">
+                            <>
+                                <Add/>
+                                <Downloads/>
+                            </>
+                        </Route>
+                        <Route path="/mediaLibrary/:query">
+                            <MediaLibrary/>
+                        </Route>
+                        <Route path="/mediaLibrary">
+                            <MediaLibrary/>
+                        </Route>
+                        <Route path="/movie/:id">
+                            <Movie/>
+                        </Route>
+                        <Route path="/search">
+                            <Search/>
+                        </Route>
+                        <Route path="/duplicates">
+                            <DuplicatesManager/>
+                        </Route>
+                        <Route path="/tags">
+                            <ConfigurationManager endpoint={"autotags"}/>
+                        </Route>
+                        <Route path="/queries">
+                            <ConfigurationManager endpoint={"queries"}/>
+                        </Route>
+                        <Route path="/log">
+                            <Log/>
+                        </Route>
+                        <Route path="/subtitleKitchen">
+                            <SubtitleKitchen/>
+                        </Route>
+                    </Switch>
+                </div>
             </div>
         </HashRouter>
     );

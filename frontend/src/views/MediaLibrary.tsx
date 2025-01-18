@@ -27,14 +27,16 @@ interface SearchQuery {
 }
 
 function MediaLibraryCards({entries}: { entries: AutoTaggedMediaLibraryEntry[] }) {
-    return <div className={"grid grid-cols-1 sm:grid-cols-3 gap-8"}>
-        {
-            entries
-                .slice(0, 100)
-                .map(item =>
-                    <MediaLibraryCard item={item.mediaLibraryEntry} key={item.mediaLibraryEntry.id}/>
-                )
-        }
+    return <div className={"flex-1 overflow-y-auto"}>
+        <div className={"grid grid-cols-1 sm:grid-cols-3 gap-8"}>
+            {
+                entries
+                    .slice(0, 100)
+                    .map(item =>
+                        <MediaLibraryCard item={item.mediaLibraryEntry} key={item.mediaLibraryEntry.id}/>
+                    )
+            }
+        </div>
     </div>;
 }
 
@@ -86,55 +88,57 @@ export function MediaLibrary() {
             <label>Filter: </label>
             <input type={"text"} value={searchBarContent} onChange={handleChange}/>
         </form>
-        <StyledButton
-            className={"inline-block"}
-            onClick={() => {
-                const item = videosFilteredBySearchBar[Math.floor(Math.random() * videosFilteredBySearchBar.length)];
-                history.push(`/movie/${item.mediaLibraryEntry.id}`)
-            }}>
-            Random video from selection
-        </StyledButton>
 
-        <StyledButton
-            className={"my-4 mx-3 inline-block"}
-            onClick={() => {
-                const zeroBois = videosFilteredBySearchBar.filter(item => {
-                    return item.mediaLibraryEntry.hits == 0
-                })
-                const item = zeroBois[Math.floor(Math.random() * zeroBois.length)];
-                history.push(`/movie/${item.mediaLibraryEntry.id}`)
-            }}>
-            Random 0-hit video
-        </StyledButton>
-        <StyledButton
-            className={"my-4 mx-3 inline-block"}
-            onClick={() => {
-                console.log("sorting!")
-                const newthing = [...data].sort((a, b) => (a.mediaLibraryEntry.name > b.mediaLibraryEntry.name) ? 1 : -1)
-                console.log(newthing)
-                setData(newthing)
-            }}>
-            Alphabetical Sort
-        </StyledButton>
+        <div className={"flex flex-row"}>
+            <StyledButton
+                className={"my-4 mx-3 inline-block"}
+                onClick={() => {
+                    const item = videosFilteredBySearchBar[Math.floor(Math.random() * videosFilteredBySearchBar.length)];
+                    history.push(`/movie/${item.mediaLibraryEntry.id}`)
+                }}>
+                Random video from selection
+            </StyledButton>
 
-        <StyledButton
-            className={"my-4 mx-3 inline-block"}
-            onClick={() => {
-                console.log("sorting!")
-                const newthing = [...data].sort((a, b) => (a.mediaLibraryEntry.hits < b.mediaLibraryEntry.hits) ? 1 : -1)
-                console.log(newthing)
-                setData(newthing)
-            }}>
-            Hit Sort
-        </StyledButton>
-        <StyledButton
-            className={"my-4 mx-3 inline-block"}
-            onClick={() => {
-                const newthing = [...data].sort(() => 0.5 - Math.random())
-                setData(newthing)
-            }}>
-            Shuffle
-        </StyledButton>
+            <StyledButton
+                className={"my-4 mx-3 inline-block"}
+                onClick={() => {
+                    const zeroBois = videosFilteredBySearchBar.filter(item => {
+                        return item.mediaLibraryEntry.hits == 0
+                    })
+                    const item = zeroBois[Math.floor(Math.random() * zeroBois.length)];
+                    history.push(`/movie/${item.mediaLibraryEntry.id}`)
+                }}>
+                Random 0-hit video
+            </StyledButton>
+            <StyledButton
+                className={"my-4 mx-3 inline-block"}
+                onClick={() => {
+                    console.log("sorting!")
+                    const newthing = [...data].sort((a, b) => (a.mediaLibraryEntry.name > b.mediaLibraryEntry.name) ? 1 : -1)
+                    console.log(newthing)
+                    setData(newthing)
+                }}>
+                Alphabetical Sort
+            </StyledButton>
+
+            <StyledButton
+                className={"my-4 mx-3 inline-block"}
+                onClick={() => {
+                    console.log("sorting!")
+                    const newthing = [...data].sort((a, b) => (a.mediaLibraryEntry.hits < b.mediaLibraryEntry.hits) ? 1 : -1)
+                    console.log(newthing)
+                    setData(newthing)
+                }}>
+                Hit Sort
+            </StyledButton>
+            <StyledButton
+                className={"my-4 mx-3 inline-block"}
+                onClick={() => {
+                    const newthing = [...data].sort(() => 0.5 - Math.random())
+                    setData(newthing)
+                }}>
+                Shuffle
+            </StyledButton></div>
         <div>
             {popTags?.slice(0, 10)?.map(tag =>
                 <StyledButton key={tag.first} className={"inline-block bg-blue-400 mx-1 my-3"} onClick={() => {
