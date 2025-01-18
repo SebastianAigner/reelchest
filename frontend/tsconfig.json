@@ -1,14 +1,15 @@
 {
   "compilerOptions": {
     "target": "es5",
-    "module": "es2015",
+    "module": "es2016",
     "jsx": "react",
     "strictNullChecks": true,
     "moduleResolution": "node",
     "lib": [
       "dom",
       "es5",
-      "es6"
+      "es6",
+      "es2016"
     ]
   },
   "include": [
