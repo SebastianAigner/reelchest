@@ -41,7 +41,7 @@ export function Search() {
 
     return <>
         <h2 className={"text-5xl"}>Search</h2>
-        <select value={searchUrl} onChange={(event => {
+        <div className={"flex flex-row"}><select value={searchUrl} onChange={(event => {
             setSearchUrl(event.target.value);
             event.preventDefault()
         })}>
@@ -49,15 +49,15 @@ export function Search() {
                 <option value={value}>{value}</option>
             )}
         </select>
-        <SimpleInputField
-            onChange={(value) => {
-            }}
-            onSubmit={(value) => {
-                setTerm(value)
-                setPageOffset(0);
-                submit(value, 0);
-                return INPUT_ACTION.DO_NOTHING
-            }}/>
+            <SimpleInputField
+                onChange={(value) => {
+                }}
+                onSubmit={(value) => {
+                    setTerm(value)
+                    setPageOffset(0);
+                    submit(value, 0);
+                    return INPUT_ACTION.DO_NOTHING
+                }}/></div>
         <div className={"grid grid-cols-1 sm:grid-cols-3 gap-8"}>
             {results?.map((result) =>
                 <SearchResultComponent key={result.url} {...result}/>
