@@ -26,6 +26,18 @@ interface SearchQuery {
     query: string | undefined
 }
 
+function MediaLibraryCards({entries}: { entries: AutoTaggedMediaLibraryEntry[] }) {
+    return <div className={"grid grid-cols-1 sm:grid-cols-3 gap-8"}>
+        {
+            entries
+                .slice(0, 100)
+                .map(item =>
+                    <MediaLibraryCard item={item.mediaLibraryEntry} key={item.mediaLibraryEntry.id}/>
+                )
+        }
+    </div>;
+}
+
 export function MediaLibrary() {
     const {query} = useParams<SearchQuery>();
     const [data, setData] = useState<Array<AutoTaggedMediaLibraryEntry>>([])
@@ -134,14 +146,6 @@ export function MediaLibrary() {
             }
 
         </div>
-        <div className={"grid grid-cols-1 sm:grid-cols-3 gap-8"}>
-            {
-                videosFilteredBySearchBar
-                    .slice(0, 100)
-                    .map(item =>
-                        <MediaLibraryCard item={item.mediaLibraryEntry} key={item.mediaLibraryEntry.id}/>
-                    )
-            }
-        </div>
+        <MediaLibraryCards entries={videosFilteredBySearchBar}/>
     </>);
 }
