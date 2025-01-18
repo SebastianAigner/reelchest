@@ -58,6 +58,16 @@ function MediaLibraryEntryGrid({entries}: { entries: AutoTaggedMediaLibraryEntry
     </div>;
 }
 
+function MediaLibraryEntryButton({children, onClick}: { children: React.ReactNode; onClick: () => void }) {
+    return (
+        <StyledButton
+            className={"my-4 mx-3"}
+            onClick={onClick}>
+            {children}
+        </StyledButton>
+    );
+}
+
 export function MediaLibrary() {
     const {query} = useParams<SearchQuery>();
     const [data, setData] = useState<Array<AutoTaggedMediaLibraryEntry>>([])
@@ -109,17 +119,15 @@ export function MediaLibrary() {
 
         <div className={""}>
             <div className={"flex flex-row overflow-x-scroll"}>
-                <StyledButton
-                    className={"my-4 mx-3"}
+                <MediaLibraryEntryButton
                     onClick={() => {
                         const item = videosFilteredBySearchBar[Math.floor(Math.random() * videosFilteredBySearchBar.length)];
                         history.push(`/movie/${item.mediaLibraryEntry.id}`)
                     }}>
                     Random video from selection
-                </StyledButton>
+                </MediaLibraryEntryButton>
 
-                <StyledButton
-                    className={"my-4 mx-3"}
+                <MediaLibraryEntryButton
                     onClick={() => {
                         const zeroBois = videosFilteredBySearchBar.filter(item => {
                             return item.mediaLibraryEntry.hits == 0
@@ -128,9 +136,9 @@ export function MediaLibrary() {
                         history.push(`/movie/${item.mediaLibraryEntry.id}`)
                     }}>
                     Random 0-hit video
-                </StyledButton>
-                <StyledButton
-                    className={"my-4 mx-3"}
+                </MediaLibraryEntryButton>
+
+                <MediaLibraryEntryButton
                     onClick={() => {
                         console.log("sorting!")
                         const newthing = [...data].sort((a, b) => (a.mediaLibraryEntry.name > b.mediaLibraryEntry.name) ? 1 : -1)
@@ -138,10 +146,9 @@ export function MediaLibrary() {
                         setData(newthing)
                     }}>
                     Alphabetical Sort
-                </StyledButton>
+                </MediaLibraryEntryButton>
 
-                <StyledButton
-                    className={"my-4 mx-3"}
+                <MediaLibraryEntryButton
                     onClick={() => {
                         console.log("sorting!")
                         const newthing = [...data].sort((a, b) => (a.mediaLibraryEntry.hits < b.mediaLibraryEntry.hits) ? 1 : -1)
@@ -149,15 +156,15 @@ export function MediaLibrary() {
                         setData(newthing)
                     }}>
                     Hit Sort
-                </StyledButton>
-                <StyledButton
-                    className={"my-4 mx-3"}
+                </MediaLibraryEntryButton>
+
+                <MediaLibraryEntryButton
                     onClick={() => {
                         const newthing = [...data].sort(() => 0.5 - Math.random())
                         setData(newthing)
                     }}>
                     Shuffle
-                </StyledButton>
+                </MediaLibraryEntryButton>
             </div>
         </div>
         <div>
@@ -174,3 +181,4 @@ export function MediaLibrary() {
         <MediaLibraryCards entries={videosFilteredBySearchBar}/>
     </>);
 }
+
