@@ -148,6 +148,17 @@ export function MediaLibrary() {
         setData(newthing);
     };
 
+    const [allLinks, setAllLinks] = useState<string[]>([]);
+
+    const handleShowAllLinks = () => {
+        if (allLinks.length > 0) {
+            setAllLinks([]);
+        } else {
+            const urls = videosFilteredBySearchBar.map(item => `${window.location.origin}/api/video/${item.mediaLibraryEntry.id}`);
+            setAllLinks(urls);
+        }
+    };
+
     return <>
         <h2 className={"text-5xl"}>Media Lib</h2>
         <form onSubmit={(e) => {
@@ -158,7 +169,7 @@ export function MediaLibrary() {
         </form>
 
         <div className={""}>
-            <div className={"flex flex-row overflow-x-scroll"}>
+            <div className={"flex flex-row overflow-x-auto"}>
                 <MediaLibraryViewChangeButton onClick={handleRandomVideoSelection}>
                     Random video from selection
                 </MediaLibraryViewChangeButton>
@@ -178,6 +189,10 @@ export function MediaLibrary() {
                 <MediaLibraryViewChangeButton onClick={handleShuffle}>
                     Shuffle
                 </MediaLibraryViewChangeButton>
+
+                <MediaLibraryViewChangeButton onClick={handleShowAllLinks}>
+                    Show All Links
+                </MediaLibraryViewChangeButton>
             </div>
         </div>
         <div>
@@ -191,6 +206,19 @@ export function MediaLibrary() {
             }
 
         </div>
+
+        {
+            allLinks.length > 0 && (
+                <div className={"mt-4"}>
+                    <h3 className={"text-xl mb-2"}>Generated Links:</h3>
+                    <div className={"font-mono whitespace-pre-wrap"}>
+                        {allLinks.map((link, index) => (
+                            <div key={index}>{link}</div>
+                        ))}
+                    </div>
+                </div>
+            )
+        }
         <MediaLibraryCards entries={videosFilteredBySearchBar}/>
     </>;
 }
