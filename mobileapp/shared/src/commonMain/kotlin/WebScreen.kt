@@ -8,14 +8,14 @@ import androidx.compose.ui.Modifier
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import io.sebi.webview.WebKitBrowserView
+import io.sebi.webview.BrowserView
 
 class WebScreen(val url: String) : Screen {
     @Composable
     override fun Content() {
         val currentNavigator = LocalNavigator.currentOrThrow
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomStart) {
-            WebKitBrowserView(url, Modifier.fillMaxSize())
+            BrowserView(url, Modifier.fillMaxSize())
 
             Button({
                 currentNavigator.pop()

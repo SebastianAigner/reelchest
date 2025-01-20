@@ -17,22 +17,22 @@ import platform.Foundation.NSURL.Companion.URLWithString
 import platform.UIKit.UIColor
 import platform.UIKit.UIView
 import platform.WebKit.WKWebView
+import androidx.compose.ui.viewinterop.UIKitView
 
 @OptIn(ExperimentalForeignApi::class, ExperimentalComposeUiApi::class)
 @Composable
-actual fun WebKitBrowserView(
+actual fun BrowserView(
     url: String,
     modifier: Modifier,
-    ) {
-    println("Browser view with URL $url")
-    androidx.compose.ui.viewinterop.UIKitView(
+) {
+    UIKitView(
         factory = {
-            val req = NSMutableURLRequest().apply {
+            WKWebView()
+        },
+        update = {
+            it.loadRequest(NSMutableURLRequest().apply {
                 setURL(URLWithString(url))
-            }
-            WKWebView().apply {
-                loadRequest(req)
-            }
+            })
         },
         modifier = modifier,
         properties = UIKitInteropProperties(interactionMode = UIKitInteropInteractionMode.NonCooperative),

@@ -8,7 +8,7 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import io.sebi.webview.WebKitBrowserView
+import io.sebi.webview.BrowserView
 import io.sebi.windowmanager.ExampleXPWindow
 import io.sebi.windowmanager.Launcher
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -52,7 +52,7 @@ class WindowManaScreen() : Screen {
                         @Composable
                         override fun Content() {
                             Box(Modifier.padding(5.dp)) {
-                                WebKitBrowserView("https://old.reddit.com", Modifier.fillMaxSize())
+                                BrowserView("https://old.reddit.com", Modifier.fillMaxSize())
                             }
                         }
                     }

@@ -1,4 +1,4 @@
-rootProject.name = "Reelchest Mobile"
+rootProject.name = "MyApplication"
 
 include(":androidApp")
 include(":shared")

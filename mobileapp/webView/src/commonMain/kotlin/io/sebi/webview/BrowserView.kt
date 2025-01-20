@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 @Composable
-expect fun WebKitBrowserView(
+expect fun BrowserView(
     url: String,
     modifier: Modifier,
-): Unit
+)
