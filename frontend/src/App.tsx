@@ -77,7 +77,7 @@ const App: React.FC = () => {
                 <PlaylistProvider>
                     <div
                     className={"min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200"}>
-                    <VStack className={"h-screen p-8"}>
+                        <VStack className={"min-h-screen p-8 bg-inherit"}>
                         <NavigationBar/>
 
                         {/* A <Switch> looks through its children <Route>s and
