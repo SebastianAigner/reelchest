@@ -36,7 +36,7 @@ class MediaLibrary(
         return findById(id) != null || File("./mediaLibrary/${id}").exists() // Smells like Null Object Pattern
     }
 
-    suspend fun addUpload(f: File, name: String) {
+    suspend fun addUpload(f: File, name: String): String {
         logger.info("Adding upload $name!")
         val uid = Random.nextLong().toString().shaHashed()
         videoStorage.storeVideo(uid, f.toPath())
@@ -54,6 +54,7 @@ class MediaLibrary(
                 generateThumbnails(it)
             }
         }
+        return uid
     }
 
     suspend fun addCompletedDownload(c: CompletedDownloadTask) {
@@ -79,6 +80,3 @@ class MediaLibrary(
         }
     }
 }
-
-
-
