@@ -1,4 +1,5 @@
 import * as React from "react";
+import {commonStyles} from "../styles/common";
 
 interface StyledButtonProps {
     // onClick: () => void
@@ -8,7 +9,7 @@ interface StyledButtonProps {
 export function StyledButton(props: StyledButtonProps & React.ButtonHTMLAttributes<HTMLButtonElement>) {
     return <button
         {...props}
-        className={`block bg-green-500 text-white font-semibold rounded-lg shadow-md focus:outline-none p-2 ${props.className}`}
+        className={`block ${commonStyles.greenButton} ${props.className}`}
     >
         {props.children}
     </button>

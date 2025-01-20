@@ -2,6 +2,7 @@ import * as React from "react";
 import useSWR from "swr/esm";
 import {fetcher} from "../utils";
 import {MainHeading} from "../components/Typography";
+import {commonStyles} from "../styles/common";
 import LogEntry = IoSebi.LogEntry;
 
 function useLog() {
@@ -18,7 +19,7 @@ export function Log() {
     const {log, isLoading, isError} = useLog()
     return <>
         <MainHeading>Logs</MainHeading>
-        <ul className={"font-mono"}>
+        <ul className={commonStyles.monospace}>
             {
                 log?.map(item =>
                     <li key={item.formattedMessage}>
@@ -27,6 +28,6 @@ export function Log() {
                 )
             }
         </ul>
-        <div className={"opacity-25"}/>
+        <div className={commonStyles.fadeOut}/>
     </>;
 }

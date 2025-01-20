@@ -3,7 +3,8 @@ import {ChangeEvent, useEffect, useState} from "react";
 import {useHistory, useParams} from "react-router-dom";
 import {MediaLibraryCard} from "../components/MediaLibraryCard";
 import {StyledButton} from "../components/StyledButton";
-import {MainHeading} from "../components/Typography";
+import {MainHeading, SmallText, SubSectionHeading} from "../components/Typography";
+import {FlexGrow, ResponsiveGrid, ScrollableHStack} from "../components/Layout";
 import {AutoTaggedMediaLibraryEntry} from "../models/AutoTaggedMediaLibraryEntry";
 import useSWR from "swr/esm";
 import {fetcher} from "../utils";
@@ -43,8 +44,8 @@ interface SearchQuery {
 }
 
 function MediaLibraryCards({entries}: { entries: AutoTaggedMediaLibraryEntry[] }) {
-    return <div className={""}>
-        <div className={"grid grid-cols-1 sm:grid-cols-3 gap-8"}>
+    return <div>
+        <ResponsiveGrid>
             {
                 entries
                     .slice(0, 100)
@@ -52,30 +53,30 @@ function MediaLibraryCards({entries}: { entries: AutoTaggedMediaLibraryEntry[] }
                         <MediaLibraryCard item={item.mediaLibraryEntry} key={item.mediaLibraryEntry.id}/>
                     )
             }
-        </div>
+        </ResponsiveGrid>
     </div>;
 }
 
 function MediaLibraryEntryGrid({entries}: { entries: AutoTaggedMediaLibraryEntry[] }) {
-    return <div className={"flex-1"}>
-        <VList className={"grid grid-cols-1 sm:grid-cols-3 gap-8"}>
+    return <FlexGrow>
+        <VList>
             {
                 chunk(entries, 3).map(items =>
-                    <div className={"grid grid-cols-1 sm:grid-cols-3 gap-8"}>
+                    <ResponsiveGrid>
                         {items.map(item =>
                             <MediaLibraryCard item={item.mediaLibraryEntry} key={item.mediaLibraryEntry.id}/>
                         )}
-                    </div>
+                    </ResponsiveGrid>
                 )
             }
         </VList>
-    </div>;
+    </FlexGrow>;
 }
 
 function MediaLibraryViewChangeButton({children, onClick}: { children: React.ReactNode; onClick: () => void }) {
     return (
         <StyledButton
-            className={"my-4 mx-3"}
+            className={commonStyles.standardMargin}
             onClick={onClick}>
             {children}
         </StyledButton>
@@ -169,8 +170,8 @@ export function MediaLibrary() {
             <input type={"text"} value={searchBarContent} onChange={handleChange}/>
         </form>
 
-        <div className={""}>
-            <div className={"flex flex-row overflow-x-auto"}>
+        <div>
+            <ScrollableHStack>
                 <MediaLibraryViewChangeButton onClick={handleRandomVideoSelection}>
                     Random video from selection
                 </MediaLibraryViewChangeButton>
@@ -194,14 +195,15 @@ export function MediaLibrary() {
                 <MediaLibraryViewChangeButton onClick={handleShowAllLinks}>
                     Show All Links
                 </MediaLibraryViewChangeButton>
-            </div>
+            </ScrollableHStack>
         </div>
         <div>
             {popTags?.slice(0, 10)?.map(tag =>
-                <StyledButton key={tag.first} className={"inline-block bg-blue-400 mx-1 my-3"} onClick={() => {
+                <StyledButton key={tag.first} className={`${commonStyles.inlineBlock} ${commonStyles.tagButton}`}
+                              onClick={() => {
                     setSearchBarContent(tag.first)
                 }}>
-                    {tag.first} <span className={"text-xs"}>({tag.second})</span>
+                    {tag.first} <SmallText>({tag.second})</SmallText>
                 </StyledButton>
             )
             }
@@ -210,9 +212,9 @@ export function MediaLibrary() {
 
         {
             allLinks.length > 0 && (
-                <div className={"mt-4"}>
-                    <h3 className={"text-xl mb-2"}>Generated Links:</h3>
-                    <div className={"font-mono whitespace-pre-wrap"}>
+                <div className={commonStyles.verticalMargin}>
+                    <SubSectionHeading>Generated Links:</SubSectionHeading>
+                    <div className={`${commonStyles.monospace} ${commonStyles.preWrap}`}>
                         {allLinks.map((link, index) => (
                             <div key={index}>{link}</div>
                         ))}

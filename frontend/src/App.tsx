@@ -10,6 +10,7 @@ import {Movie} from "./views/Movie";
 import {ConfigurationManager} from "./views/ConfigurationManager";
 import {DuplicatesManager} from "./views/DuplicatesManager";
 import {SubtitleKitchen} from "./views/SubtitleKitchen";
+import {NavGrid, VStack} from "./components/Layout";
 
 // Navigation bar supports conditional rendering by setting showNav to false.
 // However, this is part of the actual location, not the react hash router emulated string. So:
@@ -19,7 +20,7 @@ function NavigationBar() {
     const queryParams = new URLSearchParams(location.search);
     const showNav = queryParams.get("showNav") != "false";
 
-    return <nav className={"grid grid-cols-2 sm:grid-cols-8 gap-4 text-center"}>
+    return <NavGrid className={"text-center"}>
         {showNav && (
             <>
                 <div>
@@ -48,7 +49,7 @@ function NavigationBar() {
                 </div>
             </>
         )}
-    </nav>
+    </NavGrid>
         ;
 }
 
@@ -56,7 +57,7 @@ export default function App() {
     return (
         <HashRouter>
             <div className={""}>
-                <div className={"flex flex-col h-screen p-8"}>
+                <VStack className={"h-screen p-8"}>
                     {NavigationBar()}
 
                     {/* A <Switch> looks through its children <Route>s and
@@ -96,7 +97,7 @@ export default function App() {
                             <SubtitleKitchen/>
                         </Route>
                     </Switch>
-                </div>
+                </VStack>
             </div>
         </HashRouter>
     );

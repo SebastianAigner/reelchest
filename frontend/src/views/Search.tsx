@@ -5,6 +5,8 @@ import axios from "axios";
 import {SearchResultComponent} from "../components/SearchResultComponent";
 import {StyledButton} from "../components/StyledButton";
 import {MainHeading} from "../components/Typography";
+import {HStack, ResponsiveGrid} from "../components/Layout";
+import {commonStyles} from "../styles/common";
 import {INPUT_ACTION, SimpleInputField} from "../components/SimpleInputField";
 import useSWR from "swr/esm";
 import {fetcher} from "../utils";
@@ -42,7 +44,7 @@ export function Search() {
 
     return <>
         <MainHeading>Search</MainHeading>
-        <div className={"flex flex-row"}><select value={searchUrl} onChange={(event => {
+        <HStack><select value={searchUrl} onChange={(event => {
             setSearchUrl(event.target.value);
             event.preventDefault()
         })}>
@@ -58,15 +60,15 @@ export function Search() {
                     setPageOffset(0);
                     submit(value, 0);
                     return INPUT_ACTION.DO_NOTHING
-                }}/></div>
-        <div className={"grid grid-cols-1 sm:grid-cols-3 gap-8"}>
+                }}/></HStack>
+        <ResponsiveGrid>
             {results?.map((result) =>
                 <SearchResultComponent key={result.url} {...result}/>
             )}
-        </div>
+        </ResponsiveGrid>
         <div>
             <StyledButton
-                className={"my-4 inline-block"}
+                className={`${commonStyles.verticalMargin} ${commonStyles.inlineBlock}`}
                 onClick={() => {
                     submit(term, pageOffset - 30)
                     setPageOffset(pageOffset - 30)
@@ -76,7 +78,7 @@ export function Search() {
             </StyledButton>
             <span>{pageOffset / 30}</span>
             <StyledButton
-                className={"my-4 inline-block"}
+                className={`${commonStyles.verticalMargin} ${commonStyles.inlineBlock}`}
                 onClick={() => {
                     submit(term, pageOffset + 30)
                     setPageOffset(pageOffset + 30)

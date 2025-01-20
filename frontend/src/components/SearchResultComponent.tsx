@@ -5,6 +5,7 @@ import axios from "axios";
 import {LazyLoadImage} from "react-lazy-load-image-component";
 import {addToDownloadList} from "../views/Add";
 import {StyledButton} from "./StyledButton";
+import {commonStyles} from "../styles/common";
 
 enum SearchResultState {
     UNKNOWN,
@@ -27,14 +28,14 @@ export function SearchResultComponent(result: SearchResult) {
         }
         fetchData()
     }, [])
-    return <div key={result.url} className={"box-border"}>
+    return <div key={result.url} className={commonStyles.boxBorder}>
         <a href={`/decrypt?url=${result.url}`} target={"_blank"}>
             <LazyLoadImage
-                className={`object-cover rounded-md h-48 w-full ${existsAlready == SearchResultState.IN_LIBRARY || existsAlready == SearchResultState.JUST_ADDED ? "opacity-25" : ""}`}
+                className={`${commonStyles.cardImage} ${existsAlready == SearchResultState.IN_LIBRARY || existsAlready == SearchResultState.JUST_ADDED ? commonStyles.fadeOut : ""}`}
                 src={result.thumbUrl}/>
         </a>
         <a href={`/decrypt?url=${result.url}`} target={"_blank"}>{result.title}</a>
-        <StyledButton className={"w-full"}
+        <StyledButton className={commonStyles.fullWidth}
                       onClick={() => {
                           let prom = addToDownloadList(result.url)
                           prom.then((a) => {

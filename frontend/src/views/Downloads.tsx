@@ -4,6 +4,7 @@ import {fetcher} from "../utils";
 import {StyledButton} from "../components/StyledButton";
 import axios from "axios";
 import {MainHeading, SectionHeading} from "../components/Typography";
+import {commonStyles} from "../styles/common";
 import MetadatedDownloadQueueEntry = IoSebi.MetadatedDownloadQueueEntry;
 import ProblematicTaskDTO = IoSebi.ProblematicTaskDTO;
 
@@ -46,7 +47,7 @@ export function Downloads() {
                 )
             }
         </ul>
-        <MainHeading>Problematic Entries (<a href={"/api/problematic"}>endpoint</a>)</MainHeading>
+        <SectionHeading>Problematic Entries (<a href={"/api/problematic"}>endpoint</a>)</SectionHeading>
         <ul>
             {
                 probQ?.map(item =>
@@ -73,6 +74,6 @@ export function Downloads() {
                 )
             }
         </ul>
-        <div className={"opacity-25"}/>
+        <div className={commonStyles.fadeOut}/>
     </>;
 }
