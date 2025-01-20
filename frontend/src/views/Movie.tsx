@@ -1,10 +1,13 @@
-import {Link, useLocation, useParams} from "react-router-dom";
+import {Link, useHistory, useLocation, useParams} from "react-router-dom";
 import * as React from "react";
 import {useState} from "react";
 import {MediaLibraryEntry} from "../models/MediaLibraryEntry";
 import {MainHeading, SubHeading} from "../components/Typography";
 import {TagBadge} from "../components/TagBadge";
+import {usePlaylist} from "../context/PlaylistContext";
 import axios from "axios";
+import {commonStyles} from "../styles/common";
+import {StyledButton} from "../components/StyledButton";
 import useSWR from "swr/esm";
 import {fetcher} from "../utils";
 import {mutate} from "swr";
@@ -66,7 +69,9 @@ export function Movie() {
     const queryParams = new URLSearchParams(location.search);
     const showPlayer = queryParams.get("showPlayer") != "false";
     const [clicked, setClicked] = useState(false);
-    const {entry, isLoading, isError, mutateEntry} = useMediaLibraryEntry(id)
+    const {entry, isLoading, isError, mutateEntry} = useMediaLibraryEntry(id);
+    const {getNextVideo, getCurrentVideo, peekNextVideo} = usePlaylist();
+    const history = useHistory();
     const {data, error} = useSWR<MediaLibraryEntry>(`/api/mediaLibrary/${id}/possibleDuplicates`, fetcher)
     const {entry: storedDuplicates, isError: storedDuplicatesError} = useStoredDuplicates(id)
     if (!entry) return <>
@@ -77,7 +82,23 @@ export function Movie() {
             mutateEntry({name: value})
         }}/></MainHeading>
         {showPlayer && (
-            <video src={`/api/video/${id}`} width={"500px"} controls={true} onPlay={() => {
+            <video
+                src={`/api/video/${id}`}
+                width={"500px"}
+                controls={true}
+                onEnded={(e) => {
+                    e.preventDefault();
+                    console.log("[DEBUG_LOG] Video ended, attempting to play next video");
+                    const video = e.target as HTMLVideoElement;
+                    video.pause();
+                    const nextVideo = getNextVideo();
+                    if (nextVideo) {
+                        console.log("[DEBUG_LOG] Found next video, navigating to:", nextVideo.mediaLibraryEntry.id);
+                        history.push(`/movie/${nextVideo.mediaLibraryEntry.id}?autoplay=true`);
+                    }
+                }}
+                autoPlay={queryParams.get("autoplay") === "true"}
+                onPlay={() => {
                 if (!clicked) {
                     setClicked(true)
                     axios.get(`/api/mediaLibrary/${id}/hit`)
@@ -89,6 +110,23 @@ export function Movie() {
             }}/>
         )}
 
+        {getCurrentVideo()?.mediaLibraryEntry.id === id && (
+            <div className={commonStyles.verticalMargin}>
+                <SubHeading>Next in Playlist</SubHeading>
+                <p>{peekNextVideo()?.mediaLibraryEntry.name}</p>
+                <StyledButton
+                    className={`${commonStyles.standardMargin} ${commonStyles.inlineBlock}`}
+                    onClick={() => {
+                        const nextVideo = getNextVideo();
+                        if (nextVideo) {
+                            history.push(`/movie/${nextVideo.mediaLibraryEntry.id}?autoplay=true`);
+                        }
+                    }}
+                >
+                    Skip to Next
+                </StyledButton>
+            </div>
+        )}
         <SubHeading>Operations</SubHeading>
         <ul>
             <li>

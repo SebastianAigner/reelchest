@@ -14,6 +14,7 @@ import {Upload} from "./views/Upload";
 import {NavGrid, VStack} from "./components/Layout";
 import {ThemeProvider, useTheme} from "./context/ThemeContext";
 import {commonStyles} from "./styles/common";
+import {PlaylistProvider} from "./context/PlaylistContext";
 
 // Navigation bar supports conditional rendering by setting showNav to false.
 // However, this is part of the actual location, not the react hash router emulated string. So:
@@ -73,7 +74,8 @@ const App: React.FC = () => {
     return (
         <HashRouter>
             <ThemeProvider>
-                <div
+                <PlaylistProvider>
+                    <div
                     className={"min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200"}>
                     <VStack className={"h-screen p-8"}>
                         <NavigationBar/>
@@ -120,6 +122,7 @@ const App: React.FC = () => {
                         </Switch>
                     </VStack>
                 </div>
+                </PlaylistProvider>
             </ThemeProvider>
         </HashRouter>
     );

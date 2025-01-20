@@ -6,6 +6,7 @@ import {StyledButton} from "../components/StyledButton";
 import {MainHeading, SmallText, SubSectionHeading} from "../components/Typography";
 import {FlexGrow, ResponsiveGrid, ScrollableHStack} from "../components/Layout";
 import {AutoTaggedMediaLibraryEntry} from "../models/AutoTaggedMediaLibraryEntry";
+import {usePlaylist} from "../context/PlaylistContext";
 import useSWR from "swr/esm";
 import {fetcher} from "../utils";
 import {VList} from "virtua";
@@ -152,6 +153,11 @@ export function MediaLibrary() {
     };
 
     const [allLinks, setAllLinks] = useState<string[]>([]);
+    const {addToPlaylist, playlist} = usePlaylist();
+
+    const handleAddToPlaylist = () => {
+        addToPlaylist(videosFilteredBySearchBar);
+    };
 
     const handleShowAllLinks = () => {
         if (allLinks.length > 0) {
@@ -195,6 +201,10 @@ export function MediaLibrary() {
 
                 <MediaLibraryViewChangeButton onClick={handleShowAllLinks}>
                     Show All Links
+                </MediaLibraryViewChangeButton>
+
+                <MediaLibraryViewChangeButton onClick={handleAddToPlaylist}>
+                    Add to Playlist {playlist.length > 0 && `(${playlist.length})`}
                 </MediaLibraryViewChangeButton>
             </ScrollableHStack>
         </div>
