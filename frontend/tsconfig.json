@@ -5,6 +5,7 @@
     "jsx": "react",
     "strictNullChecks": true,
     "moduleResolution": "node",
+    "esModuleInterop": true,
     "lib": [
       "dom",
       "es5",
