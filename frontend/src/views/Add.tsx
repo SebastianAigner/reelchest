@@ -2,6 +2,7 @@ import * as React from "react";
 import {ChangeEvent, FormEvent, useState} from "react";
 import axios from "axios";
 import {MainHeading} from "../components/Typography";
+import {StyledInput} from "../components/StyledInput";
 
 export function Add() {
     const [urlField, setUrlField] = useState("")
@@ -19,7 +20,11 @@ export function Add() {
         <MainHeading>Add</MainHeading>
         <form onSubmit={submit}>
             <label>Link: </label>
-            <input type={"text"} value={urlField} onChange={handleChange}/>
+            <StyledInput
+                type="text"
+                value={urlField}
+                onChange={handleChange}
+            />
         </form>
     </>;
 }

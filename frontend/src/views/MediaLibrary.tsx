@@ -5,6 +5,7 @@ import {MediaLibraryCard} from "../components/MediaLibraryCard";
 import {StyledButton} from "../components/StyledButton";
 import {MainHeading, SmallText, SubSectionHeading} from "../components/Typography";
 import {FlexGrow, ResponsiveGrid, ScrollableHStack} from "../components/Layout";
+import {StyledInput} from "../components/StyledInput";
 import {AutoTaggedMediaLibraryEntry} from "../models/AutoTaggedMediaLibraryEntry";
 import {usePlaylist} from "../context/PlaylistContext";
 import useSWR from "swr/esm";
@@ -174,7 +175,11 @@ export function MediaLibrary() {
             e?.preventDefault()
         }}>
             <label>Filter: </label>
-            <input type={"text"} value={searchBarContent} onChange={handleChange}/>
+            <StyledInput
+                type="text"
+                value={searchBarContent}
+                onChange={handleChange}
+            />
         </form>
 
         <div>
