@@ -2,7 +2,8 @@ import {Link, useLocation, useParams} from "react-router-dom";
 import * as React from "react";
 import {useState} from "react";
 import {MediaLibraryEntry} from "../models/MediaLibraryEntry";
-import {MainHeading} from "../components/Typography";
+import {MainHeading, SubHeading} from "../components/Typography";
+import {TagBadge} from "../components/TagBadge";
 import axios from "axios";
 import useSWR from "swr/esm";
 import {fetcher} from "../utils";
@@ -88,7 +89,7 @@ export function Movie() {
             }}/>
         )}
 
-        <h3 className={"text-2xl"}>Operations</h3>
+        <SubHeading>Operations</SubHeading>
         <ul>
             <li>
                 <button onClick={() =>
@@ -100,11 +101,11 @@ export function Movie() {
             <li><a href={`/api/video/${id}.mp4`}>Direct link</a></li>
             <li><a href={`/api/file/${entry?.mediaLibraryEntry.name}`}>Direct link (by name)</a></li>
         </ul>
-        <h3 className={"text-2xl"}>Tags</h3>
+        <SubHeading>Tags</SubHeading>
         <ul>
             {entry.mediaLibraryEntry.tags.map((tag) => {
                     return <li key={tag}>
-                        <p className={"bg-green-500 text-white font-semibold rounded-lg shadow-md focus:outline-none p-2 inline-block"}>
+                        <TagBadge>
                             {tag}
                             <span onClick={() => {
                                 mutateEntry({
@@ -113,7 +114,7 @@ export function Movie() {
                                     })
                                 })
                             }}> x</span>
-                        </p>
+                        </TagBadge>
                     </li>
                 }
             )}
@@ -126,15 +127,15 @@ export function Movie() {
                 return INPUT_ACTION.CLEAR
             }}/>
         </p>
-        <h3 className={"text-2xl"}>Autotags</h3>
+        <SubHeading>Autotags</SubHeading>
         {entry.autoTags.map((tag) => {
             return <li key={tag}>
-                <p className={"bg-green-500 text-white font-semibold rounded-lg shadow-md focus:outline-none p-2 inline-block"}>
+                <TagBadge>
                     <Link to={`/mediaLibrary/${tag}`}>{tag}</Link>
-                </p>
+                </TagBadge>
             </li>
         })}
-        <h3 className={"text-2xl"}>Duplicate detection</h3>
+        <SubHeading>Duplicate detection</SubHeading>
         {data &&
             <>
                 <p>{data.id}</p>
@@ -142,7 +143,7 @@ export function Movie() {
                 <p><Link to={`/movie/${data.id}`}>Link here.</Link></p>
             </>
         }
-        <h3 className={"text-2xl"}>Persisted duplicate detection</h3>
+        <SubHeading>Persisted duplicate detection</SubHeading>
         {
             storedDuplicates &&
             <>

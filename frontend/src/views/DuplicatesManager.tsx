@@ -7,6 +7,7 @@ import axios from "axios";
 import {mutate} from "swr";
 import {AutoTaggedMediaLibraryEntry} from "../models/AutoTaggedMediaLibraryEntry";
 import {MainHeading} from "../components/Typography";
+import {ResponsiveGrid} from "../components/Layout";
 import DuplicateResponse = IoSebi.DuplicateResponse;
 
 function useDupData() {
@@ -60,12 +61,12 @@ export function DuplicatesManager() {
     const {dupRes, isLoading, isError} = useDupData()
     return <>
         <MainHeading>Duplicates</MainHeading>
-        <div className={"grid grid-cols-1 sm:grid-cols-3 gap-8"}>
+        <ResponsiveGrid>
             {
                 dupRes?.map(item =>
                     <DuplicateRow {...item}/>
                 )
             }
-        </div>
+        </ResponsiveGrid>
     </>;
 }
