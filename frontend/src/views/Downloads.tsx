@@ -3,6 +3,7 @@ import useSWR from "swr/esm";
 import {fetcher} from "../utils";
 import {StyledButton} from "../components/StyledButton";
 import axios from "axios";
+import {MainHeading, SectionHeading} from "../components/Typography";
 import MetadatedDownloadQueueEntry = IoSebi.MetadatedDownloadQueueEntry;
 import ProblematicTaskDTO = IoSebi.ProblematicTaskDTO;
 
@@ -30,9 +31,9 @@ function useProblematic() {
 export function Downloads() {
     const {queue, isLoading, isError} = useQueue()
     const {queue: probQ, isLoading: probLoading, isError: probErr} = useProblematic()
-    if (isLoading) return <h2>Loading Downloads...</h2>
+    if (isLoading) return <SectionHeading>Loading Downloads...</SectionHeading>
     return <>
-        <h2 className={"text-5xl"}>Downloads</h2>
+        <MainHeading>Downloads</MainHeading>
         <ul>
             {
                 queue?.map(item =>
@@ -45,7 +46,7 @@ export function Downloads() {
                 )
             }
         </ul>
-        <h2 className={"text-5xl"}>Problematic Entries (<a href={"/api/problematic"}>endpoint</a>)</h2>
+        <MainHeading>Problematic Entries (<a href={"/api/problematic"}>endpoint</a>)</MainHeading>
         <ul>
             {
                 probQ?.map(item =>

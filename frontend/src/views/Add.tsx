@@ -1,6 +1,7 @@
 import * as React from "react";
 import {ChangeEvent, FormEvent, useState} from "react";
 import axios from "axios";
+import {MainHeading} from "../components/Typography";
 
 export function Add() {
     const [urlField, setUrlField] = useState("")
@@ -15,7 +16,7 @@ export function Add() {
         setUrlField(e.target.value)
     }
     return <>
-        <h2 className={"text-5xl"}>Add</h2>
+        <MainHeading>Add</MainHeading>
         <form onSubmit={submit}>
             <label>Link: </label>
             <input type={"text"} value={urlField} onChange={handleChange}/>

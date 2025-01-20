@@ -2,6 +2,7 @@ import {Link, useLocation, useParams} from "react-router-dom";
 import * as React from "react";
 import {useState} from "react";
 import {MediaLibraryEntry} from "../models/MediaLibraryEntry";
+import {MainHeading} from "../components/Typography";
 import axios from "axios";
 import useSWR from "swr/esm";
 import {fetcher} from "../utils";
@@ -71,9 +72,9 @@ export function Movie() {
         <p>loading...</p>
     </>
     return <>
-        <h2 className={"text-5xl"}><EdiText value={entry.mediaLibraryEntry.name} type={"text"} onSave={(value) => {
+        <MainHeading><EdiText value={entry.mediaLibraryEntry.name} type={"text"} onSave={(value) => {
             mutateEntry({name: value})
-        }}/></h2>
+        }}/></MainHeading>
         {showPlayer && (
             <video src={`/api/video/${id}`} width={"500px"} controls={true} onPlay={() => {
                 if (!clicked) {

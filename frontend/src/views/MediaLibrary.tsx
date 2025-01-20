@@ -3,6 +3,7 @@ import {ChangeEvent, useEffect, useState} from "react";
 import {useHistory, useParams} from "react-router-dom";
 import {MediaLibraryCard} from "../components/MediaLibraryCard";
 import {StyledButton} from "../components/StyledButton";
+import {MainHeading} from "../components/Typography";
 import {AutoTaggedMediaLibraryEntry} from "../models/AutoTaggedMediaLibraryEntry";
 import useSWR from "swr/esm";
 import {fetcher} from "../utils";
@@ -160,7 +161,7 @@ export function MediaLibrary() {
     };
 
     return <>
-        <h2 className={"text-5xl"}>Media Lib</h2>
+        <MainHeading>Media Lib</MainHeading>
         <form onSubmit={(e) => {
             e?.preventDefault()
         }}>
@@ -222,4 +223,3 @@ export function MediaLibrary() {
         <MediaLibraryCards entries={videosFilteredBySearchBar}/>
     </>;
 }
-
