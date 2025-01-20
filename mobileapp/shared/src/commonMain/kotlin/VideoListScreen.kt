@@ -22,7 +22,7 @@ import com.russhwolf.settings.get
 import io.kamel.image.KamelImage
 import io.kamel.image.asyncPainterResource
 import io.ktor.client.request.*
-import io.sebi.webview.WebKitBrowserView
+import io.sebi.webview.BrowserView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -145,7 +145,7 @@ class VideoListScreen(val navigator: WindowCapableNavigator<Screen>) : Screen {
                                                             .padding(10.dp)
                                                             .border(1.dp, Color.Black)
                                                     ) {
-                                                        WebKitBrowserView(
+                                                        BrowserView(
                                                             Settings().get<String>("endpoint")!! + "?showNav=false#/movie/${it.id}?showPlayer=false",
                                                             modifier = Modifier.fillMaxSize()
                                                         )
