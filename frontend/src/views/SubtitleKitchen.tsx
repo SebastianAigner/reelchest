@@ -1,5 +1,6 @@
 import * as React from "react";
 import {MainHeading, SectionHeading} from "../components/Typography";
+import {StyledInput} from "../components/StyledInput";
 
 export function SubtitleKitchen() {
     return <>
@@ -14,11 +15,18 @@ export function SubtitleKitchen() {
             <div>
                 <label>
                     Subtitle file:
-                    <input type="file" multiple={true} name="subtitleFile"/>
+                    <StyledInput
+                        type="file"
+                        multiple={true}
+                        name="subtitleFile"
+                    />
                 </label>
                 <label>
                     Offset (milliseconds):
-                    <input type="number" name="offset"/>
+                    <StyledInput
+                        type="number"
+                        name="offset"
+                    />
                 </label>
             </div>
             <button type="submit">Submit</button>
@@ -30,19 +38,28 @@ export function SubtitleKitchen() {
             <div>
                 <label>
                     Video file:
-                    <input type="file" name="file1"/>
+                    <StyledInput
+                        type="file"
+                        name="file1"
+                    />
                 </label>
             </div>
             <div>
                 <label>
                     Subtitle file:
-                    <input type="file" name="file2"/>
+                    <StyledInput
+                        type="file"
+                        name="file2"
+                    />
                 </label>
             </div>
             <div>
                 <label>
                     Offset (milliseconds):
-                    <input type="number" name="offset"/>
+                    <StyledInput
+                        type="number"
+                        name="offset"
+                    />
                 </label>
             </div>
             <button type="submit">Submit</button>

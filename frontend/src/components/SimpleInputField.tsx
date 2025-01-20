@@ -1,5 +1,6 @@
 import * as React from "react";
 import {ChangeEvent, useState} from "react";
+import {StyledInput} from "./StyledInput";
 
 export enum INPUT_ACTION {
     DO_NOTHING,
@@ -24,10 +25,14 @@ export function SimpleInputField(props: SimpleInputFieldProps) {
             e?.preventDefault()
         }}>
             <label>Enter: </label>
-            <input type={"text"} value={inputFieldValue} onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                props.onChange?.(e.target.value)
-                setInputFieldValue(e.target.value)
-            }}/>
+            <StyledInput
+                type="text"
+                value={inputFieldValue}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                    props.onChange?.(e.target.value)
+                    setInputFieldValue(e.target.value)
+                }}
+            />
         </form>
     </>
 }
