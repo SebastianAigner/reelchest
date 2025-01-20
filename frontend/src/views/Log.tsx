@@ -1,6 +1,7 @@
 import * as React from "react";
 import useSWR from "swr/esm";
 import {fetcher} from "../utils";
+import {MainHeading} from "../components/Typography";
 import LogEntry = IoSebi.LogEntry;
 
 function useLog() {
@@ -16,7 +17,7 @@ function useLog() {
 export function Log() {
     const {log, isLoading, isError} = useLog()
     return <>
-        <h2 className={"text-5xl"}>Logs</h2>
+        <MainHeading>Logs</MainHeading>
         <ul className={"font-mono"}>
             {
                 log?.map(item =>

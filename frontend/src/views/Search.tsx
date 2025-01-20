@@ -4,6 +4,7 @@ import {SearchResult} from "../models/SearchResult";
 import axios from "axios";
 import {SearchResultComponent} from "../components/SearchResultComponent";
 import {StyledButton} from "../components/StyledButton";
+import {MainHeading} from "../components/Typography";
 import {INPUT_ACTION, SimpleInputField} from "../components/SimpleInputField";
 import useSWR from "swr/esm";
 import {fetcher} from "../utils";
@@ -40,7 +41,7 @@ export function Search() {
     }
 
     return <>
-        <h2 className={"text-5xl"}>Search</h2>
+        <MainHeading>Search</MainHeading>
         <div className={"flex flex-row"}><select value={searchUrl} onChange={(event => {
             setSearchUrl(event.target.value);
             event.preventDefault()

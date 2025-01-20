@@ -1,6 +1,7 @@
 import * as React from "react";
 import {useEffect, useState} from "react";
 import axios from "axios";
+import {MainHeading} from "../components/Typography";
 
 interface ConfigurationProps {
     endpoint: string
@@ -18,7 +19,7 @@ export function ConfigurationManager(props: ConfigurationProps) {
     }, [props.endpoint])
 
     return <>
-        <h2 className={"text-5xl my-5"}>Configuration: {props.endpoint}</h2>
+        <div className="my-5"><MainHeading>Configuration: {props.endpoint}</MainHeading></div>
         <p/>
         <textarea className={"w-full h-56 font-mono"} value={ruleSet} onChange={(e) => {
             setRuleSet(e.target.value)
