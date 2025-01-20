@@ -10,6 +10,7 @@ import useSWR from "swr/esm";
 import {fetcher} from "../utils";
 import {VList} from "virtua";
 import {chunk} from "underscore";
+import {commonStyles} from "../styles/common";
 
 interface MyPair {
     first: string,
