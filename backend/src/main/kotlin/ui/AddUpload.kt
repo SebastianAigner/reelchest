@@ -9,7 +9,9 @@ import io.ktor.server.routing.*
 import io.sebi.library.MediaLibrary
 import io.sebi.ui.shared.commonLayout
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.flow
 import kotlinx.html.*
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -66,10 +68,12 @@ fun Route.addUpload(mediaLibrary: MediaLibrary) {
         logger.info("Receiving multipart data...")
         val multipart = call.receiveMultipart()
         logger.info("Done.")
-        // TODO: Why can I not MAP EACH PART :CRY:
+        var lastUploadedId: String? = null
+
         multipart
             .readAllPartsAsFlow()
-            .filterIsInstance<PartData.FileItem>().map { fileItem ->
+            .filterIsInstance<PartData.FileItem>()
+            .collect { fileItem ->
                 val uploadResult = runCatching {
                     logger.info("Got FileItem ${fileItem.originalFileName}.")
                     logger.info(fileItem.headers.entries().joinToString(", ") { it.key + " " + it.value })
@@ -92,6 +96,7 @@ fun Route.addUpload(mediaLibrary: MediaLibrary) {
                     fileItem.dispose()
                     result
                 }
+
                 if (uploadResult.isFailure) {
                     call.respondText(
                         "an error has happened: ${uploadResult.exceptionOrNull()?.message}" +
@@ -99,15 +104,21 @@ fun Route.addUpload(mediaLibrary: MediaLibrary) {
                     )
                     error("Upload failed with ${uploadResult.exceptionOrNull()}")
                 }
+
                 if (uploadResult.isSuccess) {
                     val (targetFile, name) = uploadResult.getOrNull()!!
-                    mediaLibrary.addUpload(
+                    lastUploadedId = mediaLibrary.addUpload(
                         targetFile,
                         name = name
                     )
                 }
-            }.collect()
-        call.respondRedirect("/")
+            }
+
+        if (lastUploadedId != null) {
+            call.respond(mapOf("id" to lastUploadedId))
+        } else {
+            call.respond(mapOf("error" to "No file was uploaded"))
+        }
     }
 }
 

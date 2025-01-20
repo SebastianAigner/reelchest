@@ -10,6 +10,7 @@ import {Movie} from "./views/Movie";
 import {ConfigurationManager} from "./views/ConfigurationManager";
 import {DuplicatesManager} from "./views/DuplicatesManager";
 import {SubtitleKitchen} from "./views/SubtitleKitchen";
+import {Upload} from "./views/Upload";
 import {NavGrid, VStack} from "./components/Layout";
 
 // Navigation bar supports conditional rendering by setting showNav to false.
@@ -46,6 +47,9 @@ function NavigationBar() {
                 </div>
                 <div>
                     <Link to={"/subtitleKitchen"}>Subtitle Kitchen</Link>
+                </div>
+                <div>
+                    <Link to={"/upload"}>Upload</Link>
                 </div>
             </>
         )}
@@ -95,6 +99,9 @@ export default function App() {
                         </Route>
                         <Route path="/subtitleKitchen">
                             <SubtitleKitchen/>
+                        </Route>
+                        <Route path="/upload">
+                            <Upload/>
                         </Route>
                     </Switch>
                 </VStack>
