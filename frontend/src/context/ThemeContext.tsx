@@ -1,4 +1,4 @@
-import React, {createContext, useContext, useEffect, useState} from 'react';
+import React, {createContext, useContext, useEffect, useLayoutEffect, useState} from 'react';
 
 type Theme = 'light' | 'dark';
 type ThemeContextType = {
@@ -6,27 +6,30 @@ type ThemeContextType = {
     toggleTheme: () => void;
 };
 
+const getInitialTheme = (): Theme => {
+    // Check localStorage first
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark' || savedTheme === 'light') return savedTheme as Theme;
+
+    // Check system preference
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+};
+
+const applyTheme = (theme: Theme) => {
+    const root = window.document.documentElement;
+    const oppositeTheme = theme === 'dark' ? 'light' : 'dark';
+    root.classList.remove(oppositeTheme);
+    root.classList.add(theme);
+    localStorage.setItem('theme', theme);
+};
+
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({children}: { children: React.ReactNode }) {
-    const [theme, setTheme] = useState<Theme>(() => {
-        // Check localStorage first
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark' || savedTheme === 'light') return savedTheme;
+    const [theme, setTheme] = useState<Theme>(getInitialTheme);
 
-        // Check system preference
-        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            return 'dark';
-        }
-        return 'light';
-    });
-
-    useEffect(() => {
-        const root = window.document.documentElement;
-        const oppositeTheme = theme === 'dark' ? 'light' : 'dark';
-        root.classList.remove(oppositeTheme);
-        root.classList.add(theme);
-        localStorage.setItem('theme', theme);
+    useLayoutEffect(() => {
+        applyTheme(theme);
     }, [theme]);
 
     // Listen for system theme changes
