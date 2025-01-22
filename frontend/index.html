@@ -6,18 +6,6 @@
     <meta content="ie=edge" http-equiv="X-UA-Compatible"/>
     <meta content="light dark" name="color-scheme"/>
     <title>Welcome</title>
-    <script>
-      // Immediately set the theme before any rendering occurs
-      (function () {
-        const savedTheme = localStorage.getItem('theme');
-        const theme = savedTheme === 'dark' || savedTheme === 'light'
-                ? savedTheme
-                : window.matchMedia('(prefers-color-scheme: dark)').matches
-                        ? 'dark'
-                        : 'light';
-        document.documentElement.classList.add(theme);
-      })();
-    </script>
   </head>
   <body class="min-h-full bg-white dark:bg-gray-900">
   <div id="app"></div>
