@@ -23,7 +23,8 @@ export function ThemeProvider({children}: { children: React.ReactNode }) {
 
     useEffect(() => {
         const root = window.document.documentElement;
-        root.classList.remove('light', 'dark');
+        const oppositeTheme = theme === 'dark' ? 'light' : 'dark';
+        root.classList.remove(oppositeTheme);
         root.classList.add(theme);
         localStorage.setItem('theme', theme);
     }, [theme]);
