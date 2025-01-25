@@ -217,28 +217,6 @@ data class ThumbnailDebugResponse(
 
 fun Route.mediaLibraryDebugApi(mediaLibrary: MediaLibrary) {
     route("debug") {
-        get("dhash-stats") {
-            val allEntries = mediaLibrary.getEntries()
-            val entriesWithDhashes = allEntries.filter { it.getDHashesFromDisk() != null }
-            val entriesWithoutDhashes = allEntries.filter { it.getDHashesFromDisk() == null }
-
-            call.respond(buildJsonObject {
-                put("total_movies", allEntries.size)
-                put("movies_with_dhashes", entriesWithDhashes.size)
-                put("movies_missing_dhashes", entriesWithoutDhashes.size)
-                put(
-                    "missing_dhashes_list", Json.encodeToJsonElement(
-                    entriesWithoutDhashes.map { entry ->
-                        buildJsonObject {
-                            put("id", entry.id)
-                            put("name", entry.name)
-                            put("path", entry.file?.absolutePath)
-                        }
-                    }
-                ))
-            })
-        }
-
         get("missing-thumbnails") {
             val entriesWithoutThumbnails = mediaLibrary.getEntries().filter { entry ->
                 val thumbnails = entry.getThumbnails()
