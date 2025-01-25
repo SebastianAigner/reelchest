@@ -1,6 +1,12 @@
 import useSWRImmutable from "swr/immutable";
 
-const fetcher = (url: string) => fetch(url).then(r => r.json());
+const fetcher = (url: string) => {
+    const request = new Request(url, {
+        priority: 'low' // or 'low' or 'auto'
+    });
+
+    return fetch(request).then(r => r.json());
+};
 
 interface MediaInfo {
     mimeType: string;
