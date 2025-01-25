@@ -1,9 +1,10 @@
-import React, {useEffect, useState} from 'react';
+import React, {memo, useEffect, useMemo, useState} from 'react';
 import {MediaLibraryEntry} from "../models/MediaLibraryEntry";
 import axios from "axios";
 import useSWR, {mutate} from "swr";
 import {fetcher} from "../utils";
 import {AutoTaggedMediaLibraryEntry} from "../models/AutoTaggedMediaLibraryEntry";
+import {VList} from 'virtua';
 
 function useMediaLibraryEntry(id: string) {
     const endpoint = `/api/mediaLibrary/${id}?auto=true`;
@@ -38,20 +39,40 @@ interface DebugOutputProps {
     debugOutput: string[];
 }
 
+const DebugLine = memo(({line}: { line: string }) => (
+    <div
+        className={`py-1 ${line.includes('[ERROR]') ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-gray-300'}`}>
+        {line}
+    </div>
+));
+
 const DebugOutput: React.FC<DebugOutputProps> = ({debugOutput}) => {
+    const maxLines = 1000;
+    const limitedOutput = useMemo(() => {
+        return debugOutput.slice(-maxLines);
+    }, [debugOutput]);
+
+    const truncatedLines = debugOutput.length - maxLines;
+
     return (
         <div>
-            <h2 className="text-xl font-semibold mb-2">Debug Output</h2>
-            <div className="bg-gray-100 p-4 rounded h-[500px] overflow-y-auto font-mono text-sm">
+            <h2 className="text-xl font-semibold mb-2 dark:text-gray-200">Debug Output</h2>
+            <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded h-[500px] font-mono text-sm">
                 {debugOutput.length === 0 ? (
-                    <p className="text-gray-500">No debug output available.</p>
+                    <p className="text-gray-500 dark:text-gray-400">No debug output available.</p>
                 ) : (
-                    debugOutput.map((line, index) => (
-                        <div key={index}
-                             className={`${line.includes('[ERROR]') ? 'text-red-600' : 'text-gray-800'}`}>
-                            {line}
-                        </div>
-                    ))
+                    <>
+                        {truncatedLines > 0 && (
+                            <div className="text-gray-500 dark:text-gray-400 mb-2 text-xs">
+                                Showing last {maxLines} lines ({truncatedLines} earlier lines hidden)
+                            </div>
+                        )}
+                        <VList style={{height: truncatedLines > 0 ? '425px' : '450px'}}>
+                            {limitedOutput.map((line, index) => (
+                                <DebugLine key={index} line={line}/>
+                            ))}
+                        </VList>
+                    </>
                 )}
             </div>
         </div>
@@ -62,15 +83,15 @@ const EntryItem: React.FC<EntryItemProps> = ({entry, onRegenerate, isProcessing}
     const {entry: mediaEntry, mutateEntry} = useMediaLibraryEntry(entry.id);
 
     return (
-        <li className="border p-3 rounded">
+        <li className="border dark:border-gray-700 p-3 rounded dark:bg-gray-800/50">
             <div className="flex justify-between items-center gap-4">
-                <span className="min-w-0 truncate">{entry.name}</span>
+                <span className="min-w-0 truncate dark:text-gray-200">{entry.name}</span>
                 <div className="flex gap-2 shrink-0">
                     <a
                         href={`/#/movie/${entry.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="bg-gray-500 text-white p-2 rounded hover:bg-gray-600 flex items-center justify-center"
+                        className="bg-gray-500 text-white p-2 rounded hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-700 flex items-center justify-center"
                         title="Open media page"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -87,8 +108,8 @@ const EntryItem: React.FC<EntryItemProps> = ({entry, onRegenerate, isProcessing}
                         }}
                         className={`${
                             mediaEntry?.mediaLibraryEntry?.markedForDeletion
-                                ? 'bg-green-500 hover:bg-green-600'
-                                : 'bg-red-500 hover:bg-red-600'
+                                ? 'bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700'
+                                : 'bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700'
                         } text-white p-2 rounded flex items-center justify-center`}
                         title={mediaEntry?.mediaLibraryEntry?.markedForDeletion ? 'Unmark for deletion' : 'Mark for deletion'}
                     >
@@ -109,7 +130,7 @@ const EntryItem: React.FC<EntryItemProps> = ({entry, onRegenerate, isProcessing}
                     <button
                         onClick={() => onRegenerate(entry.id)}
                         disabled={isProcessing}
-                        className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
                         title="Regenerate thumbnail"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -196,32 +217,35 @@ export const ThumbnailDebug: React.FC = () => {
     };
 
     return (
-        <div className="container mx-auto p-4">
-            <h1 className="text-2xl font-bold mb-4">Thumbnail Debug</h1>
+        <div className="container mx-auto p-4 dark:bg-gray-900">
+            <h1 className="text-2xl font-bold mb-4 dark:text-white">Thumbnail Debug</h1>
 
             {error && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                <div
+                    className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-500/50 text-red-700 dark:text-red-400 px-4 py-3 rounded mb-4">
                     {error}
                 </div>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <h2 className="text-xl font-semibold mb-2">Videos Without Thumbnails</h2>
-                    {entriesWithoutThumbnails.length === 0 ? (
-                        <p>No videos found without thumbnails.</p>
-                    ) : (
-                        <ul className="space-y-2">
-                            {entriesWithoutThumbnails.map((entry) => (
-                                <EntryItem
-                                    key={entry.id}
-                                    entry={entry}
-                                    onRegenerate={regenerateThumbnail}
-                                    isProcessing={processingIds.has(entry.id)}
-                                />
-                            ))}
-                        </ul>
-                    )}
+                    <h2 className="text-xl font-semibold mb-2 dark:text-gray-200">Videos Without Thumbnails</h2>
+                    <div className="bg-white dark:bg-gray-800 rounded h-[500px]">
+                        {entriesWithoutThumbnails.length === 0 ? (
+                            <p className="text-gray-500 dark:text-gray-400">No videos found without thumbnails.</p>
+                        ) : (
+                            <VList style={{height: '450px'}} className="space-y-2">
+                                {entriesWithoutThumbnails.map((entry) => (
+                                    <EntryItem
+                                        key={entry.id}
+                                        entry={entry}
+                                        onRegenerate={regenerateThumbnail}
+                                        isProcessing={processingIds.has(entry.id)}
+                                    />
+                                ))}
+                            </VList>
+                        )}
+                    </div>
                 </div>
 
                 <DebugOutput debugOutput={debugOutput}/>
