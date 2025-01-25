@@ -161,15 +161,19 @@ suspend fun generateDHashes(videoFile: File) {
         val output = proc.inputStream.buffered()
 
         val hashColl = mutableListOf<DHash>()
-        JpegSplitter.split(output) {
-            val hash = DHash.fromImage(ImageIO.read(it.inputStream()))
-            hashColl += hash
-        }
+        JpegSplitter.split(
+            output,
+            onConcludeFile = {
+                val hash = DHash.fromImage(ImageIO.read(it.inputStream()))
+                hashColl += hash
+            })
 
         proc.waitFor()
 
         println("Saving ${hashColl.count()} hashes for later.")
-        File(videoFile.parent, "dhashes.bin").writeULongs(hashColl.map { it.raw })
+        File(
+            videoFile.parent, "dhashes.bin"
+        ).writeULongs(hashColl.map { it.raw })
     }
 }
 
