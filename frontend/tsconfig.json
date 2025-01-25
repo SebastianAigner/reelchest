@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es2017",
     "module": "es2016",
     "jsx": "react",
     "strictNullChecks": true,
@@ -10,7 +10,8 @@
       "dom",
       "es5",
       "es6",
-      "es2016"
+      "es2016",
+      "es2017"
     ]
   },
   "include": [
