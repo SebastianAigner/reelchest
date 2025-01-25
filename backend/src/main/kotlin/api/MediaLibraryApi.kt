@@ -9,6 +9,7 @@ import io.ktor.server.routing.*
 import io.sebi.datastructures.shaHashed
 import io.sebi.downloader.DownloadManager
 import io.sebi.duplicatecalculator.DuplicateCalculator
+import io.sebi.ffmpeg.MediaTypeInfo
 import io.sebi.ffmpeg.generateThumbnails
 import io.sebi.ffmpeg.getMediaType
 import io.sebi.library.*
@@ -43,6 +44,7 @@ fun DuplicatesDTO.Companion.from(d: Duplicates): DuplicatesDTO {
 }
 
 val mimeTypeCache = ConcurrentHashMap<String, String>()
+val mediaTypeCache = ConcurrentHashMap<String, MediaTypeInfo>()
 
 @OptIn(ExperimentalStdlibApi::class, ExperimentalUnsignedTypes::class)
 fun Route.mediaLibraryApi(
@@ -163,7 +165,7 @@ fun Route.mediaLibraryApi(
                         ?: return@withContext call.respond(HttpStatusCode.NotFound)
                 try {
                     val mimeType = mimeTypeCache.getOrPut(entry.id) { entry.getMimeType() }
-                    val mediaInfo = getMediaType(entry.file)
+                    val mediaInfo = mediaTypeCache.getOrPut(entry.id) { getMediaType(entry.file) }
                     call.respond(buildJsonObject {
                         put("mimeType", mimeType)
                         put("width", mediaInfo.width)

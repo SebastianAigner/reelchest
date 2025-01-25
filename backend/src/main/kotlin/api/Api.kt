@@ -39,6 +39,39 @@ fun Route.api(
 
     route("api") {
         analyticsApi()
+        get("config") {
+            val env = application.environment
+            val config = env.config
+
+            call.respond(
+                ApplicationConfig(
+                    development = env.developmentMode,
+                    port = config.property("ktor.deployment.port").getString().toInt(),
+                    shutdownUrl = config.property("ktor.deployment.shutdown.url").getString(),
+                    connectionGroupSize = config
+                        .propertyOrNull("ktor.deployment.connectionGroupSize")
+                        ?.getString()
+                        ?.toInt() ?: Runtime.getRuntime().availableProcessors() * 2,
+                    workerGroupSize = config.propertyOrNull("ktor.deployment.workerGroupSize")?.getString()?.toInt()
+                        ?: Runtime.getRuntime().availableProcessors() * 2,
+                    callGroupSize = config.propertyOrNull("ktor.deployment.callGroupSize")?.getString()?.toInt()
+                        ?: Runtime.getRuntime().availableProcessors() * 2,
+                    shutdownGracePeriod = config
+                        .propertyOrNull("ktor.deployment.shutdownGracePeriod")
+                        ?.getString()
+                        ?.toLong() ?: 1000,
+                    shutdownTimeout = config.propertyOrNull("ktor.deployment.shutdownTimeout")?.getString()?.toLong()
+                        ?: 5000,
+                    requestQueueLimit = config.propertyOrNull("ktor.deployment.requestQueueLimit")?.getString()?.toInt()
+                        ?: 16,
+                    runningLimit = config.propertyOrNull("ktor.deployment.runningLimit")?.getString()?.toInt() ?: 10,
+                    responseWriteTimeoutSeconds = config
+                        .propertyOrNull("ktor.deployment.responseWriteTimeoutSeconds")
+                        ?.getString()
+                        ?.toInt() ?: 10
+                )
+            )
+        }
         get("log") {
             call.respond(InMemoryAppender.getSerializableRepresentation())
         }
@@ -90,3 +123,19 @@ data class UrlRequest(val url: String)
 @TypeScript
 @Serializable
 data class DuplicateResponse(val entry: MediaLibraryEntry, val possibleDuplicate: MediaLibraryEntry, val distance: Int)
+
+@TypeScript
+@Serializable
+data class ApplicationConfig(
+    val development: Boolean,
+    val port: Int,
+    val shutdownUrl: String,
+    val connectionGroupSize: Int,
+    val workerGroupSize: Int,
+    val callGroupSize: Int,
+    val shutdownGracePeriod: Long,
+    val shutdownTimeout: Long,
+    val requestQueueLimit: Int,
+    val runningLimit: Int,
+    val responseWriteTimeoutSeconds: Int,
+)

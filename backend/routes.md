@@ -66,6 +66,19 @@
 
 ## System Routes
 
+- `GET /api/config` - Get current application configuration
+    - Returns:
+        - `development` - Development mode status
+        - `port` - Server port
+        - `shutdownUrl` - Shutdown endpoint URL
+        - `connectionGroupSize` - Size of connection thread pool
+        - `workerGroupSize` - Size of worker thread pool
+        - `callGroupSize` - Size of call processing thread pool
+        - `shutdownGracePeriod` - Grace period for shutdown in milliseconds
+        - `shutdownTimeout` - Shutdown timeout in milliseconds
+        - `requestQueueLimit` - Maximum number of queued requests
+        - `runningLimit` - Maximum number of running requests
+        - `responseWriteTimeoutSeconds` - Timeout for writing responses
 - `GET /api/log` - Get system logs
 - `GET /api/status` - Get worker status
 - `POST /api/isUrlInLibraryOrProgress` - Check if URL exists in library or is being processed
