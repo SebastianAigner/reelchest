@@ -3,8 +3,13 @@ package io.sebi.heavymutex
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
-class HeavyMutex(val name: String) {
+class HeavyMutex(
+    val name: String,
+    private val logger: Logger = LoggerFactory.getLogger(HeavyMutex::class.java),
+) {
     private val mutex = Mutex()
     var lockedAt = Clock.System.now()
     suspend fun lock() {
@@ -14,7 +19,7 @@ class HeavyMutex(val name: String) {
 
     fun unlock() {
         val timeHeld = Clock.System.now() - lockedAt
-        println("$name lock held for $timeHeld")
+        logger.debug("{} lock held for {}", name, timeHeld)
         mutex.unlock()
     }
 
@@ -25,7 +30,7 @@ class HeavyMutex(val name: String) {
                 block()
             } finally {
                 val timeHeld = Clock.System.now() - lockedAt
-                println("$name lock held for $timeHeld")
+                logger.debug("{} lock held for {}", name, timeHeld)
             }
         }
     }
