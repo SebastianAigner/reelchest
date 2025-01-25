@@ -1,5 +1,6 @@
 include("backend")
 include("frontend")
+include("process")
 //includeBuild("mobileapp")
 rootProject.name = "reelchest"
 
