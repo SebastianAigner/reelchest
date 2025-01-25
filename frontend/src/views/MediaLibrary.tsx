@@ -8,7 +8,7 @@ import {FlexGrow, ResponsiveGrid, ScrollableHStack} from "../components/Layout";
 import {StyledInput} from "../components/StyledInput";
 import {AutoTaggedMediaLibraryEntry} from "../models/AutoTaggedMediaLibraryEntry";
 import {usePlaylist} from "../context/PlaylistContext";
-import useSWR from "swr/esm";
+import useSWR from "swr";
 import {fetcher} from "../utils";
 import {VList} from "virtua";
 import {chunk} from "underscore";

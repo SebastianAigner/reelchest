@@ -1,5 +1,5 @@
 import * as React from "react";
-import useSWR from "swr/esm";
+import useSWR from "swr";
 import {fetcher} from "../utils";
 import {MainHeading} from "../components/Typography";
 import {commonStyles} from "../styles/common";

@@ -1,5 +1,5 @@
 import * as React from "react";
-import useSWR from "swr/esm";
+import useSWR from "swr";
 import {fetcher} from "../utils";
 import axios from "axios";
 import {MainHeading, SectionHeading} from "../components/Typography";

@@ -1,10 +1,9 @@
 import * as React from "react";
-import useSWR from "swr/esm";
+import useSWR, {mutate} from "swr";
 import {fetcher} from "../utils";
 import {MediaLibraryEntry} from "../models/MediaLibraryEntry";
 import {MediaLibraryCard} from "../components/MediaLibraryCard";
 import axios from "axios";
-import {mutate} from "swr";
 import {AutoTaggedMediaLibraryEntry} from "../models/AutoTaggedMediaLibraryEntry";
 import {MainHeading} from "../components/Typography";
 import {ResponsiveGrid} from "../components/Layout";

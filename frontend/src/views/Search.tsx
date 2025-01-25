@@ -8,7 +8,7 @@ import {MainHeading} from "../components/Typography";
 import {HStack, ResponsiveGrid} from "../components/Layout";
 import {commonStyles} from "../styles/common";
 import {INPUT_ACTION, SimpleInputField} from "../components/SimpleInputField";
-import useSWR from "swr/esm";
+import useSWR from "swr";
 import {fetcher} from "../utils";
 import {LoadingSpinner} from "../components/LoadingSpinner";
 
