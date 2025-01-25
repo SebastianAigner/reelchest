@@ -5,18 +5,20 @@ import java.io.DataOutputStream
 import java.io.File
 
 fun File.writeULongs(ulongs: List<ULong>) {
-    val dos = DataOutputStream(this.outputStream())
-    for (ulong in ulongs) {
-        dos.writeLong(ulong.toLong())
+    DataOutputStream(this.outputStream()).use {
+        for (ulong in ulongs) {
+            it.writeLong(ulong.toLong())
+        }
     }
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
 fun File.readULongs(): ULongArray {
     val count = (this.length() / ULong.SIZE_BYTES).toInt()
-    val dis = DataInputStream(this.inputStream())
-    val hashes = ULongArray(count) {
-        dis.readLong().toULong()
+    DataInputStream(this.inputStream()).use { dis ->
+        val hashes = ULongArray(count) {
+            dis.readLong().toULong()
+        }
+        return hashes
     }
-    return hashes
 }
