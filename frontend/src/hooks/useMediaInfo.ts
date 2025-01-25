@@ -14,9 +14,9 @@ interface MediaInfo {
     height?: number;
 }
 
-export function useMediaInfo(id: string) {
+export function useMediaInfo(id: string, enabled: boolean = true) {
     const endpoint = `/api/mediaLibrary/${id}/media-information`;
-    const {data, error} = useSWRImmutable<MediaInfo>(endpoint, fetcher);
+    const {data, error} = useSWRImmutable<MediaInfo>(enabled ? endpoint : null, fetcher);
     return {
         mimeType: data?.mimeType,
         width: data?.width,

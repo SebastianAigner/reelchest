@@ -10,10 +10,12 @@ import placeholderImage from '../assets/placeholder.svg';
 import audioPlaceholder from '../assets/audio-placeholder.svg';
 import {useMediaInfo} from "../hooks/useMediaInfo";
 import {TrashIcon} from '@heroicons/react/24/solid';
+import {useInView} from "../hooks/useInView";
 
 export function MediaLibraryCard({item}: { item: MediaLibraryEntry }) {
     const [showingVideo, setShowingVideo] = useState(false)
-    const {isAudio} = useMediaInfo(item.id)
+    const [ref, isInView] = useInView({threshold: 0.1});
+    const {isAudio} = useMediaInfo(item.id, isInView)
     let playerOrPicture
     if (!showingVideo) {
         playerOrPicture =
@@ -42,7 +44,9 @@ export function MediaLibraryCard({item}: { item: MediaLibraryEntry }) {
                 controls={true}/>
         )
     }
-    return <div key={"player-or-picture-card" + item.id}
+    return <div
+        ref={ref}
+        key={"player-or-picture-card" + item.id}
                 className={`${commonStyles.cardContainer} ${
                     item.markedForDeletion
                         ? "border-2 border-red-400 bg-red-50 dark:bg-red-900/10 relative opacity-75"
