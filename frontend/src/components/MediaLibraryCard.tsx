@@ -8,12 +8,12 @@ import {TwoColumnGrid} from "./Layout";
 import {commonStyles} from "../styles/common";
 import placeholderImage from '../assets/placeholder.svg';
 import audioPlaceholder from '../assets/audio-placeholder.svg';
-import {useMimeType} from "../hooks/useMimeType";
+import {useMediaInfo} from "../hooks/useMediaInfo";
 import {TrashIcon} from '@heroicons/react/24/solid';
 
 export function MediaLibraryCard({item}: { item: MediaLibraryEntry }) {
     const [showingVideo, setShowingVideo] = useState(false)
-    const {isAudio} = useMimeType(item.id)
+    const {isAudio} = useMediaInfo(item.id)
     let playerOrPicture
     if (!showingVideo) {
         playerOrPicture =

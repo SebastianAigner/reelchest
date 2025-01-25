@@ -5,6 +5,7 @@ import {MediaLibraryEntry} from "../models/MediaLibraryEntry";
 import {MainHeading, SubHeading} from "../components/Typography";
 import {TagBadge} from "../components/TagBadge";
 import {usePlaylist} from "../context/PlaylistContext";
+import {useMediaInfo} from "../hooks/useMediaInfo";
 import axios from "axios";
 import {commonStyles} from "../styles/common";
 import {StyledButton} from "../components/StyledButton";
@@ -15,6 +16,21 @@ import {INPUT_ACTION, SimpleInputField} from "../components/SimpleInputField";
 import {AutoTaggedMediaLibraryEntry} from "../models/AutoTaggedMediaLibraryEntry";
 import * as _ from "underscore";
 import DuplicatesDTO = IoSebi.DuplicatesDTO;
+
+function MediaInfoSection({id}: { id: string }) {
+    const {mimeType, width, height, isLoading} = useMediaInfo(id);
+
+    if (isLoading) return <p>Loading media information...</p>;
+
+    return (
+        <ul>
+            <li>MIME Type: {mimeType}</li>
+            {width && height && (
+                <li>Dimensions: {width}×{height}</li>
+            )}
+        </ul>
+    );
+}
 
 interface Identifiable {
     id: string
@@ -126,6 +142,9 @@ export function Movie() {
                 </StyledButton>
             </div>
         )}
+        <SubHeading>Media Information</SubHeading>
+        <MediaInfoSection id={id}/>
+
         <SubHeading>Operations</SubHeading>
         <ul>
             <li>

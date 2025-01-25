@@ -10,6 +10,7 @@ import io.sebi.datastructures.shaHashed
 import io.sebi.downloader.DownloadManager
 import io.sebi.duplicatecalculator.DuplicateCalculator
 import io.sebi.ffmpeg.generateThumbnails
+import io.sebi.ffmpeg.getMediaType
 import io.sebi.library.*
 import io.sebi.phash.DHash
 import io.sebi.phash.getMinimalDistance
@@ -154,17 +155,20 @@ fun Route.mediaLibraryApi(
             metadataStorage.retrieveMetadata(id).just()?.addHitAndPersist(metadataStorage)
             call.respond(HttpStatusCode.OK)
         }
-        get("mime-type") {
+        get("media-information") {
             val id = call.parameters["id"]!!
             val entry = metadataStorage.retrieveMetadata(id).just() ?: return@get call.respond(HttpStatusCode.NotFound)
             try {
                 val mimeType = mimeTypeCache.getOrPut(entry.id) { entry.getMimeType() }
+                val mediaInfo = getMediaType(entry.file)
                 call.respond(buildJsonObject {
                     put("mimeType", mimeType)
+                    put("width", mediaInfo.width)
+                    put("height", mediaInfo.height)
                 })
             } catch (e: Exception) {
                 call.respond(HttpStatusCode.InternalServerError, buildJsonObject {
-                    put("error", e.message ?: "Unknown error occurred while determining MIME type")
+                    put("error", e.message ?: "Unknown error occurred while determining media information")
                 })
             }
         }

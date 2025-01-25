@@ -3,7 +3,7 @@ import {MediaLibraryEntry} from "../models/MediaLibraryEntry";
 import axios from "axios";
 import useSWR, {mutate} from "swr";
 import {fetcher} from "../utils";
-import {useMimeType} from "../hooks/useMimeType";
+import {useMediaInfo} from "../hooks/useMediaInfo";
 import {AutoTaggedMediaLibraryEntry} from "../models/AutoTaggedMediaLibraryEntry";
 import {VList} from 'virtua';
 
@@ -83,7 +83,7 @@ const DebugOutput: React.FC<DebugOutputProps> = ({debugOutput}) => {
 
 const EntryItem: React.FC<EntryItemProps> = ({entry, onRegenerate, isProcessing}) => {
     const {entry: mediaEntry, mutateEntry} = useMediaLibraryEntry(entry.id);
-    const {isAudio} = useMimeType(entry.id);
+    const {isAudio} = useMediaInfo(entry.id);
 
     return (
         <li className="border dark:border-gray-700 p-3 rounded dark:bg-gray-800/50">
