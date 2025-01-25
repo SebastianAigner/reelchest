@@ -67,8 +67,8 @@ val logger = LoggerFactory.getLogger("ffmpeg")
 suspend fun generateThumbnails(
     videoFile: File,
     logger: org.slf4j.Logger = LoggerFactory.getLogger("ffmpeg"),
-    customStdoutHandler: ((String) -> Unit)? = null,
-    customStderrHandler: ((String) -> Unit)? = null,
+    onStdoutLine: (String) -> Unit? = {},
+    onStderrLine: (String) -> Unit? = {},
 ) {
     logger.info("Starting thumbnail generation for ${videoFile.name}")
     logger.info("Video file path: ${videoFile.absolutePath}")
@@ -121,8 +121,8 @@ suspend fun generateThumbnails(
     val (out, err) = try {
         FfmpegTask(ffmpegParameters).execute(
             directory = videoFile.parentFile,
-            customStdoutHandler = customStdoutHandler,
-            customStderrHandler = customStderrHandler
+            customStdoutHandler = { onStdoutLine(it) },
+            customStderrHandler = { onStderrLine(it) }
         )
     } catch (e: Exception) {
         logger.error("Failed to execute ffmpeg: ${e.message}")

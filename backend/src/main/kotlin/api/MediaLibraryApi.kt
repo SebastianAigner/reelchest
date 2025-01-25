@@ -256,11 +256,11 @@ fun Route.mediaLibraryDebugApi(mediaLibrary: MediaLibrary) {
                         generateThumbnails(
                             videoFile,
                             logger,
-                            customStdoutHandler = { line ->
+                            onStdoutLine = { line ->
                                 write("data: [FFMPEG-OUT] $line\n\n")
                                 flush()
                             },
-                            customStderrHandler = { line ->
+                            onStderrLine = { line ->
                                 write("data: [FFMPEG-ERR] $line\n\n")
                                 flush()
                             }
