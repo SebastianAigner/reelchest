@@ -27,6 +27,7 @@ import kotlinx.serialization.json.put
 import org.slf4j.LoggerFactory
 import java.io.DataOutputStream
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 
 @TypeScript
 @Serializable
@@ -39,6 +40,8 @@ data class DuplicatesDTO(
 fun DuplicatesDTO.Companion.from(d: Duplicates): DuplicatesDTO {
     return DuplicatesDTO(d.src_id, d.dup_id, d.distance)
 }
+
+val mimeTypeCache = ConcurrentHashMap<String, String>()
 
 @OptIn(ExperimentalStdlibApi::class, ExperimentalUnsignedTypes::class)
 fun Route.mediaLibraryApi(
@@ -155,7 +158,7 @@ fun Route.mediaLibraryApi(
             val id = call.parameters["id"]!!
             val entry = metadataStorage.retrieveMetadata(id).just() ?: return@get call.respond(HttpStatusCode.NotFound)
             try {
-                val mimeType = entry.getMimeType()
+                val mimeType = mimeTypeCache.getOrPut(entry.id) { entry.getMimeType() }
                 call.respond(buildJsonObject {
                     put("mimeType", mimeType)
                 })
