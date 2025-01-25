@@ -7,16 +7,19 @@ import {Link} from "react-router-dom";
 import {TwoColumnGrid} from "./Layout";
 import {commonStyles} from "../styles/common";
 import placeholderImage from '../assets/placeholder.svg';
+import audioPlaceholder from '../assets/audio-placeholder.svg';
+import {useMimeType} from "../hooks/useMimeType";
 
 export function MediaLibraryCard({item}: { item: MediaLibraryEntry }) {
     const [showingVideo, setShowingVideo] = useState(false)
+    const {isAudio} = useMimeType(item.id)
     let playerOrPicture
     if (!showingVideo) {
         playerOrPicture =
             <LazyLoadImage
                 className={commonStyles.cardImage}
                 effect={"opacity"}
-                src={`/api/mediaLibrary/${item.id}/randomThumb`}
+                src={isAudio ? audioPlaceholder : `/api/mediaLibrary/${item.id}/randomThumb`}
                 onError={(e: any) => {
                     e.target.src = placeholderImage;
                 }}
@@ -25,9 +28,18 @@ export function MediaLibraryCard({item}: { item: MediaLibraryEntry }) {
                     axios.get(`/api/mediaLibrary/${item.id}/hit`)
                 }}/>
     } else {
-        playerOrPicture = <video
-            className={commonStyles.cardImage}
-            src={`/api/video/${item.id}`} controls={true}/>
+        playerOrPicture = isAudio ? (
+            <audio
+                className={commonStyles.cardImage}
+                style={{background: '#2C2C2C'}}
+                src={`/api/video/${item.id}`}
+                controls={true}/>
+        ) : (
+            <video
+                className={commonStyles.cardImage}
+                src={`/api/video/${item.id}`}
+                controls={true}/>
+        )
     }
     return <div key={"player-or-picture-card" + item.id}
                 className={`${commonStyles.cardContainer} ${item.markedForDeletion ? "border-red-500" : ""}`}

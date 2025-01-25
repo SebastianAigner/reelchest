@@ -3,6 +3,7 @@ import {MediaLibraryEntry} from "../models/MediaLibraryEntry";
 import axios from "axios";
 import useSWR, {mutate} from "swr";
 import {fetcher} from "../utils";
+import {useMimeType} from "../hooks/useMimeType";
 import {AutoTaggedMediaLibraryEntry} from "../models/AutoTaggedMediaLibraryEntry";
 import {VList} from 'virtua';
 
@@ -24,16 +25,6 @@ function useMediaLibraryEntry(id: string) {
     };
 }
 
-function useMimeType(id: string) {
-    const endpoint = `/api/mediaLibrary/${id}/mime-type`;
-    const {data, error} = useSWR<{ mimeType: string }>(endpoint, fetcher);
-
-    return {
-        mimeType: data?.mimeType,
-        isLoading: !error && !data,
-        isError: error
-    };
-}
 
 interface DebugResponse {
     status: 'success' | 'error';
@@ -92,8 +83,7 @@ const DebugOutput: React.FC<DebugOutputProps> = ({debugOutput}) => {
 
 const EntryItem: React.FC<EntryItemProps> = ({entry, onRegenerate, isProcessing}) => {
     const {entry: mediaEntry, mutateEntry} = useMediaLibraryEntry(entry.id);
-    const {mimeType} = useMimeType(entry.id);
-    const isAudio = mimeType?.startsWith('audio/');
+    const {isAudio} = useMimeType(entry.id);
 
     return (
         <li className="border dark:border-gray-700 p-3 rounded dark:bg-gray-800/50">
