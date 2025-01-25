@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import {HashRouter, Link, Route, Switch} from "react-router-dom";
+import {ThumbnailDebug} from "./views/ThumbnailDebug";
 import {MediaLibrary} from "./views/MediaLibrary";
 import {Search} from "./views/Search";
 import {Add} from "./views/Add";
@@ -54,6 +55,9 @@ const NavigationBar: React.FC = () => {
                 </div>
                 <div>
                     <Link to={"/upload"} className={commonStyles.navLink}>Upload</Link>
+                </div>
+                <div>
+                    <Link to={"/debug/thumbnails"} className={commonStyles.navLink}>Debug Thumbnails</Link>
                 </div>
                 <div>
                     <button
@@ -118,6 +122,9 @@ const App: React.FC = () => {
                             </Route>
                             <Route path="/upload">
                                 <Upload/>
+                            </Route>
+                            <Route path="/debug/thumbnails">
+                                <ThumbnailDebug/>
                             </Route>
                         </Switch>
                     </VStack>

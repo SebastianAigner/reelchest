@@ -49,6 +49,7 @@ fun Route.api(
         }
         route("mediaLibrary") {
             mediaLibraryApi(mediaLibrary, duplicateCalculator, tagger, downloadManager, metadataStorage)
+            mediaLibraryDebugApi(mediaLibrary)
         }
 
         downloaderApi(downloadManager, urlDecoder, mediaLibrary::addCompletedDownload)

@@ -1,11 +1,9 @@
 package io.sebi.ffmpeg
 
-import com.github.pgreze.process.Redirect
-import com.github.pgreze.process.process
 import io.sebi.phash.DHash
 import io.sebi.phash.JpegSplitter
 import io.sebi.phash.writeULongs
-import kotlinx.coroutines.flow.toList
+import io.sebi.process.runExternalProcess
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.jetbrains.annotations.Blocking
@@ -23,19 +21,36 @@ class FfmpegTask(val parameters: List<String>) {
     constructor(vararg parameters: String?) : this(parameters.filterNotNull().toList())
 
     suspend fun execute(directory: File?): FfmpegProcessResult {
+        logger.info("Executing ffmpeg command with parameters: ${parameters.joinToString(" ")}")
+        if (directory != null) {
+            logger.info("Working directory: ${directory.absolutePath}")
+        }
+
         return globalFfmpegMutex.withLock {
+            logger.info("Acquired ffmpeg mutex")
             val stdout = mutableListOf<String>()
             val stderr = mutableListOf<String>()
-            val res = process(
-                "ffmpeg", *parameters.toTypedArray(),
-                stdout = Redirect.Consume { flow ->
-                    flow.toList(stdout)
-                },
-                stderr = Redirect.Consume { flow ->
-                    flow.toList(stderr)
-                }, directory = directory
-            )
-            FfmpegProcessResult(stdout, stderr)
+            try {
+                val res = runExternalProcess(
+                    "ffmpeg", *parameters.toTypedArray(),
+                    onStdoutLine = {
+                        stdout.add(it)
+                        logger.info("[FFMPEG-OUT] $it")
+                    },
+                    onStderrLine = {
+                        stderr.add(it)
+                        logger.error("[FFMPEG-ERR] $it")
+                    },
+                    directory = directory
+                )
+                logger.info("FFmpeg process completed")
+                FfmpegProcessResult(stdout, stderr)
+            } catch (e: Exception) {
+                logger.error("FFmpeg process failed: ${e.message}")
+                throw e
+            } finally {
+                logger.info("Releasing ffmpeg mutex")
+            }
         }
     }
 }
@@ -43,8 +58,32 @@ class FfmpegTask(val parameters: List<String>) {
 val logger = LoggerFactory.getLogger("ffmpeg")
 
 // https://sebi.io/posts/2024-12-21-faster-thumbnail-generation-with-ffmpeg-seeking/
-suspend fun generateThumbnails(videoFile: File) {
-    val dur = getVideoDuration(videoFile)
+suspend fun generateThumbnails(videoFile: File, logger: org.slf4j.Logger = LoggerFactory.getLogger("ffmpeg")) {
+    logger.info("Starting thumbnail generation for ${videoFile.name}")
+    logger.info("Video file path: ${videoFile.absolutePath}")
+    logger.info("Parent directory: ${videoFile.parent}")
+
+    if (!videoFile.exists()) {
+        logger.error("Video file does not exist")
+        throw IllegalArgumentException("Video file does not exist: ${videoFile.absolutePath}")
+    }
+
+    if (!videoFile.canRead()) {
+        logger.error("Cannot read video file")
+        throw IllegalArgumentException("Cannot read video file: ${videoFile.absolutePath}")
+    }
+    val dur = try {
+        getVideoDuration(videoFile).also {
+            logger.info("Video duration: ${it.inWholeSeconds} seconds")
+        }
+    } catch (e: Exception) {
+        logger.error("Failed to get video duration: ${e.message}")
+        throw e
+    }
+
+    val thumbnailCount = (dur.inWholeSeconds / 10) + 1
+    logger.info("Planning to generate $thumbnailCount thumbnails")
+
     val ffmpegParameters = buildList<String> {
         var streamId = 0
         add("-y")
@@ -59,13 +98,29 @@ suspend fun generateThumbnails(videoFile: File) {
             add("1")
             add("-map")
             add("$streamId:v:0")
-            add("thumb${streamId.toString().padStart(4, '0')}.jpg")
+            val thumbName = "thumb${streamId.toString().padStart(4, '0')}.jpg"
+            add(thumbName)
+            logger.info("Adding thumbnail $thumbName at timestamp ${timestamp}s")
             streamId++
         }
     }
 
-    val (out, err) = FfmpegTask(ffmpegParameters).execute(videoFile.parentFile)
-    if (err.isNotEmpty()) logger.error(err.joinToString("\n"))
+    logger.info("Starting ffmpeg process in directory: ${videoFile.parentFile.absolutePath}")
+
+    val (out, err) = try {
+        FfmpegTask(ffmpegParameters).execute(videoFile.parentFile)
+    } catch (e: Exception) {
+        logger.error("Failed to execute ffmpeg: ${e.message}")
+        throw e
+    }
+
+    if (out.isNotEmpty()) logger.info("FFmpeg output:\n${out.joinToString("\n")}")
+    if (err.isNotEmpty()) logger.error("FFmpeg errors:\n${err.joinToString("\n")}")
+
+    // Verify generated thumbnails
+    val generatedThumbnails =
+        videoFile.parentFile.listFiles { file -> file.name.startsWith("thumb") && file.name.endsWith(".jpg") }
+    logger.info("Generated ${generatedThumbnails?.size ?: 0} thumbnails out of $thumbnailCount planned")
 }
 
 

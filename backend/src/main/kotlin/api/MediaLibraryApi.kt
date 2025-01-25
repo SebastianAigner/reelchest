@@ -9,6 +9,7 @@ import io.ktor.server.routing.*
 import io.sebi.datastructures.shaHashed
 import io.sebi.downloader.DownloadManager
 import io.sebi.duplicatecalculator.DuplicateCalculator
+import io.sebi.ffmpeg.generateThumbnails
 import io.sebi.library.*
 import io.sebi.phash.DHash
 import io.sebi.phash.getMinimalDistance
@@ -23,6 +24,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.put
+import org.slf4j.LoggerFactory
 import java.io.DataOutputStream
 import java.io.File
 
@@ -204,5 +206,65 @@ fun Route.mediaLibraryApi(
             downloadManager.allDownloads.any { it.originUrl == url } ||
                     mediaLibrary.existsOrTombstone(sha)
         call.respond(isInLibOrProgress)
+    }
+}
+
+@Serializable
+data class ThumbnailDebugResponse(
+    val status: String,
+    val debug_output: List<String>,
+)
+
+fun Route.mediaLibraryDebugApi(mediaLibrary: MediaLibrary) {
+    route("debug") {
+        get("missing-thumbnails") {
+            val entriesWithoutThumbnails = mediaLibrary.getEntries().filter { entry ->
+                val thumbnails = entry.getThumbnails()
+                thumbnails == null || thumbnails.isEmpty()
+            }
+            call.respond(entriesWithoutThumbnails)
+        }
+
+        get("regenerate-thumbnail/{id}") {
+            val id = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing id parameter")
+            val entry = mediaLibrary.findById(id) ?: return@get call.respond(HttpStatusCode.NotFound, "Entry not found")
+
+            call.response.cacheControl(CacheControl.NoCache(null))
+            call.response.header("Access-Control-Allow-Origin", "http://localhost:8080")
+            call.response.header("Access-Control-Allow-Credentials", "true")
+            call.response.header("Cache-Control", "no-cache")
+            call.response.header("Connection", "keep-alive")
+            try {
+                entry.file?.let { videoFile ->
+                    call.respondTextWriter(contentType = ContentType.Text.EventStream) {
+                        val logger = object : org.slf4j.Logger by LoggerFactory.getLogger("ThumbnailDebug") {
+                            override fun info(msg: String) {
+                                write("data: [INFO] $msg\n\n")
+                                flush()
+                            }
+
+                            override fun error(msg: String) {
+                                write("data: [ERROR] $msg\n\n")
+                                flush()
+                            }
+                        }
+
+                        write("data: Starting thumbnail regeneration for entry: ${entry.name}\n\n")
+                        write("data: Video file: ${videoFile.absolutePath}\n\n")
+                        flush()
+
+                        generateThumbnails(videoFile, logger)
+
+                        write("data: Thumbnail generation completed\n\n")
+                        flush()
+                    }
+                } ?: call.respond(HttpStatusCode.NotFound, "Video file not found")
+            } catch (e: Exception) {
+                call.respondTextWriter(contentType = ContentType.Text.EventStream) {
+                    write("data: [ERROR] Exception: ${e.message}\n\n")
+                    flush()
+                }
+            }
+        }
     }
 }
