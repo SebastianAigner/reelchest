@@ -1,11 +1,10 @@
 package io.sebi.ffmpeg
 
+import io.sebi.heavymutex.HeavyMutex
 import io.sebi.phash.DHash
 import io.sebi.phash.JpegSplitter
 import io.sebi.phash.writeULongs
 import io.sebi.process.runExternalProcess
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -19,7 +18,7 @@ import kotlin.time.Duration.Companion.seconds
 
 data class FfmpegProcessResult(val stdout: List<String>, val stderr: List<String>)
 
-val globalFfmpegMutex = Mutex()
+val globalFfmpegMutex = HeavyMutex("FfmpegMutex")
 
 class FfmpegTask(val parameters: List<String>) {
     constructor(vararg parameters: String?) : this(parameters.filterNotNull().toList())
@@ -197,7 +196,6 @@ suspend fun getMediaType(inputFile: File): MediaTypeInfo {
         ).start()
 
         val output = process.inputStream.bufferedReader().readText()
-        println("[DEBUG_LOG] ffprobe output: $output")
 
         val json = Json.parseToJsonElement(output)
         val streams = json.jsonObject["streams"]?.jsonArray
