@@ -6,6 +6,7 @@ import axios from "axios";
 import {Link} from "react-router-dom";
 import {TwoColumnGrid} from "./Layout";
 import {commonStyles} from "../styles/common";
+import placeholderImage from '../assets/placeholder.svg';
 
 export function MediaLibraryCard({item}: { item: MediaLibraryEntry }) {
     const [showingVideo, setShowingVideo] = useState(false)
@@ -16,6 +17,9 @@ export function MediaLibraryCard({item}: { item: MediaLibraryEntry }) {
                 className={commonStyles.cardImage}
                 effect={"opacity"}
                 src={`/api/mediaLibrary/${item.id}/randomThumb`}
+                onError={(e: any) => {
+                    e.target.src = placeholderImage;
+                }}
                 onClick={() => {
                     setShowingVideo(true)
                     axios.get(`/api/mediaLibrary/${item.id}/hit`)
