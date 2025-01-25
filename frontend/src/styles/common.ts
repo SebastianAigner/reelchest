@@ -40,5 +40,8 @@ export const commonStyles = {
     // Navigation Links
     navLink: "hover:text-gray-600 dark:text-gray-200 dark:hover:text-gray-400 transition-colors",
 
+    // Status and Feedback
+    errorText: "text-red-600 dark:text-red-400",
+
     // Add more common style combinations here as needed
 };
