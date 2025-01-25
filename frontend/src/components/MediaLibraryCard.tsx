@@ -9,6 +9,7 @@ import {commonStyles} from "../styles/common";
 import placeholderImage from '../assets/placeholder.svg';
 import audioPlaceholder from '../assets/audio-placeholder.svg';
 import {useMimeType} from "../hooks/useMimeType";
+import {TrashIcon} from '@heroicons/react/24/solid';
 
 export function MediaLibraryCard({item}: { item: MediaLibraryEntry }) {
     const [showingVideo, setShowingVideo] = useState(false)
@@ -42,9 +43,18 @@ export function MediaLibraryCard({item}: { item: MediaLibraryEntry }) {
         )
     }
     return <div key={"player-or-picture-card" + item.id}
-                className={`${commonStyles.cardContainer} ${item.markedForDeletion ? "border-red-500" : ""}`}
+                className={`${commonStyles.cardContainer} ${
+                    item.markedForDeletion
+                        ? "border-2 border-red-400 bg-red-50 dark:bg-red-900/10 relative opacity-75"
+                        : ""
+                }`}
                 style={{"height": "fit-content"}}
     >
+        {item.markedForDeletion && (
+            <div className="absolute top-2 right-2 bg-red-500/90 text-white p-1.5 rounded-full shadow-sm">
+                <TrashIcon className="w-4 h-4"/>
+            </div>
+        )}
         {playerOrPicture}
         <TwoColumnGrid>
             <p className={commonStyles.cardTitle}><Link to={`/movie/${item.id}`}>{item.name}</Link></p>
