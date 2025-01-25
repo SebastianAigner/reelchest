@@ -24,6 +24,17 @@ function useMediaLibraryEntry(id: string) {
     };
 }
 
+function useMimeType(id: string) {
+    const endpoint = `/api/mediaLibrary/${id}/mime-type`;
+    const {data, error} = useSWR<{ mimeType: string }>(endpoint, fetcher);
+
+    return {
+        mimeType: data?.mimeType,
+        isLoading: !error && !data,
+        isError: error
+    };
+}
+
 interface DebugResponse {
     status: 'success' | 'error';
     debug_output: string[];
@@ -81,11 +92,22 @@ const DebugOutput: React.FC<DebugOutputProps> = ({debugOutput}) => {
 
 const EntryItem: React.FC<EntryItemProps> = ({entry, onRegenerate, isProcessing}) => {
     const {entry: mediaEntry, mutateEntry} = useMediaLibraryEntry(entry.id);
+    const {mimeType} = useMimeType(entry.id);
+    const isAudio = mimeType?.startsWith('audio/');
 
     return (
         <li className="border dark:border-gray-700 p-3 rounded dark:bg-gray-800/50">
             <div className="flex justify-between items-center gap-4">
-                <span className="min-w-0 truncate dark:text-gray-200">{entry.name}</span>
+                <div className="flex items-center gap-2 min-w-0">
+                    {isAudio && (
+                        <svg className="w-5 h-5 text-blue-500 shrink-0" fill="none" stroke="currentColor"
+                             viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                  d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+                        </svg>
+                    )}
+                    <span className="truncate dark:text-gray-200">{entry.name}</span>
+                </div>
                 <div className="flex gap-2 shrink-0">
                     <a
                         href={`/#/movie/${entry.id}`}
