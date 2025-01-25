@@ -13,6 +13,18 @@ and integrate with external search and video host adapters.
 ### Backend development
 Start the backend with the Gradle `run`, either by executing it from the IDE or via `./gradlew run`.
 
+#### DHash Tests
+
+The project includes tests for DHash generation to ensure consistent perceptual hashing. To set up the tests:
+
+1. Run the main function in `backend/src/test/kotlin/DHashTest.kt`. This will:
+   - Automatically download a test video file (~2MB) if it doesn't exist
+   - Generate reference hashes that will be used by the tests
+2. After setup, you can run the tests normally through your IDE or with `./gradlew test`
+
+The test video will be downloaded and stored in the `testData` directory.
+The reference hashes will be stored in `backend/src/test/resources`.
+
 ### Frontend development
 For frontend development, run `yarn dev` in the `frontend` directory to enable the Vite dev server. Access the frontend on port `3000`.
 
