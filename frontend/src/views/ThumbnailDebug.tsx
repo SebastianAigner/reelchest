@@ -163,6 +163,15 @@ export const ThumbnailDebug: React.FC = () => {
     const [debugOutput, setDebugOutput] = useState<string[]>([]);
     const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
     const [error, setError] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState<string>("");
+
+    const filteredEntries = useMemo(() => {
+        if (!searchTerm.trim()) return entriesWithoutThumbnails;
+        const lowercaseSearch = searchTerm.toLowerCase();
+        return entriesWithoutThumbnails.filter(entry =>
+            entry.name.toLowerCase().includes(lowercaseSearch)
+        );
+    }, [entriesWithoutThumbnails, searchTerm]);
 
     useEffect(() => {
         fetchEntriesWithoutThumbnails();
@@ -242,12 +251,25 @@ export const ThumbnailDebug: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <h2 className="text-xl font-semibold mb-2 dark:text-gray-200">Videos Without Thumbnails</h2>
+                    <div className="mb-4">
+                        <input
+                            type="text"
+                            placeholder="Filter videos..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full px-4 py-2 rounded border dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                        />
+                    </div>
                     <div className="bg-white dark:bg-gray-800 rounded h-[500px]">
-                        {entriesWithoutThumbnails.length === 0 ? (
-                            <p className="text-gray-500 dark:text-gray-400">No videos found without thumbnails.</p>
+                        {filteredEntries.length === 0 ? (
+                            <p className="text-gray-500 dark:text-gray-400">
+                                {entriesWithoutThumbnails.length === 0
+                                    ? "No videos found without thumbnails."
+                                    : `No videos match the filter "${searchTerm}"`}
+                            </p>
                         ) : (
                             <VList style={{height: '450px'}} className="space-y-2">
-                                {entriesWithoutThumbnails.map((entry) => (
+                                {filteredEntries.map((entry) => (
                                     <EntryItem
                                         key={entry.id}
                                         entry={entry}
