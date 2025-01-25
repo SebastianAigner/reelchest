@@ -29,3 +29,4 @@ node_modules
 playground
 database
 **/build/
+**/*.local.sh
