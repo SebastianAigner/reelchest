@@ -72,13 +72,17 @@ export function Downloads() {
                             gap: '8px',
                             marginBottom: '12px',
                             flexWrap: 'wrap',
-                            alignItems: 'center'
+                            alignItems: 'center',
+                            width: '100%',
+                            minWidth: 0
                         }}>
                             <div style={{
                                 display: 'flex',
                                 gap: '8px',
                                 alignItems: 'flex-start',
-                                flexWrap: 'wrap'
+                                flexWrap: 'wrap',
+                                width: '100%',
+                                minWidth: 0
                             }}>
                                 <div
                                     onClick={() => {
@@ -103,8 +107,11 @@ export function Downloads() {
                                         transition: 'all 0.2s ease',
                                         position: 'relative',
                                         paddingRight: '30px',
-                                        flex: '1',
-                                        minWidth: '300px'
+                                        flex: '1 1 auto',
+                                        minWidth: 0,
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap'
                                     }}
                                     onMouseEnter={(e) => {
                                         e.currentTarget.style.backgroundColor = 'var(--error-background-hover, rgba(220, 0, 0, 0.08))';
@@ -190,7 +197,7 @@ export function Downloads() {
                         {visibleErrors.has(item.originUrl) && (
                             <pre style={{
                                 fontFamily: '"JetBrains Mono", "Fira Code", "Consolas", monospace',
-                                whiteSpace: 'pre-wrap',
+                                whiteSpace: 'pre',
                                 backgroundColor: 'var(--code-background, rgba(0, 0, 0, 0.05))',
                                 color: 'var(--code-color, inherit)',
                                 padding: '12px',
@@ -201,6 +208,7 @@ export function Downloads() {
                                 boxShadow: 'inset 0 1px 3px var(--shadow-color, rgba(0, 0, 0, 0.1))',
                                 maxHeight: '400px',
                                 overflowY: 'auto',
+                                overflowX: 'auto',
                                 border: '1px solid var(--border-color, rgba(0, 0, 0, 0.1))'
                             }}>
                                 {item.error.split('\n').slice(1).join('\n')}
