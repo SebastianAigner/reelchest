@@ -6,6 +6,10 @@ import io.sebi.phash.writeULongs
 import io.sebi.process.runExternalProcess
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.jetbrains.annotations.Blocking
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -174,6 +178,40 @@ suspend fun generateDHashes(videoFile: File) {
         File(
             videoFile.parent, "dhashes.bin"
         ).writeULongs(hashColl.map { it.raw })
+    }
+}
+
+data class MediaTypeInfo(
+    val codecType: String,
+    val codecName: String,
+)
+
+suspend fun getMediaType(inputFile: File): MediaTypeInfo {
+    return globalFfmpegMutex.withLock {
+        val process = ProcessBuilder(
+            "ffprobe",
+            "-v", "quiet",
+            "-print_format", "json",
+            "-show_entries", "stream=codec_type,codec_name",
+            inputFile.absolutePath
+        ).start()
+
+        val output = process.inputStream.bufferedReader().readText()
+        println("[DEBUG_LOG] ffprobe output: $output")
+
+        val json = Json.parseToJsonElement(output)
+        val streams = json.jsonObject["streams"]?.jsonArray
+            ?: error("ffprobe on $inputFile didn't return any streams")
+
+        val firstStream = streams.firstOrNull()?.jsonObject
+            ?: error("ffprobe on $inputFile didn't return any streams")
+
+        val codecType = firstStream["codec_type"]?.jsonPrimitive?.content
+            ?: error("ffprobe on $inputFile didn't return a codec_type")
+        val codecName = firstStream["codec_name"]?.jsonPrimitive?.content
+            ?: error("ffprobe on $inputFile didn't return a codec_name")
+
+        MediaTypeInfo(codecType, codecName)
     }
 }
 

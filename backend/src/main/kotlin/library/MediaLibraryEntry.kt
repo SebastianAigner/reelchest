@@ -1,6 +1,7 @@
 package io.sebi.library
 
 import io.sebi.datastructures.shaHashed
+import io.sebi.ffmpeg.getMediaType
 import io.sebi.phash.readULongs
 import io.sebi.storage.MetadataStorage
 import io.sebi.tagging.Tagger
@@ -62,3 +63,21 @@ val MediaLibraryEntry.file: File get() = File("./mediaLibrary/${id}/${id}.mp4")
 
 @Serializable
 data class AutoTaggedMediaLibraryEntry(val mediaLibraryEntry: MediaLibraryEntry, val autoTags: List<String>)
+
+suspend fun MediaLibraryEntry.getMimeType(): String {
+    val mediaFile = this.file
+    if (!mediaFile.exists()) {
+        throw IllegalStateException("Media file does not exist: ${mediaFile.absolutePath}")
+    }
+
+    return try {
+        val mediaInfo = getMediaType(mediaFile)
+        when (mediaInfo.codecType.lowercase()) {
+            "video" -> "video/${mediaInfo.codecName.lowercase()}"
+            "audio" -> "audio/${mediaInfo.codecName.lowercase()}"
+            else -> "application/octet-stream"
+        }
+    } catch (e: Exception) {
+        throw IllegalStateException("Failed to determine MIME type for ${mediaFile.absolutePath}", e)
+    }
+}

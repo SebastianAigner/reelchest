@@ -151,6 +151,20 @@ fun Route.mediaLibraryApi(
             metadataStorage.retrieveMetadata(id).just()?.addHitAndPersist(metadataStorage)
             call.respond(HttpStatusCode.OK)
         }
+        get("mime-type") {
+            val id = call.parameters["id"]!!
+            val entry = metadataStorage.retrieveMetadata(id).just() ?: return@get call.respond(HttpStatusCode.NotFound)
+            try {
+                val mimeType = entry.getMimeType()
+                call.respond(buildJsonObject {
+                    put("mimeType", mimeType)
+                })
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, buildJsonObject {
+                    put("error", e.message ?: "Unknown error occurred while determining MIME type")
+                })
+            }
+        }
         get("thumbnails") {
             val id = call.parameters["id"]!!
             val entry = mediaLibrary.findById(id)!!
