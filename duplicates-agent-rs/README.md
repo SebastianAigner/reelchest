@@ -5,6 +5,15 @@ Implements the [duplicates detection agent](https://github.com/SebastianAigner/r
 - It's quick!
   - Kotlin: 7m 32s
   - Rust: 40s (~11.3 times faster) ~~52s (~8.7 times faster)~~
+
+# Configuration
+
+The following environment variables are required to run the application:
+
+- `REELCHEST_ENDPOINT`: The URL of the media library API endpoint (required)
+
+# Cross-compilation
+
 - It cross-compiles to my Raspberry Pi (3)!
   - Begin by following [tutorial](https://amritrathie.vercel.app/posts/2020/03/06/cross-compiling-rust-from-macos-to-raspberry-pi/#getting-a-linker). 
   - `rustup target add armv7-unknown-linux-musleabihf`

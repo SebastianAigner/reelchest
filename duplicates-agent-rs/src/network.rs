@@ -4,13 +4,16 @@ use serde::{Deserialize, Serialize};
 
 use crate::DHash;
 
-const ENDPOINT: &str = "http://192.168.178.165:8080/api/mediaLibrary";
+fn get_endpoint() -> String {
+    std::env::var("REELCHEST_ENDPOINT")
+        .expect("REELCHEST_ENDPOINT environment variable must be set")
+}
 
 async fn get_hashes_for_id(id: &str) -> Vec<DHash> {
     println!("Getting hashes for {id}");
     let client = reqwest::Client::new();
 
-    let url = format!("{ENDPOINT}/{id}/hash.bin");
+    let url = format!("{}/{id}/hash.bin", get_endpoint());
     let res = client.get(&url).send().await;
 
     match res {
@@ -42,7 +45,7 @@ struct MediaLibraryEntry {
 
 pub(crate) async fn get_all_hashes() -> HashMap<String, Vec<DHash>> {
     let entries: Vec<MediaLibraryEntry> =
-        reqwest::get(ENDPOINT).await.unwrap().json().await.unwrap();
+        reqwest::get(&get_endpoint()).await.unwrap().json().await.unwrap();
 
     let ids: Vec<_> = entries
         .into_iter()

@@ -28,3 +28,4 @@ backend/.idea
 node_modules
 playground
 database
+**/build/
