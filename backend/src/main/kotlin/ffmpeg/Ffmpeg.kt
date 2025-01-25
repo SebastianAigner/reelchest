@@ -183,6 +183,8 @@ suspend fun generateDHashes(videoFile: File) {
 data class MediaTypeInfo(
     val codecType: String,
     val codecName: String,
+    val width: Int? = null,
+    val height: Int? = null,
 )
 
 suspend fun getMediaType(inputFile: File): MediaTypeInfo {
@@ -191,7 +193,7 @@ suspend fun getMediaType(inputFile: File): MediaTypeInfo {
             "ffprobe",
             "-v", "quiet",
             "-print_format", "json",
-            "-show_entries", "stream=codec_type,codec_name",
+            "-show_entries", "stream=codec_type,codec_name,width,height",
             inputFile.absolutePath
         ).start()
 
@@ -208,8 +210,10 @@ suspend fun getMediaType(inputFile: File): MediaTypeInfo {
             ?: error("ffprobe on $inputFile didn't return a codec_type")
         val codecName = firstStream["codec_name"]?.jsonPrimitive?.content
             ?: error("ffprobe on $inputFile didn't return a codec_name")
+        val width = firstStream["width"]?.jsonPrimitive?.content?.toIntOrNull()
+        val height = firstStream["height"]?.jsonPrimitive?.content?.toIntOrNull()
 
-        MediaTypeInfo(codecType, codecName)
+        MediaTypeInfo(codecType, codecName, width, height)
     }
 }
 
