@@ -1,10 +1,129 @@
 import React, {useEffect, useState} from 'react';
 import {MediaLibraryEntry} from "../models/MediaLibraryEntry";
+import axios from "axios";
+import useSWR, {mutate} from "swr";
+import {fetcher} from "../utils";
+import {AutoTaggedMediaLibraryEntry} from "../models/AutoTaggedMediaLibraryEntry";
+
+function useMediaLibraryEntry(id: string) {
+    const endpoint = `/api/mediaLibrary/${id}?auto=true`;
+    const {data, error} = useSWR<AutoTaggedMediaLibraryEntry>(endpoint, fetcher);
+
+    return {
+        entry: data,
+        isLoading: !error && !data,
+        isError: error,
+        mutateEntry: (newEntry: Partial<MediaLibraryEntry>) => {
+            if (!data?.mediaLibraryEntry) return;
+            const joinedEntry = {...data.mediaLibraryEntry, ...newEntry} as MediaLibraryEntry;
+            axios.post(`/api/mediaLibrary/${id}`, joinedEntry).then(() => {
+                mutate(endpoint);
+            });
+        }
+    };
+}
 
 interface DebugResponse {
     status: 'success' | 'error';
     debug_output: string[];
 }
+
+interface EntryItemProps {
+    entry: MediaLibraryEntry;
+    onRegenerate: (id: string) => void;
+    isProcessing: boolean;
+}
+
+interface DebugOutputProps {
+    debugOutput: string[];
+}
+
+const DebugOutput: React.FC<DebugOutputProps> = ({debugOutput}) => {
+    return (
+        <div>
+            <h2 className="text-xl font-semibold mb-2">Debug Output</h2>
+            <div className="bg-gray-100 p-4 rounded h-[500px] overflow-y-auto font-mono text-sm">
+                {debugOutput.length === 0 ? (
+                    <p className="text-gray-500">No debug output available.</p>
+                ) : (
+                    debugOutput.map((line, index) => (
+                        <div key={index}
+                             className={`${line.includes('[ERROR]') ? 'text-red-600' : 'text-gray-800'}`}>
+                            {line}
+                        </div>
+                    ))
+                )}
+            </div>
+        </div>
+    );
+};
+
+const EntryItem: React.FC<EntryItemProps> = ({entry, onRegenerate, isProcessing}) => {
+    const {entry: mediaEntry, mutateEntry} = useMediaLibraryEntry(entry.id);
+
+    return (
+        <li className="border p-3 rounded">
+            <div className="flex justify-between items-center gap-4">
+                <span className="min-w-0 truncate">{entry.name}</span>
+                <div className="flex gap-2 shrink-0">
+                    <a
+                        href={`/#/movie/${entry.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-gray-500 text-white p-2 rounded hover:bg-gray-600 flex items-center justify-center"
+                        title="Open media page"
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                             xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                        </svg>
+                    </a>
+                    <button
+                        onClick={() => {
+                            if (mediaEntry?.mediaLibraryEntry) {
+                                mutateEntry({markedForDeletion: !mediaEntry.mediaLibraryEntry.markedForDeletion});
+                            }
+                        }}
+                        className={`${
+                            mediaEntry?.mediaLibraryEntry?.markedForDeletion
+                                ? 'bg-green-500 hover:bg-green-600'
+                                : 'bg-red-500 hover:bg-red-600'
+                        } text-white p-2 rounded flex items-center justify-center`}
+                        title={mediaEntry?.mediaLibraryEntry?.markedForDeletion ? 'Unmark for deletion' : 'Mark for deletion'}
+                    >
+                        {mediaEntry?.mediaLibraryEntry?.markedForDeletion ? (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                      d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                            </svg>
+                        ) : (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                        )}
+                    </button>
+                    <button
+                        onClick={() => onRegenerate(entry.id)}
+                        disabled={isProcessing}
+                        className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 disabled:opacity-50 flex items-center justify-center gap-2"
+                        title="Regenerate thumbnail"
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                             xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        <span className="text-sm">{isProcessing ? 'Regenerating...' : 'Regenerate'}</span>
+                    </button>
+                </div>
+            </div>
+        </li>
+    );
+};
 
 export const ThumbnailDebug: React.FC = () => {
     const [entriesWithoutThumbnails, setEntriesWithoutThumbnails] = useState<MediaLibraryEntry[]>([]);
@@ -15,6 +134,7 @@ export const ThumbnailDebug: React.FC = () => {
     useEffect(() => {
         fetchEntriesWithoutThumbnails();
     }, []);
+
 
     const fetchEntriesWithoutThumbnails = async () => {
         try {
@@ -93,38 +213,18 @@ export const ThumbnailDebug: React.FC = () => {
                     ) : (
                         <ul className="space-y-2">
                             {entriesWithoutThumbnails.map((entry) => (
-                                <li key={entry.id} className="border p-3 rounded">
-                                    <div className="flex justify-between items-center">
-                                        <span>{entry.name}</span>
-                                        <button
-                                            onClick={() => regenerateThumbnail(entry.id)}
-                                            disabled={processingIds.has(entry.id)}
-                                            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
-                                        >
-                                            {processingIds.has(entry.id) ? 'Regenerating...' : 'Regenerate'}
-                                        </button>
-                                    </div>
-                                </li>
+                                <EntryItem
+                                    key={entry.id}
+                                    entry={entry}
+                                    onRegenerate={regenerateThumbnail}
+                                    isProcessing={processingIds.has(entry.id)}
+                                />
                             ))}
                         </ul>
                     )}
                 </div>
 
-                <div>
-                    <h2 className="text-xl font-semibold mb-2">Debug Output</h2>
-                    <div className="bg-gray-100 p-4 rounded h-[500px] overflow-y-auto font-mono text-sm">
-                        {debugOutput.length === 0 ? (
-                            <p className="text-gray-500">No debug output available.</p>
-                        ) : (
-                            debugOutput.map((line, index) => (
-                                <div key={index}
-                                     className={`${line.includes('[ERROR]') ? 'text-red-600' : 'text-gray-800'}`}>
-                                    {line}
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </div>
+                <DebugOutput debugOutput={debugOutput}/>
             </div>
         </div>
     );
