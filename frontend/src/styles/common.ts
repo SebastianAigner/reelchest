@@ -13,7 +13,7 @@ export const commonStyles = {
     flexGrow: "flex-1",
     responsiveGrid: "grid grid-cols-1 sm:grid-cols-3 gap-8",
     twoColumnGrid: "grid grid-cols-2",
-    navGrid: "grid grid-cols-2 sm:grid-cols-8 gap-4",
+    navGrid: "flex flex-wrap sm:flex-nowrap items-center justify-between gap-4 px-8",
 
     // Card and media
     cardImage: "object-cover rounded-md h-48 w-full",
