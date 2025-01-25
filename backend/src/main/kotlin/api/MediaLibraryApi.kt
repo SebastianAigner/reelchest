@@ -156,20 +156,24 @@ fun Route.mediaLibraryApi(
             call.respond(HttpStatusCode.OK)
         }
         get("media-information") {
-            val id = call.parameters["id"]!!
-            val entry = metadataStorage.retrieveMetadata(id).just() ?: return@get call.respond(HttpStatusCode.NotFound)
-            try {
-                val mimeType = mimeTypeCache.getOrPut(entry.id) { entry.getMimeType() }
-                val mediaInfo = getMediaType(entry.file)
-                call.respond(buildJsonObject {
-                    put("mimeType", mimeType)
-                    put("width", mediaInfo.width)
-                    put("height", mediaInfo.height)
-                })
-            } catch (e: Exception) {
-                call.respond(HttpStatusCode.InternalServerError, buildJsonObject {
-                    put("error", e.message ?: "Unknown error occurred while determining media information")
-                })
+            withContext(Dispatchers.IO) {
+                val id = call.parameters["id"]!!
+                val entry =
+                    metadataStorage.retrieveMetadata(id).just()
+                        ?: return@withContext call.respond(HttpStatusCode.NotFound)
+                try {
+                    val mimeType = mimeTypeCache.getOrPut(entry.id) { entry.getMimeType() }
+                    val mediaInfo = getMediaType(entry.file)
+                    call.respond(buildJsonObject {
+                        put("mimeType", mimeType)
+                        put("width", mediaInfo.width)
+                        put("height", mediaInfo.height)
+                    })
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.InternalServerError, buildJsonObject {
+                        put("error", e.message ?: "Unknown error occurred while determining media information")
+                    })
+                }
             }
         }
         get("thumbnails") {
