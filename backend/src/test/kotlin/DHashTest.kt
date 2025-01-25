@@ -2,6 +2,7 @@ package io.sebi.phash
 
 import io.sebi.ffmpeg.generateDHashes
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import java.io.File
 import java.net.URL
 import kotlin.test.Test
@@ -42,27 +43,30 @@ fun main() = runBlocking {
 }
 
 class DHashTest {
+    @OptIn(ExperimentalUnsignedTypes::class, ExperimentalUnsignedTypes::class)
     @Test
-    fun `test DHash generation consistency`() = runBlocking {
-        if (!TestPaths.videoFile.exists()) {
-            error("Test video file not found. Please run the main function in DHashTest.kt first to download it.")
-        }
+    fun `test DHash generation consistency`(): Unit = runBlocking {
+        withTimeout(5000) {
+            if (!TestPaths.videoFile.exists()) {
+                error("Test video file not found. Please run the main function in DHashTest.kt first to download it.")
+            }
 
-        if (!TestPaths.expectedHashesFile.exists()) {
-            error("Reference hashes not found. Please run the main function in DHashTest.kt first to generate them.")
-        }
+            if (!TestPaths.expectedHashesFile.exists()) {
+                error("Reference hashes not found. Please run the main function in DHashTest.kt first to generate them.")
+            }
 
-        // Generate new hashes
-        generateDHashes(TestPaths.videoFile)
-        val newHashesFile = File(TestPaths.videoFile.parent, "dhashes.bin")
+            // Generate new hashes
+            generateDHashes(TestPaths.videoFile)
+            val newHashesFile = File(TestPaths.videoFile.parent, "dhashes.bin")
 
-        // Compare with expected hashes
-        val expectedHashes = TestPaths.expectedHashesFile.readULongs()
-        val newHashes = newHashesFile.readULongs()
+            // Compare with expected hashes
+            val expectedHashes = TestPaths.expectedHashesFile.readULongs()
+            val newHashes = newHashesFile.readULongs()
 
-        assertEquals(expectedHashes.size, newHashes.size, "Number of generated hashes should match")
-        expectedHashes.zip(newHashes).forEachIndexed { index, (expected, actual) ->
-            assertEquals(expected, actual, "Hash at position $index should match")
+            assertEquals(expectedHashes.size, newHashes.size, "Number of generated hashes should match")
+            expectedHashes.zip(newHashes).forEachIndexed { index, (expected, actual) ->
+                assertEquals(expected, actual, "Hash at position $index should match")
+            }
         }
     }
 }
