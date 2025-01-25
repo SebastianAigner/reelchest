@@ -20,7 +20,11 @@ val globalFfmpegMutex = Mutex()
 class FfmpegTask(val parameters: List<String>) {
     constructor(vararg parameters: String?) : this(parameters.filterNotNull().toList())
 
-    suspend fun execute(directory: File?): FfmpegProcessResult {
+    suspend fun execute(
+        directory: File?,
+        customStdoutHandler: ((String) -> Unit)? = null,
+        customStderrHandler: ((String) -> Unit)? = null,
+    ): FfmpegProcessResult {
         logger.info("Executing ffmpeg command with parameters: ${parameters.joinToString(" ")}")
         if (directory != null) {
             logger.info("Working directory: ${directory.absolutePath}")
@@ -36,10 +40,12 @@ class FfmpegTask(val parameters: List<String>) {
                     onStdoutLine = {
                         stdout.add(it)
                         logger.info("[FFMPEG-OUT] $it")
+                        customStdoutHandler?.invoke(it)
                     },
                     onStderrLine = {
                         stderr.add(it)
                         logger.error("[FFMPEG-ERR] $it")
+                        customStderrHandler?.invoke(it)
                     },
                     directory = directory
                 )
@@ -58,7 +64,12 @@ class FfmpegTask(val parameters: List<String>) {
 val logger = LoggerFactory.getLogger("ffmpeg")
 
 // https://sebi.io/posts/2024-12-21-faster-thumbnail-generation-with-ffmpeg-seeking/
-suspend fun generateThumbnails(videoFile: File, logger: org.slf4j.Logger = LoggerFactory.getLogger("ffmpeg")) {
+suspend fun generateThumbnails(
+    videoFile: File,
+    logger: org.slf4j.Logger = LoggerFactory.getLogger("ffmpeg"),
+    customStdoutHandler: ((String) -> Unit)? = null,
+    customStderrHandler: ((String) -> Unit)? = null,
+) {
     logger.info("Starting thumbnail generation for ${videoFile.name}")
     logger.info("Video file path: ${videoFile.absolutePath}")
     logger.info("Parent directory: ${videoFile.parent}")
@@ -108,7 +119,11 @@ suspend fun generateThumbnails(videoFile: File, logger: org.slf4j.Logger = Logge
     logger.info("Starting ffmpeg process in directory: ${videoFile.parentFile.absolutePath}")
 
     val (out, err) = try {
-        FfmpegTask(ffmpegParameters).execute(videoFile.parentFile)
+        FfmpegTask(ffmpegParameters).execute(
+            directory = videoFile.parentFile,
+            customStdoutHandler = customStdoutHandler,
+            customStderrHandler = customStderrHandler
+        )
     } catch (e: Exception) {
         logger.error("Failed to execute ffmpeg: ${e.message}")
         throw e

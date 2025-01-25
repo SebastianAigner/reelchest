@@ -253,7 +253,18 @@ fun Route.mediaLibraryDebugApi(mediaLibrary: MediaLibrary) {
                         write("data: Video file: ${videoFile.absolutePath}\n\n")
                         flush()
 
-                        generateThumbnails(videoFile, logger)
+                        generateThumbnails(
+                            videoFile,
+                            logger,
+                            customStdoutHandler = { line ->
+                                write("data: [FFMPEG-OUT] $line\n\n")
+                                flush()
+                            },
+                            customStderrHandler = { line ->
+                                write("data: [FFMPEG-ERR] $line\n\n")
+                                flush()
+                            }
+                        )
 
                         write("data: Thumbnail generation completed\n\n")
                         flush()
