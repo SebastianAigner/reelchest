@@ -34,6 +34,7 @@
     "swr": "^2.3.0",
     "underscore": "^1.13.6",
     "virtua": "^0.39.3",
-    "vite": "^2.9.5"
+    "vite": "^2.9.5",
+    "react-intersection-observer": "^9.5.3"
   }
 }

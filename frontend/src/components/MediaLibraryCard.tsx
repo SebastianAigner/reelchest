@@ -10,12 +10,12 @@ import placeholderImage from '../assets/placeholder.svg';
 import audioPlaceholder from '../assets/audio-placeholder.svg';
 import {useMediaInfo} from "../hooks/useMediaInfo";
 import {TrashIcon} from '@heroicons/react/24/solid';
-import {useInView} from "../hooks/useInView";
+import {useInView} from "react-intersection-observer";
 
 export function MediaLibraryCard({item}: { item: MediaLibraryEntry }) {
     const [showingVideo, setShowingVideo] = useState(false)
-    const [ref, isInView] = useInView({threshold: 0.1});
-    const {isAudio} = useMediaInfo(item.id, isInView)
+    const {ref, inView} = useInView({threshold: 0.1});
+    const {isAudio} = useMediaInfo(item.id, inView)
     let playerOrPicture
     if (!showingVideo) {
         playerOrPicture =
