@@ -1,5 +1,6 @@
 package io.sebi.library
 
+import io.sebi.config.AppConfig
 import io.sebi.datastructures.shaHashed
 import io.sebi.downloader.CompletedDownloadTask
 import io.sebi.ffmpeg.generateThumbnails
@@ -33,7 +34,7 @@ class MediaLibrary(
     }
 
     suspend fun existsOrTombstone(id: String): Boolean {
-        return findById(id) != null || File("./mediaLibrary/${id}").exists() // Smells like Null Object Pattern
+        return findById(id) != null || File(AppConfig.mediaLibraryPath, id).exists() // Smells like Null Object Pattern
     }
 
     suspend fun addUpload(f: File, name: String): String {

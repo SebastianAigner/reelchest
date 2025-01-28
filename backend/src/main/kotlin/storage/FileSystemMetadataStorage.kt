@@ -1,5 +1,6 @@
 package io.sebi.storage
 
+import io.sebi.config.AppConfig
 import io.sebi.library.MediaLibraryEntry
 import io.sebi.library.id
 import io.sebi.library.json
@@ -11,12 +12,13 @@ import java.io.FileNotFoundException
 class FileSystemMetadataStorage : MetadataStorage {
     override suspend fun storeMetadata(id: String, metadata: MediaLibraryEntry) {
         val persisted = json.encodeToString(metadata)
-        val targetFile = File("./mediaLibrary/${id}/${id}.json")
+        val targetFile = File(AppConfig.mediaLibraryPath, "$id/$id.json")
+        targetFile.parentFile?.mkdirs()
         targetFile.writeText(persisted)
     }
 
     override suspend fun retrieveMetadata(id: String): MetadataResult {
-        val dir = File("./mediaLibrary/$id")
+        val dir = File(AppConfig.mediaLibraryPath, id)
         if (!dir.exists()) return MetadataResult.None
         val meta = File(dir, "$id.json")
         if (!meta.exists()) return MetadataResult.Tombstone
@@ -26,14 +28,14 @@ class FileSystemMetadataStorage : MetadataStorage {
 
     override suspend fun deleteMetadata(id: String) {
         try {
-            File("./mediaLibrary/${id}/${id}.json").delete()
+            File(AppConfig.mediaLibraryPath, "$id/$id.json").delete()
         } catch (f: FileNotFoundException) {
             // ... how convenient.
         }
     }
 
     override suspend fun listAllMetadata(): List<MediaLibraryEntry> {
-        val mediaLibraryDirectory = File("./mediaLibrary/") // todo ew
+        val mediaLibraryDirectory = File(AppConfig.mediaLibraryPath)
         return mediaLibraryDirectory.list().mapNotNull { id ->
             (retrieveMetadata(id) as? MetadataResult.Just)?.entry
         }

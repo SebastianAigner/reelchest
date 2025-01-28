@@ -31,10 +31,8 @@ import io.sebi.urldecoder.UrlDecoder
 import io.sebi.urldecoder.UrlDecoderImpl
 import io.sebi.utils.creationTime
 import kotlinx.coroutines.*
-import kotlinx.coroutines.sync.withLock
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.io.File
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
@@ -94,9 +92,6 @@ fun setFileDates(metadataStorage: MetadataStorage) {
 
 @Suppress("unused") // Referenced in application.conf
 fun Application.module() {
-    File("userConfig").mkdir()
-    File("mediaLibrary").mkdir()
-
     cleanupDownloadDirectory()
 
     val networkManager = NetworkManager()

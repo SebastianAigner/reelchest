@@ -8,13 +8,13 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
+import io.sebi.config.AppConfig
 import io.sebi.downloader.CompletedDownloadTask
 import io.sebi.downloader.DownloadTask
 import io.sebi.ffmpeg.globalFfmpegMutex
 import io.sebi.network.NetworkManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -58,10 +58,18 @@ data class DecryptRequest(val url: String)
 data class UrlDecoderConfiguration(val endpoint: String)
 
 class UrlDecoderImpl(val networkManager: NetworkManager) : UrlDecoder {
-    val textFile = File("userConfig/decoders.json").apply { createNewFile() }
+    private val textFile = File(AppConfig.userConfigPath, "decoders.json").also { file ->
+        file.parentFile?.mkdirs()
+        if (!file.exists()) {
+            file.writeText("[]")
+        }
+    }
 
-    val arr = Json.decodeFromString<JsonArray>(textFile.readText().ifEmpty { "[]" }) // todo ew
-    val configurations = arr.map { Json.decodeFromJsonElement<UrlDecoderConfiguration>(it) }
+    private val configurations = run {
+        val content = textFile.readText().ifBlank { "[]" }
+        val arr = Json.decodeFromString<JsonArray>(content)
+        arr.map { Json.decodeFromJsonElement<UrlDecoderConfiguration>(it) }
+    }
 
     override suspend fun decodeUrl(url: String): DecryptResponse? {
         return configurations.firstNotNullOfOrNull config@{ decoder ->

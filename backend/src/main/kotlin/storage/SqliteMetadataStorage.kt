@@ -1,6 +1,7 @@
 package io.sebi.storage
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import io.sebi.config.AppConfig
 import io.sebi.database.MediaDatabase
 import io.sebi.library.MediaLibraryEntry
 import io.sebi.sqldelight.mediametadata.Duplicates
@@ -22,7 +23,7 @@ class SqliteMetadataStorage : MetadataStorage {
     val sqliteConfig = SQLiteConfig().apply {
         enforceForeignKeys(true)
     }
-    val driver = JdbcSqliteDriver("jdbc:sqlite:database/db.sqlite", sqliteConfig.toProperties()).also { driver ->
+    val driver = JdbcSqliteDriver(AppConfig.databaseUrl, sqliteConfig.toProperties()).also { driver ->
         fun getVersion(): Int {
             return driver.executeQuery(null, "PRAGMA user_version;", {
                 app.cash.sqldelight.db.QueryResult.Value(it.getLong(0)!!.toInt())
@@ -171,4 +172,3 @@ class SqliteMetadataStorage : MetadataStorage {
         }
     }
 }
-

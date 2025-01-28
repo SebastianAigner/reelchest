@@ -2,6 +2,7 @@ package io.sebi.downloader
 
 import io.ktor.events.*
 import io.ktor.server.application.*
+import io.sebi.config.AppConfig
 import io.sebi.datastructures.SuspendingQueue
 import io.sebi.datastructures.shaHashed
 import io.sebi.network.NetworkManager
@@ -117,15 +118,19 @@ class DownloadManagerImpl(
         logger.info("Persisting queue..")
         val dtos =
             queuedDownloads.map { DownloadTaskDTO.from(it) } + problematicDownloads.map { DownloadTaskDTO.from(it) }
-        File("userConfig/queue.json").writeText(
-            Json.encodeToString(dtos)
-        )
+        val queueFile = File(AppConfig.userConfigPath, "queue.json")
+        queueFile.parentFile?.mkdirs()
+        queueFile.writeText(Json.encodeToString(dtos))
     }
 
     override suspend fun restoreQueue() {
+        val queueFile = File(AppConfig.userConfigPath, "queue.json")
         val list = try {
-            Json
-                .decodeFromString<List<DownloadTaskDTO>>(File("userConfig/queue.json").readText())
+            if (!queueFile.exists()) {
+                logger.info("No queue file found.")
+                return
+            }
+            Json.decodeFromString<List<DownloadTaskDTO>>(queueFile.readText())
                 .distinctBy { it.originUrl }
         } catch (e: Exception) {
             logger.error("Queue restore failed. $e")

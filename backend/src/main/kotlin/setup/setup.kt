@@ -1,5 +1,6 @@
 package io.sebi.setup
 
+import io.sebi.config.AppConfig
 import io.sebi.library.MediaLibraryEntry
 import io.sebi.library.id
 import io.sebi.storage.MetadataStorage
@@ -9,8 +10,11 @@ import java.io.File
 
 private val logger = LoggerFactory.getLogger("Setup")
 fun cleanupDownloadDirectory() {
-    File("downloads").listFiles()?.forEach {
-        it.deleteRecursively()
+    val downloadsDir = File(AppConfig.downloadsPath)
+    if (downloadsDir.exists()) {
+        downloadsDir.listFiles()?.forEach {
+            it.deleteRecursively()
+        }
     }
 }
 
