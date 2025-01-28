@@ -9,14 +9,14 @@ import kotlin.test.assertEquals
 
 private object TestPaths {
     private val projectRoot = File(System.getProperty("user.dir"))
-    val videoFile = File(projectRoot.parentFile, "testData/ForBiggerJoyrides.mp4").absoluteFile
+    val videoFile = File(projectRoot, "src/test/resources/ForBiggerJoyrides.mp4").absoluteFile
     val expectedHashesFile = File(projectRoot, "src/test/resources/ForBiggerJoyrides.dhashes.bin").absoluteFile
     const val VIDEO_URL = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4"
 }
 
 /**
- * Utility main function to generate reference hashes.
- * Run this function to create initial reference hashes that will be used by the test.
+ * Downloads the test video from the specified URL.
+ * This function ensures the video file exists locally by downloading it if necessary.
  */
 private fun downloadVideo() {
     println("Downloading test video from ${TestPaths.VIDEO_URL}")
@@ -46,7 +46,7 @@ class DHashTest {
     @Test(timeout = 5000L)
     fun `test DHash generation consistency`(): Unit = runBlocking {
         if (!TestPaths.videoFile.exists()) {
-            error("Test video file not found. Please run the main function in DHashTest.kt first to download it.")
+            downloadVideo()
         }
 
         if (!TestPaths.expectedHashesFile.exists()) {
