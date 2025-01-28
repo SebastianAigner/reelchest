@@ -30,3 +30,4 @@ playground
 database
 **/build/
 **/*.local.sh
+/backend/src/test/resources/ForBiggerJoyrides.mp4
