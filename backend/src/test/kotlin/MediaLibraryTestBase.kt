@@ -21,45 +21,51 @@ abstract class MediaLibraryTestBase {
         val originalWorkingDir = System.getProperty("user.dir")
         val projectRoot = File(originalWorkingDir).parentFile
 
-        // Print debug information about source database
-        val sourceDb = File(projectRoot, "database/db.sqlite")
-        println("[DEBUG_LOG] Source database path: ${sourceDb.absolutePath}")
-        println("[DEBUG_LOG] Source database exists: ${sourceDb.exists()}")
-        if (sourceDb.exists()) {
-            println("[DEBUG_LOG] Source database size: ${sourceDb.length()} bytes")
-        }
-
-        // Copy the database file
+        // Set up target paths
         val targetDb = File(testDirFile, "database/db.sqlite")
-        sourceDb.copyTo(targetDb)
-        println("[DEBUG_LOG] Target database path: ${targetDb.absolutePath}")
-        println("[DEBUG_LOG] Target database exists: ${targetDb.exists()}")
-        if (targetDb.exists()) {
-            println("[DEBUG_LOG] Target database size: ${targetDb.length()} bytes")
+        val targetMediaLib = File(testDirFile, "mediaLibrary")
+
+        // Only copy database if it doesn't exist
+        if (!targetDb.exists()) {
+            val sourceDb = File(projectRoot, "database/db.sqlite")
+            println("[DEBUG_LOG] Source database path: ${sourceDb.absolutePath}")
+            println("[DEBUG_LOG] Source database exists: ${sourceDb.exists()}")
+            if (sourceDb.exists()) {
+                println("[DEBUG_LOG] Source database size: ${sourceDb.length()} bytes")
+                sourceDb.copyTo(targetDb)
+                println("[DEBUG_LOG] Database copied to: ${targetDb.absolutePath}")
+                println("[DEBUG_LOG] Target database size: ${targetDb.length()} bytes")
+            }
+        } else {
+            println("[DEBUG_LOG] Target database already exists, skipping copy")
         }
 
-        // Copy media library files
-        val sourceMediaLib = File(projectRoot, "mediaLibrary")
-        val targetMediaLib = File(testDirFile, "mediaLibrary")
-        println("[DEBUG_LOG] Source media library path: ${sourceMediaLib.absolutePath}")
-        println("[DEBUG_LOG] Source media library exists: ${sourceMediaLib.exists()}")
+        // Only copy media library if the directory is empty
+        val targetMediaLibFiles = targetMediaLib.listFiles()
+        if (targetMediaLibFiles == null || targetMediaLibFiles.isEmpty()) {
+            val sourceMediaLib = File(projectRoot, "mediaLibrary")
+            println("[DEBUG_LOG] Source media library path: ${sourceMediaLib.absolutePath}")
+            println("[DEBUG_LOG] Source media library exists: ${sourceMediaLib.exists()}")
 
-        if (sourceMediaLib.exists() && sourceMediaLib.isDirectory) {
-            sourceMediaLib.copyRecursively(targetMediaLib)
-            println("[DEBUG_LOG] Media files copied to: ${targetMediaLib.absolutePath}")
-            println("[DEBUG_LOG] Media library contents: ${targetMediaLib.listFiles()?.joinToString { it.name }}")
+            if (sourceMediaLib.exists() && sourceMediaLib.isDirectory) {
+                sourceMediaLib.copyRecursively(targetMediaLib)
+                println("[DEBUG_LOG] Media files copied to: ${targetMediaLib.absolutePath}")
+                println("[DEBUG_LOG] Media library contents: ${targetMediaLib.listFiles()?.joinToString { it.name }}")
+            } else {
+                println("[DEBUG_LOG] WARNING: Source media library not found!")
+            }
         } else {
-            println("[DEBUG_LOG] WARNING: Source media library not found!")
+            println("[DEBUG_LOG] Target media library not empty, skipping copy")
         }
     }
 
     protected fun withTestPaths(block: () -> Unit) {
         val originalWorkingDir = System.getProperty("user.dir")
         try {
-            // Create test directory with unique name
-            val testDirName = "test_${System.currentTimeMillis()}"
+            // Use a fixed test directory name
+            val testDirName = "test_media_library"
             val testDir = File(originalWorkingDir, testDirName).absoluteFile
-            testDir.mkdir()
+            testDir.mkdirs()
             println("[DEBUG_LOG] Original working directory: $originalWorkingDir")
             println("[DEBUG_LOG] Test directory: ${testDir.absolutePath}")
 
@@ -83,11 +89,7 @@ abstract class MediaLibraryTestBase {
                 mediaLibrary = mediaLibPath,
                 database = dbPath
             ) {
-                try {
-                    block()
-                } finally {
-                    testDir.deleteRecursively()
-                }
+                block()
             }
         } finally {
             System.setProperty("user.dir", originalWorkingDir)
