@@ -1,5 +1,6 @@
 package io.sebi.library
 
+import io.sebi.config.AppConfig
 import io.sebi.datastructures.shaHashed
 import io.sebi.ffmpeg.getMediaType
 import io.sebi.phash.readULongs
@@ -58,7 +59,7 @@ fun MediaLibraryEntry.withAutoTags(tagger: Tagger): AutoTaggedMediaLibraryEntry 
 }
 
 val MediaLibraryEntry.id: String get() = uid ?: originUrl.shaHashed()
-val MediaLibraryEntry.file: File get() = File("./mediaLibrary/${id}/${id}.mp4")
+val MediaLibraryEntry.file: File get() = File(AppConfig.mediaLibraryPath, "${id}/${id}.mp4")
 
 
 @Serializable
