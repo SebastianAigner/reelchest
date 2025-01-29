@@ -163,6 +163,12 @@ fun Route.mediaLibraryApi(
                 val entry =
                     metadataStorage.retrieveMetadata(id).just()
                         ?: return@withContext call.respond(HttpStatusCode.NotFound)
+                if (entry.file == null || !entry.file.exists()) {
+                    return@withContext call.respond(HttpStatusCode.NotFound, buildJsonObject {
+                        put("error", "File not found")
+                    })
+                }
+
                 try {
                     val mimeType = mimeTypeCache.getOrPut(entry.id) { entry.getMimeType() }
                     val mediaInfo = mediaTypeCache.getOrPut(entry.id) { getMediaType(entry.file) }
