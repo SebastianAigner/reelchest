@@ -34,7 +34,7 @@ class MediaLibraryPerformanceTest : MediaLibraryTestBase() {
         try {
             coroutineScope {
                 // Process entries in batches to prevent overwhelming the server
-                val batchSize = 5
+                val batchSize = 100
                 val batches = entries.chunked(batchSize)
 
                 for (batch in batches) {
