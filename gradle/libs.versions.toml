@@ -2,6 +2,8 @@
 
 [plugins]
 
+org-jetbrains-kotlinx-rpc-plugin = { id = "org.jetbrains.kotlinx.rpc.plugin", version.ref = "kotlinx-rpc" }
+
 io-ktor-plugin = { id = "io.ktor.plugin", version.ref = "ktor" }
 
 org-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
@@ -14,7 +16,9 @@ com-google-devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" 
 
 [versions]
 
-ksp = "1.9.23-1.0.19"
+kotlinx-rpc = "0.5.1"
+
+ksp = "2.1.10-1.0.31"
 
 kotlin = "2.1.10"
 
@@ -110,3 +114,9 @@ kotlin-inject-compiler-ksp = "me.tatarka.inject:kotlin-inject-compiler-ksp:0.6.3
 symbol-processing-api = { group = "com.google.devtools.ksp", name = "symbol-processing-api", version.ref = "ksp" }
 
 symbol-processing-cmdline = { group = "com.google.devtools.ksp", name = "symbol-processing-cmdline", version.ref = "ksp" }
+
+kotlinx-rpc-krpc-client = { group = "org.jetbrains.kotlinx", name = "kotlinx-rpc-krpc-client", version.ref = "kotlinx-rpc" }
+kotlinx-rpc-krpc-server = { group = "org.jetbrains.kotlinx", name = "kotlinx-rpc-krpc-server", version.ref = "kotlinx-rpc" }
+kotlinx-rpc-krpc-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-rpc-krpc-serialization-json", version.ref = "kotlinx-rpc" }
+kotlinx-rpc-krpc-ktor-client = { group = "org.jetbrains.kotlinx", name = "kotlinx-rpc-krpc-ktor-client", version.ref = "kotlinx-rpc" }
+kotlinx-rpc-krpc-ktor-server = { group = "org.jetbrains.kotlinx", name = "kotlinx-rpc-krpc-ktor-server", version.ref = "kotlinx-rpc" }

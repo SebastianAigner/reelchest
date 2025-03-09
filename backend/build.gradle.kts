@@ -3,9 +3,9 @@ plugins {
     application
     kotlin("jvm")
     kotlin("plugin.serialization")
-    id("io.ktor.plugin")
-    id("com.google.devtools.ksp")
-    id("org.jetbrains.kotlinx.rpc.plugin") version "0.5.1"
+    alias(libs.plugins.io.ktor.plugin)
+    alias(libs.plugins.com.google.devtools.ksp)
+    alias(libs.plugins.org.jetbrains.kotlinx.rpc.plugin)
 }
 
 group = "io.sebi"
@@ -72,15 +72,15 @@ dependencies {
     implementation(libs.kotlin.inject.runtime)
 
     // Client API
-    implementation("org.jetbrains.kotlinx:kotlinx-rpc-krpc-client:0.5.1")
+    implementation(libs.kotlinx.rpc.krpc.client)
     // Server API
-    implementation("org.jetbrains.kotlinx:kotlinx-rpc-krpc-server:0.5.1")
+    implementation(libs.kotlinx.rpc.krpc.server)
     // Serialization module. Also, protobuf and cbor are provided
-    implementation("org.jetbrains.kotlinx:kotlinx-rpc-krpc-serialization-json:0.5.1")
+    implementation(libs.kotlinx.rpc.krpc.serialization.json)
 
     // Transport implementation for Ktor
-    implementation("org.jetbrains.kotlinx:kotlinx-rpc-krpc-ktor-client:0.5.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-rpc-krpc-ktor-server:0.5.1")
+    implementation(libs.kotlinx.rpc.krpc.ktor.client)
+    implementation(libs.kotlinx.rpc.krpc.ktor.server)
 
     // Ktor API
     implementation("io.ktor:ktor-client-cio-jvm:3.1.1")
