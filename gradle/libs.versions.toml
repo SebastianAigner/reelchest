@@ -78,11 +78,6 @@ ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negoti
 
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json" }
 
-xodus-openapi = "org.jetbrains.xodus:xodus-openAPI:2.0.1"
-
-xodus-entity-store = "org.jetbrains.xodus:xodus-entity-store:2.0.1"
-
-xodus-environment = "org.jetbrains.xodus:xodus-environment:2.0.1"
 
 ktor-client-cio = { module = "io.ktor:ktor-client-cio" }
 
