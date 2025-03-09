@@ -26,7 +26,7 @@ application {
 }
 
 repositories {
-    mavenLocal()
+//    mavenLocal()
     mavenCentral()
     maven {
         url = uri("https://maven.pkg.jetbrains.space/public/p/ktor/eap")
@@ -37,6 +37,7 @@ repositories {
 
 dependencies {
     implementation(project(":process"))
+    implementation(kotlin("test"))
     implementation(libs.logback.classic)
     implementation(libs.ktor.server.netty)
     implementation(libs.ktor.server.core)
@@ -99,9 +100,9 @@ dependencies {
 
 }
 
-tasks.getByName("build") {
-    mustRunAfter(":frontend:build")
-}
+//tasks.getByName("build") {
+//    dependsOn(":frontend:build")
+//}
 
 //// i truly don't understand why i need this, but gradle won't shut up otherwise.
 //// if you can explain it, feel free to DM me.
@@ -110,12 +111,12 @@ tasks.getByName("build") {
 //}
 
 
-tasks.getByName<Copy>("processResources") {
-    dependsOn(":frontend:build")
-    from("../frontend/dist") {
-        into("frontend")
-    }
-}
+//tasks.getByName<Copy>("processResources") {
+//    dependsOn(":frontend:build")
+//    from("../frontend/dist") {
+//        into("frontend")
+//    }
+//}
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     kotlinOptions {
