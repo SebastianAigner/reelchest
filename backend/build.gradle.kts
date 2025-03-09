@@ -11,7 +11,6 @@ plugins {
     application
     kotlin("jvm")
     kotlin("plugin.serialization")
-    id("app.cash.sqldelight")
     id("io.ktor.plugin")
     id("com.google.devtools.ksp")
     id("org.jetbrains.kotlinx.rpc.plugin") version "0.5.1"
@@ -76,7 +75,6 @@ dependencies {
     implementation(libs.kotlin.retry)
 
     implementation(libs.sqlite.jdbc)
-    implementation(libs.sqlite.driver)
 
     ksp(libs.kotlin.inject.compiler.ksp)
     implementation(libs.kotlin.inject.runtime)
@@ -99,16 +97,13 @@ dependencies {
 
 }
 
-//tasks.getByName("build") {
-//    dependsOn(":frontend:build")
-//}
+tasks.getByName("build") {
+    dependsOn(":frontend:build")
+}
 
-//// i truly don't understand why i need this, but gradle won't shut up otherwise.
-//// if you can explain it, feel free to DM me.
-//tasks.named("generateMainMediaDatabaseInterface") {
-//    dependsOn(":frontend:build")
-//}
-
+tasks.getByName("compileKotlin") {
+    dependsOn(":frontend:build")
+}
 
 //tasks.getByName<Copy>("processResources") {
 //    dependsOn(":frontend:build")
@@ -118,6 +113,7 @@ dependencies {
 //}
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    dependsOn(":frontend:build")
     kotlinOptions {
         freeCompilerArgs = listOf("-Xcontext-receivers")
     }
@@ -134,16 +130,6 @@ tasks.withType(JavaExec::class.java) {
     // ^ this is an ugly hack to preserve the previous behavior of the `run` tasks,
     // i.e. expecting mediaLibrary & co. folders in the root of the project.
     // ideally this can be ditched once config management is improved.
-}
-
-sqldelight {
-    databases {
-        create("MediaDatabase") {
-            packageName.set("io.sebi.database")
-            dialect(libs.sqlite325dialect)
-            module(libs.sqlite.json.module.get())
-        }
-    }
 }
 
 //kapt {

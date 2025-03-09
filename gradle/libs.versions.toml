@@ -10,15 +10,11 @@ org-jetbrains-kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.
 
 org-jetbrains-kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
 
-app-cash-sqldelight = { id = "app.cash.sqldelight", version.ref = "app-cash-sqldelight" }
-
 com-google-devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 
 [versions]
 
 ksp = "1.9.23-1.0.19"
-
-app-cash-sqldelight = "2.1.0-SNAPSHOT"
 
 kotlin = "2.1.10"
 
@@ -29,18 +25,6 @@ kotlinx-coroutines = "1.10.1"
 kotlinx-serialization = "1.8.0"
 
 [libraries]
-
-gradle-plugin = { group = "app.cash.sqldelight", name = "gradle-plugin", version.ref = "app-cash-sqldelight" }
-
-sqlite325dialect = { group = "app.cash.sqldelight", name = "sqlite-3-25-dialect", version.ref = "app-cash-sqldelight" }
-
-sqlite-json-module = { group = "app.cash.sqldelight", name = "sqlite-json-module", version.ref = "app-cash-sqldelight" }
-
-compiler-env = { group = "app.cash.sqldelight", name = "compiler-env", version.ref = "app-cash-sqldelight" }
-
-migration-env = { group = "app.cash.sqldelight", name = "migration-env", version.ref = "app-cash-sqldelight" }
-
-app-cash-sqldelight-runtime = { group = "app.cash.sqldelight", name = "runtime", version.ref = "app-cash-sqldelight" }
 
 jtsgen-annotations = "com.github.dzuvic:jtsgen-annotations:0.5.0"
 
@@ -109,8 +93,6 @@ kotlin-process = "com.github.pgreze:kotlin-process:1.4.1"
 kotlin-retry = "com.michael-bull.kotlin-retry:kotlin-retry:1.0.9"
 
 sqlite-jdbc = "org.xerial:sqlite-jdbc:3.49.1.0"
-
-sqlite-driver = { group = "app.cash.sqldelight", name = "sqlite-driver", version.ref = "app-cash-sqldelight" }
 
 kotlinx-datetime = "org.jetbrains.kotlinx:kotlinx-datetime:0.6.1"
 

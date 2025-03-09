@@ -19,8 +19,8 @@ import io.sebi.phash.ensureDHashes
 import io.sebi.setup.cleanupDownloadDirectory
 import io.sebi.setup.removeFilesScheduledForDeletion
 import io.sebi.storage.FileSystemVideoStorage
+import io.sebi.storage.JdbcSqliteMetadataStorage
 import io.sebi.storage.MetadataStorage
-import io.sebi.storage.SqliteMetadataStorage
 import io.sebi.tagging.CachingTagger
 import io.sebi.tagging.Tagger
 import io.sebi.ui.*
@@ -95,7 +95,7 @@ fun Application.module() {
     val urlDecoder: UrlDecoder = UrlDecoderImpl(networkManager)
     val videoStorage = FileSystemVideoStorage()
 
-    val metadataStorage: MetadataStorage = SqliteMetadataStorage()
+    val metadataStorage: MetadataStorage = JdbcSqliteMetadataStorage()
     runBlocking { removeFilesScheduledForDeletion(metadataStorage, videoStorage) }
     val mediaLibrary = MediaLibrary(urlDecoder, networkManager, videoStorage, metadataStorage)
     val downloadManager: DownloadManager =

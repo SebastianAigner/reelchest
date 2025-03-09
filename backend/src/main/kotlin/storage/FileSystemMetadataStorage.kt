@@ -4,8 +4,6 @@ import io.sebi.config.AppConfig
 import io.sebi.library.MediaLibraryEntry
 import io.sebi.library.id
 import io.sebi.library.json
-import io.sebi.sqldelight.mediametadata.Duplicates
-import kotlinx.serialization.encodeToString
 import java.io.File
 import java.io.FileNotFoundException
 

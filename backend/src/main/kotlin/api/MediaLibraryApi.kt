@@ -14,7 +14,7 @@ import io.sebi.ffmpeg.getMediaType
 import io.sebi.library.*
 import io.sebi.phash.DHash
 import io.sebi.phash.getMinimalDistance
-import io.sebi.sqldelight.mediametadata.Duplicates
+import io.sebi.storage.Duplicates
 import io.sebi.storage.MetadataStorage
 import io.sebi.tagging.Tagger
 import kotlinx.coroutines.Dispatchers
