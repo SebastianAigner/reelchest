@@ -11,7 +11,6 @@ plugins {
     application
     kotlin("jvm")
     kotlin("plugin.serialization")
-//    kotlin("kapt")
     id("app.cash.sqldelight")
     id("io.ktor.plugin")
     id("com.google.devtools.ksp")
