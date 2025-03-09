@@ -18,11 +18,13 @@ tasks.register<Copy>("build") {
     dependsOn("buildReactFrontend")
 //    dependsOn(":backend:kaptKotlin")
     destinationDir = rootDir
-    from("../backend/build/generated/source/kapt/main/") {
-        into("frontend/src/generated")
-    }
+//    from("../backend/build/generated/source/kapt/main/") {
+//        into("frontend/src/generated")
+//    }
     outputs.dir("build")
 }
+
+println(tasks.toList())
 
 tasks.register<Delete>("clean") {
     delete("node_modules")
