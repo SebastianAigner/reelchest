@@ -38,8 +38,8 @@ class ServerIntegrationTest {
                 try {
                     // Give the server a moment to be ready
                     delay(500)
-                    val port = server.resolvedConnectors().first().port
-                    block(server, client, port)
+                    val port = server.engine.resolvedConnectors().first().port
+                    block(server.engine, client, port)
                 } finally {
                     client.close()
                     server.stop(1000, 1000)

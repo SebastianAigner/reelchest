@@ -3,7 +3,6 @@ import io.ktor.client.engine.cio.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.response.*
@@ -29,7 +28,7 @@ class BackendTest {
         try {
             // Give the server a moment to be ready
             delay(500)
-            val port = server.resolvedConnectors().first().port
+            val port = server.engine.resolvedConnectors().first().port
             println("[DEBUG_LOG] Server started on port: $port")
             println("[DEBUG_LOG] Server environment: ${server.environment}")
             println("[DEBUG_LOG] Attempting to connect to http://localhost:$port/")
