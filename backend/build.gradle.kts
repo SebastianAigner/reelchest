@@ -83,8 +83,8 @@ dependencies {
     implementation(libs.kotlinx.rpc.krpc.ktor.server)
 
     // Ktor API
-    implementation("io.ktor:ktor-client-cio-jvm:3.1.1")
-    implementation("io.ktor:ktor-server-netty-jvm:3.1.1")
+    implementation(libs.ktor.client.cio.jvm)
+    implementation(libs.ktor.server.netty.jvm)
     implementation(libs.kotlinx.datetime)
 
 }
@@ -106,8 +106,8 @@ tasks.named<Copy>("processResources") {
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions {
-        freeCompilerArgs = listOf("-Xcontext-receivers")
+    compilerOptions {
+        freeCompilerArgs.set(listOf("-Xcontext-receivers"))
     }
 }
 
@@ -132,5 +132,5 @@ tasks.withType(JavaExec::class.java) {
 //}
 
 kotlin {
-    jvmToolchain(11)
+    jvmToolchain(libs.versions.jvm.toolchain.get().toInt())
 }

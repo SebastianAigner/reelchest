@@ -16,6 +16,7 @@ com-google-devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" 
 
 [versions]
 
+jvm-toolchain = "11"
 kotlinx-rpc = "0.5.1"
 
 ksp = "2.1.10-1.0.31"
@@ -120,3 +121,6 @@ kotlinx-rpc-krpc-server = { group = "org.jetbrains.kotlinx", name = "kotlinx-rpc
 kotlinx-rpc-krpc-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-rpc-krpc-serialization-json", version.ref = "kotlinx-rpc" }
 kotlinx-rpc-krpc-ktor-client = { group = "org.jetbrains.kotlinx", name = "kotlinx-rpc-krpc-ktor-client", version.ref = "kotlinx-rpc" }
 kotlinx-rpc-krpc-ktor-server = { group = "org.jetbrains.kotlinx", name = "kotlinx-rpc-krpc-ktor-server", version.ref = "kotlinx-rpc" }
+
+ktor-client-cio-jvm = { group = "io.ktor", name = "ktor-client-cio-jvm", version.ref = "ktor" }
+ktor-server-netty-jvm = { group = "io.ktor", name = "ktor-server-netty-jvm", version.ref = "ktor" }
