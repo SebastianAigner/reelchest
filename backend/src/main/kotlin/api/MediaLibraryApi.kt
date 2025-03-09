@@ -2,7 +2,6 @@ package io.sebi.api
 
 import dz.jtsgen.annotations.TypeScript
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -62,7 +61,7 @@ fun Route.mediaLibraryApi(
                     it.creationDate
                 }
                 .distinctBy { it.id }
-        if (this.context.request.queryParameters["auto"] != null) {
+        if (this.call.request.queryParameters["auto"] != null) {
             return@get call.respond(mediaLib.map { it.withAutoTags(tagger) })
         }
         call.respond(mediaLib)

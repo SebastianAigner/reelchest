@@ -1,7 +1,6 @@
 package io.sebi.api
 
 import dz.jtsgen.annotations.TypeScript
-import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.sebi.analytics.analyticsApi
@@ -45,7 +44,7 @@ fun Route.api(
 
             call.respond(
                 ApplicationConfig(
-                    development = env.developmentMode,
+                    development = application.developmentMode, // TODO: Ktor 3 API?
                     port = config.property("ktor.deployment.port").getString().toInt(),
                     shutdownUrl = config.property("ktor.deployment.shutdown.url").getString(),
                     connectionGroupSize = config

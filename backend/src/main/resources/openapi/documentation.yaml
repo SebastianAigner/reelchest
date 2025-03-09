@@ -1,0 +1,1006 @@
+openapi: "3.1.0"
+info:
+  title: "reelchest API"
+  description: "reelchest API"
+  version: "1.0.0"
+servers:
+  - url: "https://reelchest"
+paths:
+  /add:
+    get:
+      description: ""
+      responses:
+        "200":
+          description: "OK"
+          content:
+            text/plain:
+              schema:
+                $ref: "#/components/schemas/Function1_? super HTML"
+              examples:
+                text/html:
+                  description: "HTML document"
+                  value: ""
+  /api:
+    get:
+      description: ""
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "string"
+    post:
+      description: ""
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: "string"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "object"
+  /api/autotags/popular:
+    get:
+      description: ""
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/Pair"
+  /api/config:
+    get:
+      description: ""
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApplicationConfig"
+  /api/download:
+    post:
+      description: ""
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UrlRequest"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+              examples:
+                Example#1:
+                  value: "OK"
+  /api/embedsubtitles:
+    post:
+      description: ""
+      responses:
+        "400":
+          description: "Bad Request"
+          content:
+            '*/*':
+              schema:
+                type: "string"
+              examples:
+                Example#1:
+                  value: "Both video and subtitle files must be provided."
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "string"
+              examples:
+                Example#1:
+                  value: "Subtitle embedding process initiated."
+  /api/event:
+    post:
+      description: ""
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "object"
+  /api/file/{filename}:
+    get:
+      description: ""
+      parameters:
+        - name: "filename"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/LocalFileContent"
+  /api/log:
+    get:
+      description: ""
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/LogEntry"
+  /api/mediaLibrary:
+    get:
+      description: ""
+      parameters:
+        - name: "auto"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "array"
+                items: { }
+  /api/mediaLibrary/{id}:
+    get:
+      description: ""
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - name: "auto"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+      responses:
+        "404":
+          description: "Not Found"
+          content:
+            '*/*':
+              schema:
+                type: "object"
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Object"
+    post:
+      description: ""
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MediaLibraryEntry"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "object"
+  /api/mediaLibrary/{id}/hash.{format}:
+    get:
+      description: ""
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - name: "format"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+      responses:
+        "404":
+          description: "Not Found"
+          content:
+            '*/*':
+              schema:
+                type: "object"
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "array"
+                items:
+                  type: "integer"
+                  format: "int64"
+        "400":
+          description: "Bad Request"
+          content:
+            '*/*':
+              schema:
+                type: "object"
+  /api/mediaLibrary/{id}/hit:
+    get:
+      description: ""
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "object"
+  /api/mediaLibrary/{id}/media-information:
+    get:
+      description: ""
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "404":
+          description: "Not Found"
+          content:
+            '*/*':
+              schema:
+                type: "object"
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/JsonObject"
+        "500":
+          description: "Internal Server Error"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/JsonObject"
+  /api/mediaLibrary/{id}/possibleDuplicates:
+    get:
+      description: ""
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "404":
+          description: "Not Found"
+          content:
+            '*/*':
+              schema:
+                type: "object"
+              examples:
+                Example#1:
+                  value: "Duplicate detection is disabled because low-end devices\
+                    \ can't handle the memory issues"
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/MediaLibraryEntry"
+  /api/mediaLibrary/{id}/randomThumb:
+    get:
+      description: ""
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "404":
+          description: "Not Found"
+          content:
+            '*/*':
+              schema:
+                type: "object"
+        "200":
+          description: "OK <br> A file response"
+          content:
+            application/*:
+              schema:
+                type: "object"
+                format: "binary"
+  /api/mediaLibrary/{id}/thumbnails:
+    get:
+      description: ""
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "array"
+                items:
+                  type: "string"
+  /api/mediaLibrary/debug/missing-thumbnails:
+    get:
+      description: ""
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/MediaLibraryEntry"
+  /api/mediaLibrary/debug/regenerate-thumbnail/{id}:
+    get:
+      description: ""
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "400":
+          description: "Bad Request"
+          content:
+            '*/*':
+              schema:
+                type: "string"
+              examples:
+                Example#1:
+                  value: "Missing id parameter"
+        "404":
+          description: "Not Found"
+          content:
+            '*/*':
+              schema:
+                type: "string"
+              examples:
+                Example#1:
+                  value: "Video file not found"
+                Example#2:
+                  value: "Entry not found"
+  /api/mediaLibrary/duplicates:
+    get:
+      description: ""
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/DuplicateResponse"
+  /api/mediaLibrary/duplicates/{id}:
+    get:
+      description: ""
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "404":
+          description: "Not Found"
+          content:
+            '*/*':
+              schema:
+                type: "object"
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/DuplicatesDTO"
+    post:
+      description: ""
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DuplicatesDTO"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "object"
+  /api/mediaLibrary/hashing/all:
+    get:
+      description: ""
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/JsonObject"
+  /api/mediaLibrary/hashing/hash/{id}:
+    post:
+      description: ""
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: "array"
+              items:
+                type: "string"
+                format: "byte"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "string"
+              examples:
+                Example#1:
+                  value: "OK"
+                Example#2:
+                  value: "Not found"
+  /api/mediaLibrary/hashing/unhashed:
+    get:
+      description: ""
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/MediaLibraryEntry"
+  /api/mediaLibrary/isUrlInLibraryOrProgress:
+    post:
+      description: ""
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UrlRequest"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "boolean"
+  /api/problematic:
+    get:
+      description: ""
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/ProblematicTaskDTO"
+  /api/problematic/remove:
+    post:
+      description: ""
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UrlRequest"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "object"
+  /api/problematic/retry:
+    post:
+      description: ""
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UrlRequest"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "object"
+  /api/queue:
+    get:
+      description: ""
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/MetadatedDownloadQueueEntry"
+  /api/search/{provider}:
+    post:
+      description: ""
+      parameters:
+        - name: "provider"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchRequest"
+        required: true
+      responses:
+        "503":
+          description: "Service Unavailable"
+          content:
+            '*/*':
+              schema:
+                type: "object"
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/SearchResult"
+  /api/searchers:
+    get:
+      description: ""
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "array"
+                items:
+                  type: "string"
+  /api/shiftsubtitles:
+    post:
+      description: ""
+      responses:
+        "200":
+          description: "OK <br> A file response"
+          content:
+            application/*:
+              schema:
+                type: "object"
+                format: "binary"
+  /api/status:
+    get:
+      description: ""
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "array"
+                items:
+                  type: "string"
+  /api/video/{id}:
+    get:
+      description: ""
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/LocalFileContent"
+  /decrypt:
+    get:
+      description: ""
+      parameters:
+        - name: "url"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+      responses:
+        "302":
+          description: "Found <br> Redirect"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+  /dl:
+    get:
+      description: ""
+      parameters:
+        - name: "url"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+      responses:
+        "302":
+          description: "Found <br> downloadUrls.add(Download(text))"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+              examples:
+                Example#1:
+                  value: "/downloads"
+  /downloads:
+    get:
+      description: ""
+      responses:
+        "200":
+          description: "OK"
+          content:
+            text/plain:
+              schema:
+                $ref: "#/components/schemas/Function1_? super HTML"
+              examples:
+                text/html:
+                  description: "HTML document"
+                  value: ""
+  /progress/{id}:
+    get:
+      description: ""
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+  /ul:
+    post:
+      description: ""
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Map_String"
+            text/plain:
+              schema:
+                type: "string"
+  /upload:
+    get:
+      description: ""
+      responses:
+        "200":
+          description: "OK"
+          content:
+            text/plain:
+              schema:
+                $ref: "#/components/schemas/Function1_? super HTML"
+              examples:
+                text/html:
+                  description: "HTML document"
+                  value: ""
+components:
+  schemas:
+    Function1:
+      type: "object"
+      properties: { }
+    Function1_? super HTML:
+      type: "object"
+    Pair:
+      type: "object"
+      properties: { }
+      required:
+        - "first"
+        - "second"
+    ApplicationConfig:
+      type: "object"
+      properties:
+        development:
+          type: "boolean"
+        port:
+          type: "integer"
+          format: "int32"
+        shutdownUrl:
+          type: "string"
+        connectionGroupSize:
+          type: "integer"
+          format: "int32"
+        workerGroupSize:
+          type: "integer"
+          format: "int32"
+        callGroupSize:
+          type: "integer"
+          format: "int32"
+        shutdownGracePeriod:
+          type: "integer"
+          format: "int64"
+        shutdownTimeout:
+          type: "integer"
+          format: "int64"
+        requestQueueLimit:
+          type: "integer"
+          format: "int32"
+        runningLimit:
+          type: "integer"
+          format: "int32"
+        responseWriteTimeoutSeconds:
+          type: "integer"
+          format: "int32"
+      required:
+        - "development"
+        - "port"
+        - "shutdownUrl"
+        - "connectionGroupSize"
+        - "workerGroupSize"
+        - "callGroupSize"
+        - "shutdownGracePeriod"
+        - "shutdownTimeout"
+        - "requestQueueLimit"
+        - "runningLimit"
+        - "responseWriteTimeoutSeconds"
+    UrlRequest:
+      type: "object"
+      properties:
+        url:
+          type: "string"
+      required:
+        - "url"
+    File:
+      type: "object"
+      properties:
+        path:
+          type: "string"
+    HeaderValueParam:
+      type: "object"
+      properties:
+        name:
+          type: "string"
+        value:
+          type: "string"
+        escapeValue:
+          type: "boolean"
+      required:
+        - "name"
+        - "value"
+        - "escapeValue"
+    ContentType:
+      type: "object"
+      properties:
+        contentType:
+          type: "string"
+        contentSubtype:
+          type: "string"
+        parameters:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/HeaderValueParam"
+      required:
+        - "contentType"
+        - "contentSubtype"
+        - "parameters"
+    LocalFileContent:
+      type: "object"
+      properties:
+        file:
+          $ref: "#/components/schemas/File"
+        contentType:
+          $ref: "#/components/schemas/ContentType"
+      required:
+        - "file"
+        - "contentType"
+    LogEntry:
+      type: "object"
+      properties:
+        formattedMessage:
+          type: "string"
+      required:
+        - "formattedMessage"
+    MediaLibraryEntry:
+      type: "object"
+      properties:
+        name:
+          type: "string"
+        originUrl:
+          type: "string"
+        tags:
+          type: "array"
+          items:
+            type: "string"
+        creationDate:
+          type: "integer"
+          format: "int64"
+        uid:
+          type: "string"
+        hits:
+          type: "integer"
+          format: "int32"
+        markedForDeletion:
+          type: "boolean"
+        unifiedId:
+          type: "string"
+      required:
+        - "name"
+        - "originUrl"
+        - "tags"
+        - "creationDate"
+        - "hits"
+        - "markedForDeletion"
+        - "unifiedId"
+    AutoTaggedMediaLibraryEntry:
+      type: "object"
+      properties:
+        mediaLibraryEntry:
+          $ref: "#/components/schemas/MediaLibraryEntry"
+        autoTags:
+          type: "array"
+          items:
+            type: "string"
+      required:
+        - "mediaLibraryEntry"
+        - "autoTags"
+    Object:
+      type: "object"
+      properties: { }
+    JsonObject:
+      type: "object"
+      properties: { }
+    DuplicateResponse:
+      type: "object"
+      properties:
+        entry:
+          $ref: "#/components/schemas/MediaLibraryEntry"
+        possibleDuplicate:
+          $ref: "#/components/schemas/MediaLibraryEntry"
+        distance:
+          type: "integer"
+          format: "int32"
+      required:
+        - "entry"
+        - "possibleDuplicate"
+        - "distance"
+    DuplicatesDTO:
+      type: "object"
+      properties:
+        src_id:
+          type: "string"
+        dup_id:
+          type: "string"
+        distance:
+          type: "integer"
+          format: "int64"
+      required:
+        - "src_id"
+        - "dup_id"
+        - "distance"
+    ProblematicTaskDTO:
+      type: "object"
+      properties:
+        originUrl:
+          type: "string"
+        error:
+          type: "string"
+      required:
+        - "originUrl"
+        - "error"
+    DownloadTaskDTO:
+      type: "object"
+      properties:
+        originUrl:
+          type: "string"
+        progress:
+          type: "number"
+          format: "double"
+      required:
+        - "originUrl"
+        - "progress"
+    MetadatedDownloadQueueEntry:
+      type: "object"
+      properties:
+        queueEntry:
+          $ref: "#/components/schemas/DownloadTaskDTO"
+        title:
+          type: "string"
+      required:
+        - "queueEntry"
+        - "title"
+    SearchRequest:
+      type: "object"
+      properties:
+        term:
+          type: "string"
+        offset:
+          type: "integer"
+          format: "int32"
+      required:
+        - "term"
+        - "offset"
+    SearchResult:
+      type: "object"
+      properties:
+        title:
+          type: "string"
+        url:
+          type: "string"
+        thumbUrl:
+          type: "string"
+      required:
+        - "title"
+        - "url"
+    Map:
+      type: "object"
+      properties: { }
+    Map_String:
+      type: "string"

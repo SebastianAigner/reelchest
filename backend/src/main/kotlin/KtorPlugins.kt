@@ -3,7 +3,7 @@ package io.sebi
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
-import io.ktor.server.plugins.callloging.*
+import io.ktor.server.plugins.calllogging.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.plugins.partialcontent.*
@@ -12,7 +12,7 @@ import io.ktor.server.request.*
 import io.ktor.server.websocket.*
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
-import java.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 fun Application.installPlugins() {
     val logger = LoggerFactory.getLogger("Plugins")
@@ -36,8 +36,8 @@ fun Application.installPlugins() {
     }
 
     install(WebSockets) {
-        pingPeriod = Duration.ofSeconds(15)
-        timeout = Duration.ofSeconds(15)
+        pingPeriod = 15.seconds
+        timeout = 15.seconds
         maxFrameSize = Long.MAX_VALUE
         masking = false
     }

@@ -22,7 +22,7 @@ export function SubtitleKitchen() {
                     />
                 </label>
                 <label>
-                    Offset (milliseconds):
+                    Offset (seconds):
                     <StyledInput
                         type="number"
                         name="offset"

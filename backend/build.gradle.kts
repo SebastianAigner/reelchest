@@ -1,11 +1,11 @@
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath(CashApp.sqlDelight.gradlePlugin)
-    }
-}
+//buildscript {
+//    repositories {
+//        mavenCentral()
+//    }
+//    dependencies {
+//        classpath(CashApp.sqlDelight.gradlePlugin)
+//    }
+//}
 
 plugins {
     application
@@ -15,7 +15,7 @@ plugins {
     id("app.cash.sqldelight")
     id("io.ktor.plugin")
     id("com.google.devtools.ksp")
-    id("org.jetbrains.kotlinx.rpc.plugin") version "0.2.1"
+    id("org.jetbrains.kotlinx.rpc.plugin") version "0.5.1"
 }
 
 group = "io.sebi"
@@ -32,6 +32,7 @@ repositories {
         url = uri("https://maven.pkg.jetbrains.space/public/p/ktor/eap")
         name = "ktor-eap"
     }
+    maven(url = "https://oss.sonatype.org/content/repositories/snapshots")
 }
 
 dependencies {
@@ -66,7 +67,7 @@ dependencies {
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
 
-    testImplementation(libs.ktor.server.tests)
+//    testImplementation(libs.ktor.server.tests)
     testImplementation(kotlin("test"))
     compileOnly(libs.jtsgen.annotations)
     compileOnly(libs.jtsgen.processor)
@@ -80,23 +81,34 @@ dependencies {
     ksp(libs.kotlin.inject.compiler.ksp)
     implementation(libs.kotlin.inject.runtime)
 
-    // client API
-    implementation("org.jetbrains.kotlinx:kotlinx-rpc-krpc-client")
-    // server API
-    implementation("org.jetbrains.kotlinx:kotlinx-rpc-krpc-server")
-    // serialization module. also, protobuf and cbor are available
-    implementation("org.jetbrains.kotlinx:kotlinx-rpc-krpc-serialization-json")
+    // Client API
+    implementation("org.jetbrains.kotlinx:kotlinx-rpc-krpc-client:0.5.1")
+    // Server API
+    implementation("org.jetbrains.kotlinx:kotlinx-rpc-krpc-server:0.5.1")
+    // Serialization module. Also, protobuf and cbor are provided
+    implementation("org.jetbrains.kotlinx:kotlinx-rpc-krpc-serialization-json:0.5.1")
 
-    // transport implementation for Ktor
-    implementation("org.jetbrains.kotlinx:kotlinx-rpc-krpc-ktor-client")
-    implementation("org.jetbrains.kotlinx:kotlinx-rpc-krpc-ktor-server")
+    // Transport implementation for Ktor
+    implementation("org.jetbrains.kotlinx:kotlinx-rpc-krpc-ktor-client:0.5.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-rpc-krpc-ktor-server:0.5.1")
+
+    // Ktor API
+    implementation("io.ktor:ktor-client-cio-jvm:3.1.1")
+    implementation("io.ktor:ktor-server-netty-jvm:3.1.1")
     implementation(libs.kotlinx.datetime)
 
 }
 
-tasks.getByName("compileKotlin") {
-    dependsOn(":frontend:build")
+tasks.getByName("build") {
+    mustRunAfter(":frontend:build")
 }
+
+//// i truly don't understand why i need this, but gradle won't shut up otherwise.
+//// if you can explain it, feel free to DM me.
+//tasks.named("generateMainMediaDatabaseInterface") {
+//    dependsOn(":frontend:build")
+//}
+
 
 tasks.getByName<Copy>("processResources") {
     dependsOn(":frontend:build")

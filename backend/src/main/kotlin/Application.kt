@@ -1,9 +1,6 @@
 package io.sebi
 
-import io.ktor.client.*
-import io.ktor.client.request.*
 import io.ktor.server.application.*
-import io.ktor.server.engine.*
 import io.ktor.server.http.content.*
 import io.ktor.server.routing.*
 import io.sebi.api.api
@@ -145,18 +142,18 @@ fun Application.module() {
     }
 
     launch {
-        warmApi(environment as ApplicationEngineEnvironment, this)
+        warmApi(environment, this)
     }
 }
 
-fun warmApi(env: ApplicationEngineEnvironment, scope: CoroutineScope) {
-    env.monitor.subscribe(ServerReady) {
-        val conns = env.connectors.first()
-        val url = "http://${conns.host}:${conns.port}/api/mediaLibrary"
-        scope.launch {
-            HttpClient().get(url)
-        }
-    }
+fun warmApi(env: ApplicationEnvironment, scope: CoroutineScope) {
+//    embeddedServer.monitor.subscribe(ServerReady) {
+//        val conns = env.connectors.first()
+//        val url = "http://${conns.host}:${conns.port}/api/mediaLibrary"
+//        scope.launch {
+//            HttpClient().get(url)
+//        }
+//    }
 }
 
 fun Routing.setupStaticPaths() {

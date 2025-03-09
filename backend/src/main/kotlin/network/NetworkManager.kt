@@ -28,7 +28,7 @@ class NetworkManager(val requestTokenProvider: RequestTokenProvider = GlobalRequ
         }
 
         engine {
-            threadsCount = 8
+            //threadsCount = 8
         }
     }
 
