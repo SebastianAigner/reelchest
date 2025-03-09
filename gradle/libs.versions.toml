@@ -108,7 +108,7 @@ kotlin-process = "com.github.pgreze:kotlin-process:1.4.1"
 
 kotlin-retry = "com.michael-bull.kotlin-retry:kotlin-retry:1.0.9"
 
-sqlite-jdbc = "org.xerial:sqlite-jdbc:3.45.1.0"
+sqlite-jdbc = "org.xerial:sqlite-jdbc:3.49.1.0"
 
 sqlite-driver = { group = "app.cash.sqldelight", name = "sqlite-driver", version.ref = "app-cash-sqldelight" }
 
