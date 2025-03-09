@@ -1,11 +1,3 @@
-//buildscript {
-//    repositories {
-//        mavenCentral()
-//    }
-//    dependencies {
-//        classpath(CashApp.sqlDelight.gradlePlugin)
-//    }
-//}
 
 plugins {
     application
@@ -97,23 +89,23 @@ dependencies {
 
 }
 
-tasks.getByName("build") {
-    dependsOn(":frontend:build")
+// Configure frontend input
+configurations {
+    create("frontendInput")
 }
 
-tasks.getByName("compileKotlin") {
-    dependsOn(":frontend:build")
+dependencies {
+    "frontendInput"(project(":frontend", "frontendOutput"))
 }
 
-//tasks.getByName<Copy>("processResources") {
-//    dependsOn(":frontend:build")
-//    from("../frontend/dist") {
-//        into("frontend")
-//    }
-//}
+tasks.named<Copy>("processResources") {
+    dependsOn(":frontend:build")
+    from(configurations.getByName("frontendInput")) {
+        into("frontend")  // Match the staticResources("/", "frontend") configuration
+    }
+}
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    dependsOn(":frontend:build")
     kotlinOptions {
         freeCompilerArgs = listOf("-Xcontext-receivers")
     }

@@ -1,10 +1,23 @@
 tasks.register<Exec>("buildReactFrontend") {
     dependsOn("installReactFrontendDeps")
     inputs.dir("src")
-//    inputs.dir("static")
     inputs.dir("node_modules")
-    outputs.dir("build")
-    commandLine("yarn --verbose build".split(" ")) //--public-url /react
+    inputs.file("package.json")
+    inputs.file("vite.config.ts")
+    outputs.dir("dist")  // Vite's default output directory
+
+    // Use workingDir to ensure we're in the right directory
+    workingDir = projectDir
+    commandLine("yarn", "build")
+
+    // Add more debug logging
+    doLast {
+        println("Vite build completed")
+        println("dist directory exists: ${file("dist").exists()}")
+        if (file("dist").exists()) {
+            println("dist directory contents: ${file("dist").list()?.joinToString(", ")}")
+        }
+    }
 }
 
 tasks.register<Exec>("installReactFrontendDeps") {
@@ -16,12 +29,18 @@ tasks.register<Exec>("installReactFrontendDeps") {
 
 tasks.register<Copy>("build") {
     dependsOn("buildReactFrontend")
-//    dependsOn(":backend:kaptKotlin")
-    destinationDir = rootDir
-//    from("../backend/build/generated/source/kapt/main/") {
-//        into("frontend/src/generated")
-//    }
-    outputs.dir("build")
+    from("dist") {  // Vite's output directory
+        include("**/*")  // Include all files and subdirectories
+    }
+    into(project.buildDir.resolve("web"))  // Destination directory
+}
+
+// Create a configuration to expose frontend artifacts
+configurations.create("frontendOutput")
+artifacts {
+    add("frontendOutput", project.buildDir.resolve("web")) {
+        builtBy("build")
+    }
 }
 
 println(tasks.toList())
