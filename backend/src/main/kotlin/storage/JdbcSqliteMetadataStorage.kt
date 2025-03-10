@@ -69,7 +69,7 @@ class JdbcSqliteMetadataStorage : MetadataStorage {
             stmt.execute(
                 """
                 CREATE TABLE IF NOT EXISTS tags_for_library_entries (
-                    unique_id TEXT NOT NULL REFERENCES media_library_entries ON DELETE CASCADE,
+                    library_entry_uuid TEXT NOT NULL REFERENCES media_library_entries ON DELETE CASCADE,
                     tag_id INTEGER NOT NULL REFERENCES tags(id)
                 )
             """
@@ -78,7 +78,7 @@ class JdbcSqliteMetadataStorage : MetadataStorage {
             stmt.execute(
                 """
                 CREATE UNIQUE INDEX IF NOT EXISTS unq_uuid_tag_id 
-                ON tags_for_library_entries(unique_id, tag_id)
+                ON tags_for_library_entries(library_entry_uuid, tag_id)
             """
             )
 
@@ -146,7 +146,7 @@ class JdbcSqliteMetadataStorage : MetadataStorage {
 
                 connection.prepareStatement(
                     """
-                    INSERT OR IGNORE INTO tags_for_library_entries (unique_id, tag_id)
+                    INSERT OR IGNORE INTO tags_for_library_entries (library_entry_uuid, tag_id)
                     SELECT ?, tags.id FROM tags WHERE name = ?
                 """
                 ).use { stmt ->
@@ -181,7 +181,7 @@ class JdbcSqliteMetadataStorage : MetadataStorage {
                         ELSE json_group_array(t.name)
                     END as tags
                     FROM media_library_entries e
-                    LEFT JOIN tags_for_library_entries tfle ON e.unique_id = tfle.unique_id
+                    LEFT JOIN tags_for_library_entries tfle ON e.unique_id = tfle.library_entry_uuid
                     LEFT JOIN tags t ON t.id = tfle.tag_id
                     WHERE e.unique_id = ?
                     GROUP BY e.unique_id
@@ -235,7 +235,7 @@ class JdbcSqliteMetadataStorage : MetadataStorage {
                         ELSE json_group_array(t.name)
                     END as tags
                     FROM media_library_entries e
-                    LEFT JOIN tags_for_library_entries tfle ON e.unique_id = tfle.unique_id
+                    LEFT JOIN tags_for_library_entries tfle ON e.unique_id = tfle.library_entry_uuid
                     LEFT JOIN tags t ON t.id = tfle.tag_id
                     GROUP BY e.unique_id
                     ORDER BY e.creation_date DESC
