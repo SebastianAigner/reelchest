@@ -1,4 +1,3 @@
-
 plugins {
     application
     kotlin("jvm")
@@ -23,6 +22,17 @@ repositories {
         name = "ktor-eap"
     }
     maven(url = "https://oss.sonatype.org/content/repositories/snapshots")
+    // GitHub packages is required for the 'usearch' dependency.
+    maven {
+        name = "GitHubPackages"
+        url = uri("https://maven.pkg.github.com/unum-cloud/usearch")
+        credentials {
+            username = project.findProperty("gpr.user") as String? ?: (System.getenv("USERNAME")
+                ?: error("No GitHub Packages Gradle registry username specified."))
+            password = project.findProperty("gpr.key") as String? ?: (System.getenv("TOKEN")
+                ?: error("No GitHub Packages Gradle registry password specified."))
+        }
+    }
 }
 
 dependencies {
@@ -86,6 +96,9 @@ dependencies {
     implementation(libs.ktor.client.cio.jvm)
     implementation(libs.ktor.server.netty.jvm)
     implementation(libs.kotlinx.datetime)
+
+//     USearch Vector Search
+    implementation("cloud.unum:usearch:2.17.2")
 
 }
 
