@@ -4,7 +4,6 @@ import io.sebi.config.AppConfig
 import io.sebi.datastructures.shaHashed
 import io.sebi.downloader.CompletedDownloadTask
 import io.sebi.ffmpeg.generateThumbnails
-import io.sebi.network.NetworkManager
 import io.sebi.storage.MetadataStorage
 import io.sebi.storage.VideoStorage
 import io.sebi.urldecoder.UrlDecoder
@@ -22,7 +21,6 @@ val json = Json
 
 class MediaLibrary(
     private val urlDecoder: UrlDecoder,
-    private val networkManager: NetworkManager,
     private val videoStorage: VideoStorage,
     private val metadataStorage: MetadataStorage,
 ) {
