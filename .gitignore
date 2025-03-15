@@ -6,9 +6,10 @@
 *.iml
 *.ipr
 *.iws
-mediaLibrary
-downloads
-userConfig
+/mediaLibrary
+/downloads
+/userConfig
+/database
 cache.map
 migrations
 .gradle
@@ -27,7 +28,6 @@ backend/.idea
 .DS_Store
 node_modules
 playground
-database
 **/build/
 **/*.local.sh
 /backend/src/test/resources/ForBiggerJoyrides.mp4
