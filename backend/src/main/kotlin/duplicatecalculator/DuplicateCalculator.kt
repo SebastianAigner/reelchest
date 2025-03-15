@@ -10,12 +10,12 @@ import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
 import kotlin.time.ExperimentalTime
 
-data class EntryWithDistance(val entry: MediaLibraryEntry, val distance: Int)
+data class IdWithDistance(val id: String, val distance: Int)
 
 private val logger = LoggerFactory.getLogger("Duplicate Calculator")
 
 class DuplicateCalculator(val mediaLibrary: MediaLibrary) {
-    var duplicatesMap: Map<MediaLibraryEntry, EntryWithDistance>? = null
+    var duplicatesMap: Map<MediaLibraryEntry, IdWithDistance>? = null
 
     @OptIn(ExperimentalTime::class)
     suspend fun calculateDuplicates() {
@@ -28,7 +28,8 @@ class DuplicateCalculator(val mediaLibrary: MediaLibrary) {
             coroutineScope {
                 mediaLibrary.getEntries().toList().map {
                     async(dispatcher) {
-                        val duplicateForEntry = calculateDuplicateForEntry(it)
+                        val duplicateForEntry =
+                            calculateDuplicateForEntry(it.id, it.getDHashesFromDisk() ?: return@async null)
                         it to (duplicateForEntry ?: return@async null)
                     }
                 }
@@ -55,23 +56,24 @@ class DuplicateCalculator(val mediaLibrary: MediaLibrary) {
     }
 
     @OptIn(ExperimentalUnsignedTypes::class)
-    private fun getRestLibrary(entry: MediaLibraryEntry): Sequence<Pair<MediaLibraryEntry, ULongArray>> {
+    private fun getRestLibrary(entryId: String): Sequence<Pair<String, ULongArray>> {
         return mediaLibWithHashes
             .filterNot {
-                it.first.id == entry.id
+                it.first.id == entryId
+            }.map {
+                it.first.id to it.second
             }
     }
 
 
     @OptIn(ExperimentalUnsignedTypes::class)
-    fun calculateDuplicateForEntry(entry: MediaLibraryEntry): EntryWithDistance? {
-        val restLibrary = getRestLibrary(entry)
+    fun calculateDuplicateForEntry(entryId: String, dHashesForEntry: ULongArray): IdWithDistance? {
+        val restLibrary = getRestLibrary(entryId)
         // we randomly pick a handful of hashes from our candidate.
-        val entryHashes = entry.getDHashesFromDisk() ?: return null
-        val handful = ULongArray(100) { entryHashes.random() }
+        val handful = ULongArray(100) { dHashesForEntry.random() }
         // we find the global minimum: which of the other library entries has the lowest cumulative distance?
 
-        val mostLikelyDuplicate = restLibrary.minByOrNull { (entry, dhashes) ->
+        val mostLikelyDuplicate = restLibrary.minByOrNull { (_, dhashes) ->
             handful.sumOf {
                 getMinimalDistance(dhashes, DHash(it))
             }
@@ -80,6 +82,6 @@ class DuplicateCalculator(val mediaLibrary: MediaLibrary) {
         val cumulativeDistance = handful.sumOf {
             getMinimalDistance(mostLikelyDuplicate.second, DHash(it))
         }
-        return EntryWithDistance(mostLikelyDuplicate.first, cumulativeDistance)
+        return IdWithDistance(mostLikelyDuplicate.first, cumulativeDistance)
     }
 }

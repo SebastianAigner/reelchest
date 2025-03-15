@@ -6,6 +6,7 @@
 *.iml
 *.ipr
 *.iws
+/all-remote-hashes
 /mediaLibrary
 /downloads
 /userConfig
