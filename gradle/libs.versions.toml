@@ -124,3 +124,5 @@ kotlinx-rpc-krpc-ktor-server = { group = "org.jetbrains.kotlinx", name = "kotlin
 
 ktor-client-cio-jvm = { group = "io.ktor", name = "ktor-client-cio-jvm", version.ref = "ktor" }
 ktor-server-netty-jvm = { group = "io.ktor", name = "ktor-server-netty-jvm", version.ref = "ktor" }
+
+usearch = "cloud.unum:usearch:2.17.2"

@@ -97,8 +97,8 @@ dependencies {
     implementation(libs.ktor.server.netty.jvm)
     implementation(libs.kotlinx.datetime)
 
-//     USearch Vector Search
-    implementation("cloud.unum:usearch:2.17.2")
+    // USearch Vector Search
+    implementation(libs.usearch)
 
 }
 
