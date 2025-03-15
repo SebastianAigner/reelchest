@@ -7,12 +7,13 @@ import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import org.slf4j.LoggerFactory
+import java.util.concurrent.ConcurrentHashMap
 
 class NetworkManager(val requestTokenProvider: RequestTokenProvider = GlobalRequestTokenProvider) {
 
     val logger = LoggerFactory.getLogger("Network Manager")
 
-    val cachemap = mutableMapOf<String, String>()
+    val cachemap = ConcurrentHashMap<String, String>()
 
     private val client = HttpClient(Apache) {
         install(UserAgent) {
