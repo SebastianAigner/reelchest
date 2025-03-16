@@ -3,14 +3,11 @@ package io.sebi.helpertools
 import io.sebi.duplicatecalculator.calculateLikelyDuplicateForDHashArray
 import io.sebi.phash.readULongs
 import io.sebi.storage.Duplicates
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.io.File
 import kotlin.time.Duration
 import kotlin.time.measureTimedValue
@@ -24,7 +21,7 @@ fun main() {
     println("Built index in $time.")
     val allDuplicates = MutableStateFlow(emptyList<DuplicatesWithTiming>())
     runBlocking {
-        launch {
+        val inspector = launch {
             while (true) {
                 delay(1000)
                 println(
@@ -39,7 +36,9 @@ fun main() {
         findDuplicatesForEntireIndex(index).collect {
             allDuplicates.update { oldList -> oldList + it }
         }
+        inspector.cancelAndJoin()
     }
+    println(allDuplicates.value.sortedBy { it.duplicates.distance }.take(100).joinToString("\n"))
 }
 
 fun List<Duration>.average(): Duration {
@@ -60,7 +59,7 @@ fun findDuplicatesForEntireIndex(index: Map<String, ULongArray>): Flow<Duplicate
                         seq
                     )
                 }
-                println("Calculated most likely duplicate (dist=${likelyDup.distance} for $needle in $dupTime.")
+                println("Calculated $needle <==(dist=${likelyDup.distance})==> ${likelyDup.id} in $dupTime.")
                 send(
                     DuplicatesWithTiming(
                         Duplicates(needle, likelyDup.id, likelyDup.distance.toLong()),

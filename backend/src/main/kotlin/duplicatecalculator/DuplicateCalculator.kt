@@ -5,10 +5,11 @@ import io.sebi.library.MediaLibraryEntry
 import io.sebi.library.getDHashesFromDisk
 import io.sebi.library.id
 import io.sebi.phash.DHash
-import io.sebi.phash.getMinimalDistance
+import io.sebi.phash.distanceTo
 import kotlinx.coroutines.*
 import org.checkerframework.dataflow.qual.SideEffectFree
 import org.slf4j.LoggerFactory
+import kotlin.math.min
 import kotlin.time.ExperimentalTime
 
 data class IdWithDistance(val id: String, val distance: Int)
@@ -81,38 +82,38 @@ fun calculateLikelyDuplicateForDHashArray(
     // we randomly pick a handful of hashes from our candidate.
     val someNeedleHashes = ULongArray(100) { needleDHashes.random() }
     // we find the global minimum: which of the other library entries has the lowest cumulative distance?
-
-    val mostLikelyDuplicate = haystack.minByOrNull { (_, haystackElemHashes) ->
-        someNeedleHashes.sumOf {
-            getMinimalDistance(haystackElemHashes, DHash(it))
-        }
-    }!!
-
-    val cumulativeDistance = someNeedleHashes.sumOf {
-        getMinimalDistance(mostLikelyDuplicate.second, DHash(it))
-    }
-    return IdWithDistance(mostLikelyDuplicate.first, cumulativeDistance)
+    val moDup = findEntryWithLowestCumulativeDistance(someNeedleHashes, haystack)
+    return IdWithDistance(moDup.first, moDup.second)
 }
 
+// baseline: 1.85 seconds.
+// this implementation: 1.36 seconds.
 @OptIn(ExperimentalUnsignedTypes::class)
-fun findEntryWithLowestCumulativeDistance(needleHashes: ULongArray, haystack: Sequence<Pair<String, ULongArray>>) {
+fun findEntryWithLowestCumulativeDistance(
+    needleHashes: ULongArray,
+    haystack: Sequence<Pair<String, ULongArray>>,
+): Pair<String, Int> {
     var smallestSeenDistance = Int.MAX_VALUE
     var idOfSmallestSeen = ""
 
     hayclumploop@ for ((hayclumpId, hayclumpHashes) in haystack) {
-        var cumulativeDistanceForThisHaystack = 0
+        var cumulativeDistanceForThisHayclump = 0
         for (needleHash in needleHashes) {
-            for (haystackHash in hayclumpHashes) {
-                cumulativeDistanceForThisHaystack += DHash(needleHash).distanceTo(DHash(haystackHash))
-                if (cumulativeDistanceForThisHaystack >= smallestSeenDistance) {
-                    // early exit: this "hay clump" already exceeds the smallest distance, no need to do more calculations.
-                    continue@hayclumploop
-                }
+            var smallestDistanceToHayclumpHash = Int.MAX_VALUE
+            for (hayclumpHash in hayclumpHashes) {
+                val thisDistance = DHash(needleHash).distanceTo(DHash(hayclumpHash))
+                smallestDistanceToHayclumpHash = min(thisDistance, smallestDistanceToHayclumpHash)
+            }
+            cumulativeDistanceForThisHayclump += smallestDistanceToHayclumpHash
+            if (cumulativeDistanceForThisHayclump >= smallestSeenDistance) {
+                // early exit: this "hay clump" already exceeds the smallest distance, no need to do more calculations.
+                continue@hayclumploop
             }
         }
-        if (cumulativeDistanceForThisHaystack < smallestSeenDistance) {
-            smallestSeenDistance = cumulativeDistanceForThisHaystack
+        if (cumulativeDistanceForThisHayclump < smallestSeenDistance) {
+            smallestSeenDistance = cumulativeDistanceForThisHayclump
             idOfSmallestSeen = hayclumpId
         }
     }
+    return idOfSmallestSeen to smallestSeenDistance
 }
