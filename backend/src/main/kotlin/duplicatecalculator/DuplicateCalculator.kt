@@ -93,3 +93,26 @@ fun calculateLikelyDuplicateForDHashArray(
     }
     return IdWithDistance(mostLikelyDuplicate.first, cumulativeDistance)
 }
+
+@OptIn(ExperimentalUnsignedTypes::class)
+fun findEntryWithLowestCumulativeDistance(needleHashes: ULongArray, haystack: Sequence<Pair<String, ULongArray>>) {
+    var smallestSeenDistance = Int.MAX_VALUE
+    var idOfSmallestSeen = ""
+
+    hayclumploop@ for ((hayclumpId, hayclumpHashes) in haystack) {
+        var cumulativeDistanceForThisHaystack = 0
+        for (needleHash in needleHashes) {
+            for (haystackHash in hayclumpHashes) {
+                cumulativeDistanceForThisHaystack += DHash(needleHash).distanceTo(DHash(haystackHash))
+                if (cumulativeDistanceForThisHaystack >= smallestSeenDistance) {
+                    // early exit: this "hay clump" already exceeds the smallest distance, no need to do more calculations.
+                    continue@hayclumploop
+                }
+            }
+        }
+        if (cumulativeDistanceForThisHaystack < smallestSeenDistance) {
+            smallestSeenDistance = cumulativeDistanceForThisHaystack
+            idOfSmallestSeen = hayclumpId
+        }
+    }
+}
