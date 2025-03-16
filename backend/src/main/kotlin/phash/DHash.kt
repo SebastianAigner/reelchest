@@ -32,9 +32,9 @@ fun DHash.distanceTo(other: DHash): Int {
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
-fun getMinimalDistance(rawDHashes: ULongArray, target: DHash): Int {
-    val thatHash = rawDHashes.minByOrNull {
+fun getMinimalDistance(candidateHashes: ULongArray, target: DHash): Int {
+    val thatHash = candidateHashes.minByOrNull { // minBy vs minByOrNull makes no measurable difference.
         target.distanceTo(DHash(it))
-    } ?: error("Could not get minimal distance! Whose fault is this?!")
+    } ?: error("Couldn't find distance. Huh?")
     return DHash(thatHash).distanceTo(target)
 }
