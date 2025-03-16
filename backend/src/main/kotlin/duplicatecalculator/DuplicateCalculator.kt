@@ -7,7 +7,6 @@ import io.sebi.library.id
 import io.sebi.phash.DHash
 import io.sebi.phash.distanceTo
 import kotlinx.coroutines.*
-import org.checkerframework.dataflow.qual.SideEffectFree
 import org.slf4j.LoggerFactory
 import kotlin.math.min
 import kotlin.time.ExperimentalTime
@@ -73,7 +72,6 @@ class DuplicateCalculator(val mediaLibrary: MediaLibrary) {
 
 }
 
-@SideEffectFree
 @OptIn(ExperimentalUnsignedTypes::class)
 fun calculateLikelyDuplicateForDHashArray(
     needleDHashes: ULongArray,

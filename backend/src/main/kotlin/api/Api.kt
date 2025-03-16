@@ -6,7 +6,6 @@ import io.sebi.api.handlers.*
 import io.sebi.downloader.DownloadManager
 import io.sebi.library.MediaLibrary
 import io.sebi.storage.MetadataStorage
-import io.sebi.subtitles.subtitleApi
 import io.sebi.tagging.Tagger
 import io.sebi.urldecoder.UrlDecoder
 import org.slf4j.LoggerFactory
@@ -97,7 +96,10 @@ fun Route.api(
         route("searchers") {
             get { getSearchersHandler(searchServiceProvider) }
         }
-        subtitleApi()
+        route("subtitles") {
+            post("shiftsubtitles") { shiftSubtitlesHandler() }
+            post("embedsubtitles") { embedSubtitlesHandler() }
+        }
 
         route("autotags") {
             get("/popular") { popularAutotagsHandler(mediaLibrary, tagger) }
@@ -112,5 +114,3 @@ fun Route.api(
         }
     }
 }
-
-

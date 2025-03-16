@@ -7,10 +7,7 @@ import io.sebi.ffmpeg.generateThumbnails
 import io.sebi.storage.MetadataStorage
 import io.sebi.storage.VideoStorage
 import io.sebi.urldecoder.UrlDecoder
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -26,6 +23,7 @@ class MediaLibrary(
 ) {
     suspend fun getEntries() = metadataStorage.listAllMetadata()
     val logger = LoggerFactory.getLogger("Media Library")
+    val mediaLibraryScope = CoroutineScope(SupervisorJob())
 
     suspend fun findById(id: String): MediaLibraryEntry? {
         return metadataStorage.retrieveMetadata(id).just()
@@ -49,7 +47,7 @@ class MediaLibrary(
         entry.persist(metadataStorage)
         f.delete()
         entry.file?.let {
-            GlobalScope.launch(Dispatchers.IO) {
+            mediaLibraryScope.launch(Dispatchers.IO) {
                 generateThumbnails(it)
             }
         }

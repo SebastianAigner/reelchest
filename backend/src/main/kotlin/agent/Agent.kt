@@ -85,6 +85,7 @@ suspend fun getHashesForId(id: String): ULongArray {
     }
 }
 
+@OptIn(ExperimentalUnsignedTypes::class)
 data class IdToHashes(val id: String, val hashes: ULongArray)
 
 @OptIn(ExperimentalUnsignedTypes::class)

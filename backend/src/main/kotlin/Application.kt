@@ -8,7 +8,6 @@ import io.sebi.autoscrape.setupAutoscraper
 import io.sebi.downloader.DownloadManager
 import io.sebi.downloader.DownloadManagerImpl
 import io.sebi.downloader.IntoMediaLibraryDownloader
-import io.sebi.duplicatecalculator.DuplicateCalculator
 import io.sebi.ffmpeg.globalFfmpegMutex
 import io.sebi.library.MediaLibrary
 import io.sebi.library.MediaLibraryEntry
@@ -107,9 +106,8 @@ fun Application.module() {
             urlDecoder,
             networkManager,
             mediaLibrary::addCompletedDownload,
-            environment.monitor
+            monitor
         )
-    val duplicateCalculator = DuplicateCalculator(mediaLibrary)
     val tagger = CachingTagger()
     val intoMediaLibraryDownloader = IntoMediaLibraryDownloader(downloadManager, urlDecoder, mediaLibrary)
 

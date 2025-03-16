@@ -21,6 +21,7 @@ val hashingInProgress = mutableListOf<MediaLibraryEntry>()
 /**
  * Handler for getting unhashed entries.
  */
+@OptIn(ExperimentalUnsignedTypes::class)
 suspend fun RoutingContext.getUnhashedEntryHandler(
     mediaLibrary: MediaLibrary,
     hashingInProgress: MutableList<MediaLibraryEntry>,
@@ -34,6 +35,7 @@ suspend fun RoutingContext.getUnhashedEntryHandler(
 /**
  * Handler for getting all hashes.
  */
+@OptIn(ExperimentalUnsignedTypes::class)
 suspend fun RoutingContext.getAllHashesHandler(mediaLibrary: MediaLibrary) {
     val res = mediaLibrary.getEntries().map {
         yield()
@@ -60,6 +62,7 @@ suspend fun RoutingContext.saveHashHandler(metadataStorage: MetadataStorage) {
 /**
  * Handler for getting a hash by format.
  */
+@OptIn(ExperimentalUnsignedTypes::class)
 suspend fun RoutingContext.getHashByFormatHandler(metadataStorage: MetadataStorage) {
     val id = call.parameters["id"]!!
     val format = call.parameters["format"]!!
