@@ -194,14 +194,20 @@ export function Movie() {
                 </TagBadge>
             </li>
         })}
-        {duplicate && validDuplicateEntry && (
-            <>
-                <SubHeading>Duplicate</SubHeading>
-                <div>
-                    <p>Distance: {duplicate.distance}</p>
-                    <MediaLibraryCard item={validDuplicateEntry.mediaLibraryEntry}/>
-                </div>
-            </>
+        <SubHeading>Duplicate</SubHeading>
+        {duplicate ? (
+            <div>
+                <p>Distance: {duplicate.distance}</p>
+                {duplicateEntry?.mediaLibraryEntry ? (
+                    <MediaLibraryCard item={duplicateEntry.mediaLibraryEntry}/>
+                ) : (
+                    <p>Loading duplicate entry or duplicate entry not found.</p>
+                )}
+            </div>
+        ) : (
+            <div>
+                <p>no duplicate stored.</p>
+            </div>
         )}
     </>
 }
