@@ -1,5 +1,11 @@
 package io.sebi.helpertools
 
+import io.ktor.client.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.request.*
+import io.ktor.http.*
+import io.sebi.api.DuplicatesDTO
+import io.sebi.api.from
 import io.sebi.duplicatecalculator.calculateLikelyDuplicateForDHashArray
 import io.sebi.phash.readULongs
 import io.sebi.storage.Duplicates
@@ -9,6 +15,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.serialization.json.Json
 import java.io.File
 import kotlin.time.Duration
 import kotlin.time.measureTimedValue
@@ -39,7 +46,30 @@ fun main() {
         }
         inspector.cancelAndJoin()
     }
-    println(allDuplicates.value.sortedBy { it.duplicates.distance }.take(100).joinToString("\n"))
+    println(allDuplicates.value.sortedBy { it.duplicate.distance }.take(100).joinToString("\n"))
+}
+
+/**
+ * Communicates a duplicate to a remote server.
+ *
+ * @param remoteAddress The address of the remote server, e.g. "http://example.com:8080"
+ * @param duplicate The duplicate to send
+ */
+suspend fun communicateDuplicateToRemote(remoteAddress: String, duplicate: Duplicates) {
+    val client = HttpClient(CIO)
+
+    try {
+        val duplicateDto = DuplicatesDTO.from(duplicate)
+
+        val response = client.post("$remoteAddress/api/mediaLibrary/${duplicate.src_id}/storedDuplicate") {
+            contentType(ContentType.Application.Json)
+            setBody(Json.encodeToString(DuplicatesDTO.serializer(), duplicateDto))
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+    } finally {
+        client.close()
+    }
 }
 
 
@@ -68,7 +98,7 @@ fun findDuplicatesForEntireIndex(index: Map<String, ULongArray>): Flow<Duplicate
     }
 }
 
-data class DuplicatesWithTiming(val duplicates: Duplicates, val time: Duration)
+data class DuplicatesWithTiming(val duplicate: Duplicates, val time: Duration)
 
 @OptIn(ExperimentalUnsignedTypes::class)
 fun buildIndexForDirectory(dir: File): Map<String, ULongArray> {
