@@ -79,7 +79,10 @@ fun buildIndexForDirectory(dir: File): Map<String, ULongArray> {
         for (file in dir.listFiles()!!) {
             val ulongs = file.readULongs()
             if (ulongs.size < 10) continue
-            put(file.nameWithoutExtension, ulongs)
+            put(
+                file.nameWithoutExtension,
+                ulongs
+            ) // we try an optimization here: we put all the zero-bitted hashes in the front.
         }
     }
 }
