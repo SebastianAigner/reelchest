@@ -24,7 +24,6 @@ import io.sebi.tagging.CachingTagger
 import io.sebi.tagging.Tagger
 import io.sebi.ui.addDownload
 import io.sebi.ui.addUpload
-import io.sebi.ui.decryptEndpointRoute
 import io.sebi.ui.progressList
 import io.sebi.urldecoder.UrlDecoder
 import io.sebi.urldecoder.UrlDecoderImpl
@@ -138,8 +137,7 @@ fun Application.module() {
     routing {
         api(urlDecoder, mediaLibrary, downloadManager, tagger, metadataStorage)
         addDownload(intoMediaLibraryDownloader)
-        addUpload(mediaLibrary)
-        decryptEndpointRoute(urlDecoder)
+        addUpload()
         progressList(downloadManager)
         setupStaticPaths()
     }

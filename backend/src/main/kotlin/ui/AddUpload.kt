@@ -1,16 +1,11 @@
 package io.sebi.ui
 
 import io.ktor.http.content.*
-import io.ktor.server.application.*
 import io.ktor.server.html.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.sebi.library.MediaLibrary
 import io.sebi.ui.shared.commonLayout
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.flow
 import kotlinx.html.*
 import org.slf4j.LoggerFactory
@@ -25,7 +20,7 @@ val uploadPool = newFixedThreadPoolContext(2, "Uploader")
 
 private val logger = LoggerFactory.getLogger("Upload")
 
-fun Route.addUpload(mediaLibrary: MediaLibrary) {
+fun Route.addUpload() {
     get("/upload") {
         call.respondHtml {
             commonLayout("upload file") {
@@ -55,69 +50,7 @@ fun Route.addUpload(mediaLibrary: MediaLibrary) {
                         """.trimIndent()
                     }
                 }
-//                form(action = "/ul", method = FormMethod.post, encType = FormEncType.multipartFormData) {
-//                    input(type = InputType.file, name = "file") {
-//                    }
-//                    input(type = InputType.submit)
-//                }
             }
-        }
-    }
-    post("/ul") {
-        logger.info("Starting upload handler.")
-        logger.info("Receiving multipart data...")
-        val multipart = call.receiveMultipart()
-        logger.info("Done.")
-        var lastUploadedId: String? = null
-
-        multipart
-            .readAllPartsAsFlow()
-            .filterIsInstance<PartData.FileItem>()
-            .collect { fileItem ->
-                val uploadResult = runCatching {
-                    logger.info("Got FileItem ${fileItem.originalFileName}.")
-                    logger.info(fileItem.headers.entries().joinToString(", ") { it.key + " " + it.value })
-                    val targetFile = File.createTempFile(
-                        "vid",
-                        ".mp4",
-                        File("downloads").apply { mkdir(); }
-                    ).apply { deleteOnExit() }
-                    logger.info("Starting copy.")
-
-                    fileItem.streamProvider().let { stream ->
-                        val targetPath = targetFile.toPath()
-                        stream.copyToNIO(targetPath)
-                    }
-                    val result = ProcessUploadedFilePartResult(
-                        targetFile!!,
-                        fileItem.originalFileName!!
-                    )
-                    logger.info("Disposing part.")
-                    fileItem.dispose()
-                    result
-                }
-
-                if (uploadResult.isFailure) {
-                    call.respondText(
-                        "an error has happened: ${uploadResult.exceptionOrNull()?.message}" +
-                                "\n${uploadResult.exceptionOrNull()?.stackTraceToString()}"
-                    )
-                    error("Upload failed with ${uploadResult.exceptionOrNull()}")
-                }
-
-                if (uploadResult.isSuccess) {
-                    val (targetFile, name) = uploadResult.getOrNull()!!
-                    lastUploadedId = mediaLibrary.addUpload(
-                        targetFile,
-                        name = name
-                    )
-                }
-            }
-
-        if (lastUploadedId != null) {
-            call.respond(mapOf("id" to lastUploadedId))
-        } else {
-            call.respond(mapOf("error" to "No file was uploaded"))
         }
     }
 }
