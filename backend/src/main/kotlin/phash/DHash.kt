@@ -6,14 +6,9 @@ import java.awt.image.BufferedImage
 
 @JvmInline
 value class DHash(val raw: ULong) {
-    fun distanceTo(other: DHash): Int {
-        return (raw xor other.raw).countOneBits()
-    }
-
     override fun toString(): String {
         return raw.toString(16)
     }
-
     companion object {
         fun fromImage(img: BufferedImage): DHash {
             val scl = BufferedImage(9, 8, BufferedImage.TYPE_BYTE_GRAY)
@@ -32,6 +27,11 @@ value class DHash(val raw: ULong) {
     }
 }
 
+fun DHash.distanceTo(other: DHash): Int {
+    return (raw xor other.raw).countOneBits()
+}
+
+@OptIn(ExperimentalUnsignedTypes::class)
 fun getMinimalDistance(rawDHashes: ULongArray, target: DHash): Int {
     val thatHash = rawDHashes.minByOrNull {
         target.distanceTo(DHash(it))

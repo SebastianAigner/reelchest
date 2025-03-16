@@ -29,6 +29,11 @@ data class MediaLibraryEntry(
 fun MediaLibraryEntry.getDHashesFromDisk(): ULongArray? {
     val hashFile = File(file!!.parent, "dhashes.bin")
     if (!hashFile.exists()) return null
+    return getHashesFromFile(hashFile)
+}
+
+@OptIn(ExperimentalUnsignedTypes::class)
+fun getHashesFromFile(hashFile: File): ULongArray? {
     val dhashes = hashFile.readULongs()
     return if (dhashes.count() > 10) {
         dhashes

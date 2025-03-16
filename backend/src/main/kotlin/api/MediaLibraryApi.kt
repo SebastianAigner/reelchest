@@ -83,10 +83,10 @@ fun Route.mediaLibraryApi(
             val dups = duplicateCalculator.duplicatesMap ?: error("No duplicates map.")
             val lst = dups
                 .toList()
-                .distinctBy { setOf(it.first, it.second.entry) }
+                .distinctBy { setOf(it.first, it.second) }
                 .sortedBy { (k, v) -> v.distance }
                 .map { (entry, dup) ->
-                    DuplicateResponse(entry, dup.entry, dup.distance)
+                    DuplicateResponse(entry.id, dup.id, dup.distance)
                 }
             call.respond(lst)
         }

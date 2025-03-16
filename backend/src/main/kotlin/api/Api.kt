@@ -121,7 +121,7 @@ data class UrlRequest(val url: String)
 
 @TypeScript
 @Serializable
-data class DuplicateResponse(val entry: MediaLibraryEntry, val possibleDuplicate: MediaLibraryEntry, val distance: Int)
+data class DuplicateResponse(val entryId: String, val possibleDuplicateId: String, val distance: Int)
 
 @TypeScript
 @Serializable

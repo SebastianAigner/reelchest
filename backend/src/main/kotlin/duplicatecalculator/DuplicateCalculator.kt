@@ -7,6 +7,7 @@ import io.sebi.library.id
 import io.sebi.phash.DHash
 import io.sebi.phash.getMinimalDistance
 import kotlinx.coroutines.*
+import org.checkerframework.dataflow.qual.SideEffectFree
 import org.slf4j.LoggerFactory
 import kotlin.time.ExperimentalTime
 
@@ -17,7 +18,7 @@ private val logger = LoggerFactory.getLogger("Duplicate Calculator")
 class DuplicateCalculator(val mediaLibrary: MediaLibrary) {
     var duplicatesMap: Map<MediaLibraryEntry, IdWithDistance>? = null
 
-    @OptIn(ExperimentalTime::class)
+    @OptIn(ExperimentalTime::class, ExperimentalUnsignedTypes::class)
     suspend fun calculateDuplicates() {
         val x = kotlin.time.TimeSource.Monotonic.markNow()
         logger.info("Starting duplicates calculation...")
@@ -29,7 +30,10 @@ class DuplicateCalculator(val mediaLibrary: MediaLibrary) {
                 mediaLibrary.getEntries().toList().map {
                     async(dispatcher) {
                         val duplicateForEntry =
-                            calculateDuplicateForEntry(it.id, it.getDHashesFromDisk() ?: return@async null)
+                            calculateLikelyDuplicateForDHashArray(
+                                it.getDHashesFromDisk() ?: return@async null,
+                                getRestLibrary(it.id)
+                            )
                         it to (duplicateForEntry ?: return@async null)
                     }
                 }
@@ -66,22 +70,26 @@ class DuplicateCalculator(val mediaLibrary: MediaLibrary) {
     }
 
 
-    @OptIn(ExperimentalUnsignedTypes::class)
-    fun calculateDuplicateForEntry(entryId: String, dHashesForEntry: ULongArray): IdWithDistance? {
-        val restLibrary = getRestLibrary(entryId)
-        // we randomly pick a handful of hashes from our candidate.
-        val handful = ULongArray(100) { dHashesForEntry.random() }
-        // we find the global minimum: which of the other library entries has the lowest cumulative distance?
+}
 
-        val mostLikelyDuplicate = restLibrary.minByOrNull { (_, dhashes) ->
-            handful.sumOf {
-                getMinimalDistance(dhashes, DHash(it))
-            }
-        }!!
+@SideEffectFree
+@OptIn(ExperimentalUnsignedTypes::class)
+fun calculateLikelyDuplicateForDHashArray(
+    needleDHashes: ULongArray,
+    haystack: Sequence<Pair<String, ULongArray>>,
+): IdWithDistance? {
+    // we randomly pick a handful of hashes from our candidate.
+    val handful = ULongArray(100) { needleDHashes.random() }
+    // we find the global minimum: which of the other library entries has the lowest cumulative distance?
 
-        val cumulativeDistance = handful.sumOf {
-            getMinimalDistance(mostLikelyDuplicate.second, DHash(it))
+    val mostLikelyDuplicate = haystack.minByOrNull { (_, haystackElemHashes) ->
+        handful.sumOf {
+            getMinimalDistance(haystackElemHashes, DHash(it))
         }
-        return IdWithDistance(mostLikelyDuplicate.first, cumulativeDistance)
+    }!!
+
+    val cumulativeDistance = handful.sumOf {
+        getMinimalDistance(mostLikelyDuplicate.second, DHash(it))
     }
+    return IdWithDistance(mostLikelyDuplicate.first, cumulativeDistance)
 }
