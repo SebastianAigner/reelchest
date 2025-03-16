@@ -82,14 +82,14 @@ fun calculateLikelyDuplicateForDHashArray(
     // we randomly pick a handful of hashes from our candidate.
     val someNeedleHashes = ULongArray(100) { needleDHashes.random() }
     // we find the global minimum: which of the other library entries has the lowest cumulative distance?
-    val moDup = findEntryWithLowestCumulativeDistance(someNeedleHashes, haystack)
+    val moDup = findHaystackIdWithLowestCumulativeDistance(someNeedleHashes, haystack)
     return IdWithDistance(moDup.first, moDup.second)
 }
 
 // baseline: 1.85 seconds.
 // this implementation: 1.36 seconds.
 @OptIn(ExperimentalUnsignedTypes::class)
-fun findEntryWithLowestCumulativeDistance(
+fun findHaystackIdWithLowestCumulativeDistance(
     needleHashes: ULongArray,
     haystack: List<Pair<String, ULongArray>>,
 ): Pair<String, Int> {
