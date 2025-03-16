@@ -2,9 +2,8 @@ package io.sebi.storage
 
 import io.sebi.config.AppConfig
 import io.sebi.library.MediaLibraryEntry
+import io.sebi.utils.ReaderWriterLock
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
@@ -14,9 +13,7 @@ import java.sql.DriverManager
 
 class JdbcSqliteMetadataStorage : MetadataStorage {
     private val logger = LoggerFactory.getLogger(JdbcSqliteMetadataStorage::class.java)
-    private val mutex = Mutex()
-    private val roomEmpty = Mutex()
-    private var readers = 0
+    private val readerWriterLock = ReaderWriterLock()
 
     private val sqliteConfig = SQLiteConfig().apply {
         enforceForeignKeys(true)
@@ -99,28 +96,10 @@ class JdbcSqliteMetadataStorage : MetadataStorage {
         }
     }
 
-    // Reader/Writer lock implementation
-    private suspend inline fun <T> withReaderLock(criticalSection: () -> T): T {
-        mutex.withLock {
-            readers++
-            if (readers == 1)
-                roomEmpty.lock()
-        }
-        try {
-            return criticalSection()
-        } finally {
-            mutex.withLock {
-                readers--
-                if (readers == 0) {
-                    roomEmpty.unlock()
-                }
-            }
-        }
-    }
 
     override suspend fun storeMetadata(id: String, metadata: MediaLibraryEntry) {
         withContext(Dispatchers.IO) {
-            roomEmpty.withLock {
+            readerWriterLock.withWriterLock {
                 connection.prepareStatement(
                     """
                     INSERT OR REPLACE INTO media_library_entries(
@@ -162,13 +141,13 @@ class JdbcSqliteMetadataStorage : MetadataStorage {
 
     override suspend fun retrieveMetadata(id: String): MetadataResult {
         return withContext(Dispatchers.IO) {
-            withReaderLock {
+            readerWriterLock.withReaderLock {
                 // Check for tombstone first
                 connection.prepareStatement("SELECT 1 FROM media_library_tombstones WHERE unique_id = ?").use { stmt ->
                     stmt.setString(1, id)
                     stmt.executeQuery().use { rs ->
                         if (rs.next()) {
-                            return@withContext MetadataResult.Tombstone
+                            return@withReaderLock MetadataResult.Tombstone
                         }
                     }
                 }
@@ -199,19 +178,18 @@ class JdbcSqliteMetadataStorage : MetadataStorage {
                                 hits = rs.getInt("hits"),
                                 markedForDeletion = rs.getInt("marked_for_deletion") == 1
                             )
-                            return@withContext MetadataResult.Just(entry)
+                            return@withReaderLock MetadataResult.Just(entry)
                         }
                     }
                 }
-
-                return@withContext MetadataResult.None
+                return@withReaderLock MetadataResult.None
             }
         }
     }
 
     override suspend fun deleteMetadata(id: String) {
         withContext(Dispatchers.IO) {
-            roomEmpty.withLock {
+            readerWriterLock.withWriterLock {
                 connection.prepareStatement("DELETE FROM media_library_entries WHERE unique_id = ?").use { stmt ->
                     stmt.setString(1, id)
                     stmt.executeUpdate()
@@ -227,7 +205,7 @@ class JdbcSqliteMetadataStorage : MetadataStorage {
 
     override suspend fun listAllMetadata(): List<MediaLibraryEntry> {
         return withContext(Dispatchers.IO) {
-            withReaderLock {
+            readerWriterLock.withReaderLock {
                 connection.prepareStatement(
                     """
                     SELECT e.*, CASE 
@@ -265,7 +243,7 @@ class JdbcSqliteMetadataStorage : MetadataStorage {
 
     override suspend fun addDuplicate(id: String, dup: String, dist: Int) {
         withContext(Dispatchers.IO) {
-            roomEmpty.withLock {
+            readerWriterLock.withWriterLock {
                 connection.prepareStatement(
                     """
                     INSERT INTO duplicates (src_id, dup_id, distance)
@@ -283,7 +261,7 @@ class JdbcSqliteMetadataStorage : MetadataStorage {
 
     override suspend fun getDuplicate(id: String): Duplicates? {
         return withContext(Dispatchers.IO) {
-            withReaderLock {
+            readerWriterLock.withReaderLock {
                 connection.prepareStatement(
                     """
                     SELECT * FROM duplicates

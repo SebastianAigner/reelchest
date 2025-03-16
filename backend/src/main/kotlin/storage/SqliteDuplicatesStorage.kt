@@ -1,9 +1,8 @@
 package io.sebi.storage
 
 import io.sebi.config.AppConfig
+import io.sebi.utils.ReaderWriterLock
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 import org.sqlite.SQLiteConfig
@@ -16,9 +15,7 @@ import java.sql.DriverManager
  */
 class SqliteDuplicatesStorage : DuplicatesStorage {
     private val logger = LoggerFactory.getLogger(SqliteDuplicatesStorage::class.java)
-    private val mutex = Mutex()
-    private val roomEmpty = Mutex()
-    private var readers = 0
+    private val readerWriterLock = ReaderWriterLock()
 
     private val sqliteConfig = SQLiteConfig().apply {
         enforceForeignKeys(true)
@@ -61,28 +58,10 @@ class SqliteDuplicatesStorage : DuplicatesStorage {
         }
     }
 
-    // Reader/Writer lock implementation
-    private suspend inline fun <T> withReaderLock(criticalSection: () -> T): T {
-        mutex.withLock {
-            readers++
-            if (readers == 1)
-                roomEmpty.lock()
-        }
-        try {
-            return criticalSection()
-        } finally {
-            mutex.withLock {
-                readers--
-                if (readers == 0) {
-                    roomEmpty.unlock()
-                }
-            }
-        }
-    }
 
     override suspend fun createDuplicate(sourceId: String, destinationId: String, distance: Int) {
         withContext(Dispatchers.IO) {
-            roomEmpty.withLock {
+            readerWriterLock.withWriterLock {
                 connection.prepareStatement(
                     """
                     INSERT INTO duplicates (src_id, dup_id, distance)
@@ -100,7 +79,7 @@ class SqliteDuplicatesStorage : DuplicatesStorage {
 
     override suspend fun getDuplicateBySourceId(sourceId: String): Duplicates? {
         return withContext(Dispatchers.IO) {
-            withReaderLock {
+            readerWriterLock.withReaderLock {
                 connection.prepareStatement(
                     """
                     SELECT * FROM duplicates
@@ -128,7 +107,7 @@ class SqliteDuplicatesStorage : DuplicatesStorage {
 
     override suspend fun getAllDuplicatesForSourceId(sourceId: String): List<Duplicates> {
         return withContext(Dispatchers.IO) {
-            withReaderLock {
+            readerWriterLock.withReaderLock {
                 connection.prepareStatement(
                     """
                     SELECT * FROM duplicates
@@ -157,7 +136,7 @@ class SqliteDuplicatesStorage : DuplicatesStorage {
 
     override suspend fun updateDuplicate(sourceId: String, destinationId: String, distance: Int): Boolean {
         return withContext(Dispatchers.IO) {
-            roomEmpty.withLock {
+            readerWriterLock.withWriterLock {
                 connection.prepareStatement(
                     """
                     UPDATE duplicates
@@ -176,7 +155,7 @@ class SqliteDuplicatesStorage : DuplicatesStorage {
 
     override suspend fun deleteDuplicate(sourceId: String, destinationId: String): Boolean {
         return withContext(Dispatchers.IO) {
-            roomEmpty.withLock {
+            readerWriterLock.withWriterLock {
                 connection.prepareStatement(
                     """
                     DELETE FROM duplicates
@@ -193,7 +172,7 @@ class SqliteDuplicatesStorage : DuplicatesStorage {
 
     override suspend fun deleteAllDuplicatesForSourceId(sourceId: String): Int {
         return withContext(Dispatchers.IO) {
-            roomEmpty.withLock {
+            readerWriterLock.withWriterLock {
                 connection.prepareStatement(
                     """
                     DELETE FROM duplicates
