@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.io.File
+import kotlin.time.Duration
 import kotlin.time.measureTimedValue
 
 private const val INPUT_DIR = "all-remote-hashes"
@@ -21,12 +22,18 @@ fun main() {
     val inputDir = File(INPUT_DIR)
     val (index, time) = measureTimedValue { buildIndexForDirectory(inputDir) }
     println("Built index in $time.")
-    val allDuplicates = MutableStateFlow(emptyList<Duplicates>())
+    val allDuplicates = MutableStateFlow(emptyList<DuplicatesWithTiming>())
     runBlocking {
         launch {
             while (true) {
                 delay(1000)
-                println("Checked ${allDuplicates.value.size} duplicates so far.")
+                println(
+                    "Checked ${allDuplicates.value.size} duplicates so far (average time: ${
+                        allDuplicates.value
+                            .map { it.time }
+                            .average()
+                    }s)."
+                )
             }
         }
         findDuplicatesForEntireIndex(index).collect {
@@ -35,8 +42,13 @@ fun main() {
     }
 }
 
+fun List<Duration>.average(): Duration {
+    if (this.isEmpty()) return Duration.ZERO
+    return this.fold(Duration.ZERO) { acc, d -> acc + d } / this.size
+}
+
 @OptIn(ExperimentalUnsignedTypes::class)
-fun findDuplicatesForEntireIndex(index: Map<String, ULongArray>): Flow<Duplicates> {
+fun findDuplicatesForEntireIndex(index: Map<String, ULongArray>): Flow<DuplicatesWithTiming> {
     return channelFlow {
         for (entry in index.entries) {
             val (needle, needleHashes) = entry
@@ -49,11 +61,18 @@ fun findDuplicatesForEntireIndex(index: Map<String, ULongArray>): Flow<Duplicate
                     )
                 }
                 println("Calculated most likely duplicate (dist=${likelyDup.distance} for $needle in $dupTime.")
-                send(Duplicates(needle, likelyDup.id, likelyDup.distance.toLong()))
+                send(
+                    DuplicatesWithTiming(
+                        Duplicates(needle, likelyDup.id, likelyDup.distance.toLong()),
+                        dupTime
+                    )
+                )
             }
         }
     }
 }
+
+data class DuplicatesWithTiming(val duplicates: Duplicates, val time: Duration)
 
 @OptIn(ExperimentalUnsignedTypes::class)
 fun buildIndexForDirectory(dir: File): Map<String, ULongArray> {
