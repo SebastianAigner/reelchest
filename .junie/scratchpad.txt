@@ -1,0 +1,22 @@
+The Ktor API on the backend is currently heavily intertwined with the logic of the application. Let's change that.
+Refactor the API entirely, so that `Api.kt` contains the full tree of all API routes, but moves all the actual processing logic into separate files (that can, for now, still stay as part of the `api` package).
+
+The final structure I am looking for looks roughly like this:
+
+route("api") {
+    get("config", ::configRouteHandler)
+    route("mediaLibrary") {
+        get(::getMediaLibraryEntriesHandler)
+        route("duplicates") {
+            get("{id}", ::getDuplicatesByIdHandler)
+        }
+        // ...
+    }
+}
+
+and so on. The essential part is that there should be a strict separation between the API route definition and the API route handlers. API route handlers should not be in the same file as the API route definitions (but still in the `api` package.)
+
+Let me be very explicit: All handler functions MUST be called via function references, i.e. `::fooHandler`. No other calling conventions are permitted.
+
+Make this change consistently for the entire backend API, until the entire API is represented as a single DSL tree inside `Api.kt`. Make sure you run tests to ensure that nothing broke.
+You are only done with the task once there is a strict separation between route definitions and handlers, and all tests pass.
