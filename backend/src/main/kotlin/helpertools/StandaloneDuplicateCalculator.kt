@@ -4,8 +4,12 @@ import io.sebi.duplicatecalculator.calculateLikelyDuplicateForDHashArray
 import io.sebi.phash.readULongs
 import io.sebi.storage.Duplicates
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.io.File
 import kotlin.time.measureTimedValue
@@ -17,11 +21,27 @@ fun main() {
     val inputDir = File(INPUT_DIR)
     val (index, time) = measureTimedValue { buildIndexForDirectory(inputDir) }
     println("Built index in $time.")
-    val duplicates = runBlocking {
-        index.entries.take(100).map {
-            val (needle, needleHashes) = it
+    val allDuplicates = MutableStateFlow(emptyList<Duplicates>())
+    runBlocking {
+        launch {
+            while (true) {
+                delay(1000)
+                println("Checked ${allDuplicates.value.size} duplicates so far.")
+            }
+        }
+        findDuplicatesForEntireIndex(index).collect {
+            allDuplicates.update { oldList -> oldList + it }
+        }
+    }
+}
+
+@OptIn(ExperimentalUnsignedTypes::class)
+fun findDuplicatesForEntireIndex(index: Map<String, ULongArray>): Flow<Duplicates> {
+    return channelFlow {
+        for (entry in index.entries) {
+            val (needle, needleHashes) = entry
             val seq = index.asSequence().filter { it.key != needle }.map { it.toPair() }
-            async(Dispatchers.Default) {
+            launch(Dispatchers.Default) {
                 val (likelyDup, dupTime) = measureTimedValue {
                     calculateLikelyDuplicateForDHashArray(
                         needleHashes,
@@ -29,11 +49,10 @@ fun main() {
                     )
                 }
                 println("Calculated most likely duplicate (dist=${likelyDup.distance} for $needle in $dupTime.")
-                Duplicates(needle, likelyDup.id, likelyDup.distance.toLong())
+                send(Duplicates(needle, likelyDup.id, likelyDup.distance.toLong()))
             }
-        }.awaitAll()
+        }
     }
-    println(duplicates.sortedBy { it.distance }.joinToString("\n"))
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
