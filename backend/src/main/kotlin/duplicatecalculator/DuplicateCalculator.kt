@@ -79,16 +79,16 @@ fun calculateLikelyDuplicateForDHashArray(
     haystack: Sequence<Pair<String, ULongArray>>,
 ): IdWithDistance {
     // we randomly pick a handful of hashes from our candidate.
-    val handful = ULongArray(100) { needleDHashes.random() }
+    val someNeedleHashes = ULongArray(100) { needleDHashes.random() }
     // we find the global minimum: which of the other library entries has the lowest cumulative distance?
 
     val mostLikelyDuplicate = haystack.minByOrNull { (_, haystackElemHashes) ->
-        handful.sumOf {
+        someNeedleHashes.sumOf {
             getMinimalDistance(haystackElemHashes, DHash(it))
         }
     }!!
 
-    val cumulativeDistance = handful.sumOf {
+    val cumulativeDistance = someNeedleHashes.sumOf {
         getMinimalDistance(mostLikelyDuplicate.second, DHash(it))
     }
     return IdWithDistance(mostLikelyDuplicate.first, cumulativeDistance)
