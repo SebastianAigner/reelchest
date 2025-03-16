@@ -1,140 +1,116 @@
 package io.sebi.api
 
-import dz.jtsgen.annotations.TypeScript
-import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.sebi.analytics.analyticsApi
+import io.sebi.analytics.AnalyticsDatabase
+import io.sebi.api.handlers.*
 import io.sebi.downloader.DownloadManager
-import io.sebi.downloader.DownloadTaskDTO
-import io.sebi.duplicatecalculator.DuplicateCalculator
 import io.sebi.library.MediaLibrary
-import io.sebi.library.MediaLibraryEntry
-import io.sebi.library.withAutoTags
-import io.sebi.logging.InMemoryAppender
-import io.sebi.logging.getSerializableRepresentation
-import io.sebi.network.NetworkManager
 import io.sebi.storage.MetadataStorage
 import io.sebi.subtitles.subtitleApi
 import io.sebi.tagging.Tagger
 import io.sebi.urldecoder.UrlDecoder
-import kotlinx.serialization.Serializable
 import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("Api")
 
-val hashingInProgress = mutableListOf<MediaLibraryEntry>()
+
+private val analyticsDatabase = AnalyticsDatabase()
+
 
 
 @OptIn(ExperimentalStdlibApi::class)
 fun Route.api(
     urlDecoder: UrlDecoder,
     mediaLibrary: MediaLibrary,
-    duplicateCalculator: DuplicateCalculator,
     downloadManager: DownloadManager,
-    networkManager: NetworkManager,
     tagger: Tagger,
     metadataStorage: MetadataStorage,
 ) {
 
     route("api") {
-        analyticsApi()
-        get("config") {
-            val env = application.environment
-            val config = env.config
-
-            call.respond(
-                ApplicationConfig(
-                    development = application.developmentMode, // TODO: Ktor 3 API?
-                    port = config.property("ktor.deployment.port").getString().toInt(),
-                    shutdownUrl = config.property("ktor.deployment.shutdown.url").getString(),
-                    connectionGroupSize = config
-                        .propertyOrNull("ktor.deployment.connectionGroupSize")
-                        ?.getString()
-                        ?.toInt() ?: Runtime.getRuntime().availableProcessors() * 2,
-                    workerGroupSize = config.propertyOrNull("ktor.deployment.workerGroupSize")?.getString()?.toInt()
-                        ?: Runtime.getRuntime().availableProcessors() * 2,
-                    callGroupSize = config.propertyOrNull("ktor.deployment.callGroupSize")?.getString()?.toInt()
-                        ?: Runtime.getRuntime().availableProcessors() * 2,
-                    shutdownGracePeriod = config
-                        .propertyOrNull("ktor.deployment.shutdownGracePeriod")
-                        ?.getString()
-                        ?.toLong() ?: 1000,
-                    shutdownTimeout = config.propertyOrNull("ktor.deployment.shutdownTimeout")?.getString()?.toLong()
-                        ?: 5000,
-                    requestQueueLimit = config.propertyOrNull("ktor.deployment.requestQueueLimit")?.getString()?.toInt()
-                        ?: 16,
-                    runningLimit = config.propertyOrNull("ktor.deployment.runningLimit")?.getString()?.toInt() ?: 10,
-                    responseWriteTimeoutSeconds = config
-                        .propertyOrNull("ktor.deployment.responseWriteTimeoutSeconds")
-                        ?.getString()
-                        ?.toInt() ?: 10
-                )
-            )
+        route("analytics") {
+            post("event") { logEventHandler(analyticsDatabase) }
         }
-        get("log") {
-            call.respond(InMemoryAppender.getSerializableRepresentation())
-        }
-        get("status") {
-            call.respond(
-                downloadManager.workerStatus()
-            )
-        }
+        get("config", RoutingContext::configHandler)
+        get("log", RoutingContext::logHandler)
+        get("status") { statusHandler(downloadManager) }
         route("mediaLibrary") {
-            mediaLibraryApi(mediaLibrary, duplicateCalculator, tagger, downloadManager, metadataStorage)
-            mediaLibraryDebugApi(mediaLibrary)
+            get { getMediaLibraryEntriesHandler(mediaLibrary, tagger) }
+            post("isUrlInLibraryOrProgress") { isUrlInLibraryOrProgressHandler(downloadManager, mediaLibrary) }
+
+            route("duplicates") {
+                get("{id}") { getDuplicateByIdHandler(metadataStorage) }
+                post("{id}") { createDuplicateHandler(metadataStorage) }
+                get { listAllDuplicatesHandler() }
+            }
+
+            route("hashing") {
+                get("unhashed") { getUnhashedEntryHandler(mediaLibrary, hashingInProgress) }
+                get("/all") { getAllHashesHandler(mediaLibrary) }
+                post("/hash/{id}") { saveHashHandler(metadataStorage) }
+            }
+
+            route("{id}") {
+                get { getMediaLibraryEntryByIdHandler(metadataStorage, tagger) }
+                post { updateMediaLibraryEntryHandler(metadataStorage) }
+
+                route("storedDuplicate") {
+                    get { retrieveStoredDuplicateHandler(metadataStorage) }
+                    post { createStoredDuplicateHandler(metadataStorage) }
+                }
+
+                get("hash.{format}") { getHashByFormatHandler(metadataStorage) }
+                get("hit") { recordHitHandler(metadataStorage) }
+                get("media-information") { getMediaInformationHandler(metadataStorage) }
+                get("thumbnails") { getThumbnailsHandler(mediaLibrary) }
+                get("possibleDuplicates") { findPossibleDuplicatesHandler() }
+                get("randomThumb") { getRandomThumbHandler(mediaLibrary) }
+            }
+
+            route("debug") {
+                get("missing-thumbnails") { getMissingThumbnailsHandler(mediaLibrary) }
+                get("regenerate-thumbnail/{id}") { regenerateThumbnailHandler(mediaLibrary) }
+            }
         }
 
-        downloaderApi(downloadManager, urlDecoder, mediaLibrary::addCompletedDownload)
-        searcherApi()
+        route("download") {
+            post { downloadUrlHandler(downloadManager, urlDecoder, mediaLibrary::addCompletedDownload) }
+        }
+        route("queue") {
+            get { getDownloadQueueHandler(downloadManager) }
+        }
+        route("problematic") {
+            get { getProblematicDownloadsHandler(downloadManager) }
+            post("remove") { removeProblematicDownloadHandler(downloadManager) }
+            post("retry") {
+                retryProblematicDownloadHandler(
+                    downloadManager,
+                    urlDecoder,
+                    mediaLibrary::addCompletedDownload
+                )
+            }
+        }
+        val searchServiceProvider = RPCSearchServiceProvider()
+        route("search") {
+            post("{provider}") { searchHandler(searchServiceProvider) }
+        }
+        route("searchers") {
+            get { getSearchersHandler(searchServiceProvider) }
+        }
         subtitleApi()
 
         route("autotags") {
-            get("/popular") {
-                val popular =
-                    mediaLibrary
-                        .getEntries()
-                        .flatMap { it.withAutoTags(tagger).autoTags }
-                        .groupingBy { it }
-                        .eachCount()
-                        .toList()
-                        .sortedByDescending { it.second }
-                call.respond(popular)
-            }
+            get("/popular") { popularAutotagsHandler(mediaLibrary, tagger) }
         }
-        userConfigReadWriteEndpoint("autotags")
-        userConfigReadWriteEndpoint("queries")
+        route("autotags") {
+            get { userConfigReadHandler("autotags") }
+            post { userConfigWriteHandler("autotags") }
+        }
+        route("queries") {
+            get { userConfigReadHandler("queries") }
+            post { userConfigWriteHandler("queries") }
+        }
     }
 }
 
 
-@TypeScript
-@Serializable
-data class MetadatedDownloadQueueEntry(val queueEntry: DownloadTaskDTO, val title: String)
-
-@TypeScript
-@Serializable
-data class SearchRequest(val term: String, val offset: Int = 0)
-
-@TypeScript
-@Serializable
-data class UrlRequest(val url: String)
-
-@TypeScript
-@Serializable
-data class DuplicateResponse(val entryId: String, val possibleDuplicateId: String, val distance: Int)
-
-@TypeScript
-@Serializable
-data class ApplicationConfig(
-    val development: Boolean,
-    val port: Int,
-    val shutdownUrl: String,
-    val connectionGroupSize: Int,
-    val workerGroupSize: Int,
-    val callGroupSize: Int,
-    val shutdownGracePeriod: Long,
-    val shutdownTimeout: Long,
-    val requestQueueLimit: Int,
-    val runningLimit: Int,
-    val responseWriteTimeoutSeconds: Int,
-)

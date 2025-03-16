@@ -135,7 +135,7 @@ fun Application.module() {
     installPlugins()
 
     routing {
-        api(urlDecoder, mediaLibrary, duplicateCalculator, downloadManager, networkManager, tagger, metadataStorage)
+        api(urlDecoder, mediaLibrary, downloadManager, tagger, metadataStorage)
         addDownload(intoMediaLibraryDownloader)
         addUpload(mediaLibrary)
         decryptEndpointRoute(urlDecoder)
