@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "vite build",
     "clean": "rm -rf .cache dist",
-    "build-dev": "NODE_ENV=development parcel build src/index.html --no-minify"
+    "build-dev": "NODE_ENV=development parcel build src/index.html --no-minify",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/react": "^16.9.51",

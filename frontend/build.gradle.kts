@@ -32,21 +32,19 @@ tasks.register<Copy>("build") {
     from("dist") {  // Vite's output directory
         include("**/*")  // Include all files and subdirectories
     }
-    into(project.buildDir.resolve("web"))  // Destination directory
+    into(layout.buildDirectory.dir("web").get().asFile)
 }
 
 // Create a configuration to expose frontend artifacts
 configurations.create("frontendOutput")
 artifacts {
-    add("frontendOutput", project.buildDir.resolve("web")) {
+    add("frontendOutput", layout.buildDirectory.dir("web").get().asFile) {
         builtBy("build")
     }
 }
 
-println(tasks.toList())
-
 tasks.register<Delete>("clean") {
     delete("node_modules")
     delete("dist")
-    delete("build")
+    delete(layout.buildDirectory)  // Updated to use layout.buildDirectory
 }
