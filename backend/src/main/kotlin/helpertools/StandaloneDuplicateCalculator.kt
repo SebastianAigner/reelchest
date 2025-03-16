@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.json.Json
 import java.io.File
 import kotlin.time.Duration
@@ -41,8 +43,15 @@ fun main() {
                 )
             }
         }
+        val semaphore = Semaphore(4)
         findDuplicatesForEntireIndex(index).collect {
             allDuplicates.update { oldList -> oldList + it }
+            launch {
+                semaphore.withPermit {
+                    val resp = communicateDuplicateToRemote("", it.duplicate)
+                    println(resp)
+                }
+            }
         }
         inspector.cancelAndJoin()
     }
@@ -55,20 +64,19 @@ fun main() {
  * @param remoteAddress The address of the remote server, e.g. "http://example.com:8080"
  * @param duplicate The duplicate to send
  */
-suspend fun communicateDuplicateToRemote(remoteAddress: String, duplicate: Duplicates) {
-    val client = HttpClient(CIO)
-
+val client = HttpClient(CIO)
+suspend fun communicateDuplicateToRemote(remoteAddress: String, duplicate: Duplicates): HttpStatusCode {
     try {
         val duplicateDto = DuplicatesDTO.from(duplicate)
-
         val response = client.post("$remoteAddress/api/mediaLibrary/${duplicate.src_id}/storedDuplicate") {
             contentType(ContentType.Application.Json)
             setBody(Json.encodeToString(DuplicatesDTO.serializer(), duplicateDto))
         }
+        return response.status
     } catch (e: Exception) {
         e.printStackTrace()
+        return HttpStatusCode.fromValue(418)
     } finally {
-        client.close()
     }
 }
 
