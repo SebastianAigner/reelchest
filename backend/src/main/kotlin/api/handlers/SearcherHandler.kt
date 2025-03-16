@@ -4,8 +4,8 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.sebi.api.RPCSearchServiceProvider
 import io.sebi.api.dtos.SearchRequest
+import io.sebi.search.RPCSearchServiceProvider
 import io.sebi.search.SearchResult
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withTimeoutOrNull

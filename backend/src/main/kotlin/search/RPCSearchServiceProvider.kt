@@ -1,4 +1,4 @@
-package io.sebi.api
+package io.sebi.search
 
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
@@ -40,7 +40,7 @@ class RPCSearchServiceProvider() {
             }
             val service = client.rpc {
                 url(
-                    Json
+                    Json.Default
                         .decodeFromString<JsonArray>(File("userConfig/wsSearcher.json").readText())
                         .first().jsonPrimitive.content
                 ) // TODO: Allow more than one searcher
@@ -56,4 +56,3 @@ class RPCSearchServiceProvider() {
         }
     }
 }
-

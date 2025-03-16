@@ -7,7 +7,7 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
-import io.sebi.api.DuplicatesDTO
+import io.sebi.api.dtos.DuplicatesDTO
 import io.sebi.library.MediaLibraryEntry
 import io.sebi.library.id
 import io.sebi.phash.DHash

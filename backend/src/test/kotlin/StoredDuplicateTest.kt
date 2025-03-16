@@ -5,7 +5,7 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
-import io.sebi.api.DuplicatesDTO
+import io.sebi.api.dtos.DuplicatesDTO
 import io.sebi.config.AppConfig
 import io.sebi.module
 import kotlinx.coroutines.delay

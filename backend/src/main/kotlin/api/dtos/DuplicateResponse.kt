@@ -1,4 +1,4 @@
-package io.sebi.api
+package io.sebi.api.dtos
 
 import dz.jtsgen.annotations.TypeScript
 import kotlinx.serialization.Serializable

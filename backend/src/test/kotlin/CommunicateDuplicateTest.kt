@@ -10,7 +10,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.sebi.WithTestServerTestBase
-import io.sebi.api.DuplicatesDTO
+import io.sebi.api.dtos.DuplicatesDTO
 import io.sebi.helpertools.communicateDuplicateToRemote
 import io.sebi.storage.Duplicates
 import kotlinx.coroutines.delay

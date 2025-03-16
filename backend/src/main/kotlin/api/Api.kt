@@ -5,6 +5,7 @@ import io.sebi.analytics.AnalyticsDatabase
 import io.sebi.api.handlers.*
 import io.sebi.downloader.DownloadManager
 import io.sebi.library.MediaLibrary
+import io.sebi.search.RPCSearchServiceProvider
 import io.sebi.storage.MetadataStorage
 import io.sebi.tagging.Tagger
 import io.sebi.urldecoder.UrlDecoder

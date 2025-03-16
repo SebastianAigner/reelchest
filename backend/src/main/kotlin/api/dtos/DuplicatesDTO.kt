@@ -1,4 +1,4 @@
-package io.sebi.api
+package io.sebi.api.dtos
 
 import dz.jtsgen.annotations.TypeScript
 import io.sebi.storage.Duplicates
@@ -11,6 +11,7 @@ data class DuplicatesDTO(
     val dup_id: String,
     val distance: Long,
 )
+
 
 fun DuplicatesDTO.Companion.from(d: Duplicates): DuplicatesDTO {
     return DuplicatesDTO(d.src_id, d.dup_id, d.distance)

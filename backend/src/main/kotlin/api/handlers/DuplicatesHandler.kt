@@ -4,8 +4,8 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.sebi.api.DuplicateResponse
-import io.sebi.api.DuplicatesDTO
+import io.sebi.api.dtos.DuplicateResponse
+import io.sebi.api.dtos.DuplicatesDTO
 import io.sebi.storage.Duplicates
 import io.sebi.storage.MetadataStorage
 

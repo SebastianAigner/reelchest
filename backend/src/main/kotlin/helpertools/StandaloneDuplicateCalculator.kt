@@ -4,8 +4,8 @@ import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import io.sebi.api.DuplicatesDTO
-import io.sebi.api.from
+import io.sebi.api.dtos.DuplicatesDTO
+import io.sebi.api.dtos.from
 import io.sebi.duplicatecalculator.calculateLikelyDuplicateForDHashArray
 import io.sebi.phash.readULongs
 import io.sebi.storage.Duplicates
