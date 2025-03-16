@@ -126,6 +126,29 @@ fun Route.mediaLibraryApi(
             )
             call.respond(if (auto) individual.withAutoTags(tagger) else individual)
         }
+        route("storedDuplicate") {
+            get {
+                val id = call.parameters["id"]!!
+                // Check if the media library entry exists
+                val individual = metadataStorage.retrieveMetadata(id).just() ?: return@get call.respond(
+                    HttpStatusCode.NotFound
+                )
+                val duplicate = metadataStorage.getDuplicate(id) ?: return@get call.respond(
+                    HttpStatusCode.NotFound
+                )
+                call.respond(DuplicatesDTO.from(duplicate))
+            }
+            post {
+                val id = call.parameters["id"]!!
+                // Check if the media library entry exists
+                val individual = metadataStorage.retrieveMetadata(id).just() ?: return@post call.respond(
+                    HttpStatusCode.NotFound
+                )
+                val ddto = call.receive<DuplicatesDTO>()
+                metadataStorage.addDuplicate(id, ddto.dup_id, ddto.distance.toInt())
+                call.respond(HttpStatusCode.OK)
+            }
+        }
         get("hash.{format}") {
             val id = call.parameters["id"]!!
             val format = call.parameters["format"]!!

@@ -106,4 +106,5 @@ class ServerIntegrationTest {
             assertTrue(responseText.contains("\"name\""), "Response should contain media entries with names")
         }
     }
+
 }
