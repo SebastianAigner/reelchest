@@ -29,7 +29,10 @@ import io.sebi.urldecoder.UrlDecoder
 import io.sebi.urldecoder.UrlDecoderImpl
 import io.sebi.utils.ReaderWriterLock
 import io.sebi.utils.creationTime
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
@@ -141,20 +144,6 @@ fun Application.module() {
         progressList(downloadManager)
         setupStaticPaths()
     }
-
-    launch {
-        warmApi(environment, this)
-    }
-}
-
-fun warmApi(env: ApplicationEnvironment, scope: CoroutineScope) {
-//    embeddedServer.monitor.subscribe(ServerReady) {
-//        val conns = env.connectors.first()
-//        val url = "http://${conns.host}:${conns.port}/api/mediaLibrary"
-//        scope.launch {
-//            HttpClient().get(url)
-//        }
-//    }
 }
 
 fun Routing.setupStaticPaths() {
