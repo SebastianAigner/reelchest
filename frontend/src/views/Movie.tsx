@@ -15,6 +15,7 @@ import EdiText from "react-editext";
 import {INPUT_ACTION, SimpleInputField} from "../components/SimpleInputField";
 import {AutoTaggedMediaLibraryEntry} from "../models/AutoTaggedMediaLibraryEntry";
 import * as _ from "underscore";
+import {MediaLibraryCard} from "../components/MediaLibraryCard";
 import DuplicatesDTO = IoSebi.DuplicatesDTO;
 
 function MediaInfoSection({id}: { id: string }) {
@@ -40,17 +41,17 @@ interface Identifiable {
 //     [P in keyof T]?: T[P];
 // }
 
-function useStoredDuplicates(id) {
-    const endpoint = `/api/mediaLibrary/${id}/duplicates`
+function useStoredDuplicate(id: string) {
+    const endpoint = `/api/mediaLibrary/${id}/storedDuplicate`
     const {data, error} = useSWR<DuplicatesDTO>(endpoint, fetcher)
     return {
-        entry: data,
+        duplicate: data,
         isLoading: !error && !data,
         isError: error,
     }
 }
 
-function useMediaLibraryEntry(id) {
+function useMediaLibraryEntry(id: string) {
     const endpoint = `/api/mediaLibrary/${id}?auto=true`
     const {data, error} = useSWR<AutoTaggedMediaLibraryEntry>(endpoint, fetcher)
     return {
@@ -70,7 +71,7 @@ function useMediaLibraryEntry(id) {
     }
 }
 
-let throttledApiEvent = _.throttle((id, time) => {
+let throttledApiEvent = _.throttle((id: string, time: number) => {
     console.log("running throttled function!")
     axios.post("/api/event", {
         id: id,
@@ -87,8 +88,10 @@ export function Movie() {
     const {entry, isLoading, isError, mutateEntry} = useMediaLibraryEntry(id);
     const {getNextVideo, getCurrentVideo, peekNextVideo} = usePlaylist();
     const history = useHistory();
-    const {data, error} = useSWR<MediaLibraryEntry>(`/api/mediaLibrary/${id}/possibleDuplicates`, fetcher)
-    const {entry: storedDuplicates, isError: storedDuplicatesError} = useStoredDuplicates(id)
+    const {duplicate, isLoading: isDuplicateLoading, isError: isDuplicateError} = useStoredDuplicate(id)
+    const {entry: duplicateEntry, isLoading: isDuplicateEntryLoading} = useMediaLibraryEntry(duplicate?.dup_id || id)
+    // Only use duplicateEntry if duplicate exists and IDs match
+    const validDuplicateEntry = duplicate && duplicateEntry && duplicate.dup_id === duplicateEntry.mediaLibraryEntry.id ? duplicateEntry : null
     if (!entry) return <>
         <p>loading...</p>
     </>
@@ -191,21 +194,14 @@ export function Movie() {
                 </TagBadge>
             </li>
         })}
-        <SubHeading>Duplicate detection</SubHeading>
-        {data &&
+        {duplicate && validDuplicateEntry && (
             <>
-                <p>{data.id}</p>
-                <p>{data.name}</p>
-                <p><Link to={`/movie/${data.id}`}>Link here.</Link></p>
+                <SubHeading>Duplicate</SubHeading>
+                <div>
+                    <p>Distance: {duplicate.distance}</p>
+                    <MediaLibraryCard item={validDuplicateEntry.mediaLibraryEntry}/>
+                </div>
             </>
-        }
-        <SubHeading>Persisted duplicate detection</SubHeading>
-        {
-            storedDuplicates &&
-            <>
-                <p>{storedDuplicates.dup_id}</p>
-                <p>{storedDuplicates.distance}</p>
-            </>
-        }
+        )}
     </>
 }

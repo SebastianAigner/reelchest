@@ -18,7 +18,7 @@ function useDupData() {
     }
 }
 
-function useMediaLibraryEntry(id) {
+function useMediaLibraryEntry(id: string) {
     const endpoint = `/api/mediaLibrary/${id}?auto=true`
     const {data, error} = useSWR<AutoTaggedMediaLibraryEntry>(endpoint, fetcher)
     return {
