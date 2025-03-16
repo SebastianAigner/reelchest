@@ -17,7 +17,6 @@ private val logger = LoggerFactory.getLogger("Api")
 private val analyticsDatabase = AnalyticsDatabase()
 
 
-
 @OptIn(ExperimentalStdlibApi::class)
 fun Route.api(
     urlDecoder: UrlDecoder,
@@ -112,6 +111,13 @@ fun Route.api(
         route("queries") {
             get { userConfigReadHandler("queries") }
             post { userConfigWriteHandler("queries") }
+        }
+
+        route("file") {
+            get("{filename}") { serveFileByFilenameHandler(mediaLibrary) }
+        }
+        route("video") {
+            get("{id}") { serveVideoByIdHandler(mediaLibrary) }
         }
     }
 }

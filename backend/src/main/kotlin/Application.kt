@@ -22,7 +22,10 @@ import io.sebi.storage.JdbcSqliteMetadataStorage
 import io.sebi.storage.MetadataStorage
 import io.sebi.tagging.CachingTagger
 import io.sebi.tagging.Tagger
-import io.sebi.ui.*
+import io.sebi.ui.addDownload
+import io.sebi.ui.addUpload
+import io.sebi.ui.decryptEndpointRoute
+import io.sebi.ui.progressList
 import io.sebi.urldecoder.UrlDecoder
 import io.sebi.urldecoder.UrlDecoderImpl
 import io.sebi.utils.ReaderWriterLock
@@ -138,7 +141,6 @@ fun Application.module() {
         addUpload(mediaLibrary)
         decryptEndpointRoute(urlDecoder)
         progressList(downloadManager)
-        videoPlayer(mediaLibrary)
         setupStaticPaths()
     }
 
