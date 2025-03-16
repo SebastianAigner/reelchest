@@ -37,7 +37,7 @@ ktor-bom = { group = "io.ktor", name = "ktor-bom", version.ref = "ktor" }
 
 kotlin-stdlib-jdk8 = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib-jdk8", version.ref = "kotlin" }
 
-logback-classic = "ch.qos.logback:logback-classic:1.4.8"
+logback-classic = "ch.qos.logback:logback-classic:1.4.12"
 
 ktor-server-netty = { module = "io.ktor:ktor-server-netty" }
 
