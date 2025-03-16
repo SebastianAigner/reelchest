@@ -77,7 +77,7 @@ class DuplicateCalculator(val mediaLibrary: MediaLibrary) {
 fun calculateLikelyDuplicateForDHashArray(
     needleDHashes: ULongArray,
     haystack: Sequence<Pair<String, ULongArray>>,
-): IdWithDistance? {
+): IdWithDistance {
     // we randomly pick a handful of hashes from our candidate.
     val handful = ULongArray(100) { needleDHashes.random() }
     // we find the global minimum: which of the other library entries has the lowest cumulative distance?
