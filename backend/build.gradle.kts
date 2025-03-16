@@ -73,7 +73,6 @@ dependencies {
     compileOnly(libs.jtsgen.annotations)
     compileOnly(libs.jtsgen.processor)
 //    kapt(libs.jtsgen.processor)
-    implementation(libs.minio)
     implementation(libs.kotlin.retry)
 
     implementation(libs.sqlite.jdbc)
