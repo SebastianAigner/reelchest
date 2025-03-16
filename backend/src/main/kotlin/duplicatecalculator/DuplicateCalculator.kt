@@ -33,7 +33,7 @@ class DuplicateCalculator(val mediaLibrary: MediaLibrary) {
                         val duplicateForEntry =
                             calculateLikelyDuplicateForDHashArray(
                                 it.getDHashesFromDisk() ?: return@async null,
-                                getRestLibrary(it.id)
+                                getRestLibrary(it.id).toList()
                             )
                         it to (duplicateForEntry ?: return@async null)
                     }
@@ -77,7 +77,7 @@ class DuplicateCalculator(val mediaLibrary: MediaLibrary) {
 @OptIn(ExperimentalUnsignedTypes::class)
 fun calculateLikelyDuplicateForDHashArray(
     needleDHashes: ULongArray,
-    haystack: Sequence<Pair<String, ULongArray>>,
+    haystack: List<Pair<String, ULongArray>>,
 ): IdWithDistance {
     // we randomly pick a handful of hashes from our candidate.
     val someNeedleHashes = ULongArray(100) { needleDHashes.random() }
@@ -91,7 +91,7 @@ fun calculateLikelyDuplicateForDHashArray(
 @OptIn(ExperimentalUnsignedTypes::class)
 fun findEntryWithLowestCumulativeDistance(
     needleHashes: ULongArray,
-    haystack: Sequence<Pair<String, ULongArray>>,
+    haystack: List<Pair<String, ULongArray>>,
 ): Pair<String, Int> {
     var smallestSeenDistance = Int.MAX_VALUE
     var idOfSmallestSeen = ""

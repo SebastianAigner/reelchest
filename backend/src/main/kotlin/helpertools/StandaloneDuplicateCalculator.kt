@@ -51,12 +51,12 @@ fun findDuplicatesForEntireIndex(index: Map<String, ULongArray>): Flow<Duplicate
     return channelFlow {
         for (entry in index.entries) {
             val (needle, needleHashes) = entry
-            val seq = index.asSequence().filter { it.key != needle }.map { it.toPair() }
+            val haystack = index.filter { it.key != needle }.map { it.toPair() }
             launch(Dispatchers.Default) {
                 val (likelyDup, dupTime) = measureTimedValue {
                     calculateLikelyDuplicateForDHashArray(
                         needleHashes,
-                        seq
+                        haystack
                     )
                 }
                 println("Calculated $needle <==(dist=${likelyDup.distance})==> ${likelyDup.id} in $dupTime.")
