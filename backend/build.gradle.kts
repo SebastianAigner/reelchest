@@ -48,12 +48,8 @@ dependencies {
     implementation(libs.ktor.server.content.negotiation)
     implementation(libs.ktor.client.apache)
 
-    implementation(libs.jsoup)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.serialization.json)
-
-    implementation(libs.quartz)
-    implementation(libs.reflections)
 
     implementation(libs.ktor.server.status.pages)
     implementation(libs.ktor.server.cors)
@@ -68,17 +64,12 @@ dependencies {
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
 
-//    testImplementation(libs.ktor.server.tests)
     testImplementation(kotlin("test"))
     compileOnly(libs.jtsgen.annotations)
     compileOnly(libs.jtsgen.processor)
-//    kapt(libs.jtsgen.processor)
     implementation(libs.kotlin.retry)
 
     implementation(libs.sqlite.jdbc)
-
-    ksp(libs.kotlin.inject.compiler.ksp)
-    implementation(libs.kotlin.inject.runtime)
 
     // Client API
     implementation(libs.kotlinx.rpc.krpc.client)
@@ -91,14 +82,10 @@ dependencies {
     implementation(libs.kotlinx.rpc.krpc.ktor.client)
     implementation(libs.kotlinx.rpc.krpc.ktor.server)
 
-    // Ktor API
-    implementation(libs.ktor.client.cio.jvm)
-    implementation(libs.ktor.server.netty.jvm)
     implementation(libs.kotlinx.datetime)
 
     // USearch Vector Search
     implementation(libs.usearch)
-
 }
 
 // Configure frontend input
