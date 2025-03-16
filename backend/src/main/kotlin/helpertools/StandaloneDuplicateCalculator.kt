@@ -3,6 +3,7 @@ package io.sebi.helpertools
 import io.sebi.duplicatecalculator.calculateLikelyDuplicateForDHashArray
 import io.sebi.phash.readULongs
 import io.sebi.storage.Duplicates
+import io.sebi.utils.average
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,7 +30,7 @@ fun main() {
                         allDuplicates.value
                             .map { it.time }
                             .average()
-                    }s)."
+                    })."
                 )
             }
         }
@@ -41,10 +42,6 @@ fun main() {
     println(allDuplicates.value.sortedBy { it.duplicates.distance }.take(100).joinToString("\n"))
 }
 
-fun List<Duration>.average(): Duration {
-    if (this.isEmpty()) return Duration.ZERO
-    return this.fold(Duration.ZERO) { acc, d -> acc + d } / this.size
-}
 
 @OptIn(ExperimentalUnsignedTypes::class)
 fun findDuplicatesForEntireIndex(index: Map<String, ULongArray>): Flow<DuplicatesWithTiming> {
