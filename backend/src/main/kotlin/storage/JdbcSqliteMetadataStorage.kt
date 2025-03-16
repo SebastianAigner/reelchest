@@ -11,9 +11,10 @@ import org.sqlite.SQLiteConfig
 import java.sql.Connection
 import java.sql.DriverManager
 
-class JdbcSqliteMetadataStorage : MetadataStorage {
+class JdbcSqliteMetadataStorage(
+    private val readerWriterLock: ReaderWriterLock,
+) : MetadataStorage {
     private val logger = LoggerFactory.getLogger(JdbcSqliteMetadataStorage::class.java)
-    private val readerWriterLock = ReaderWriterLock()
 
     private val sqliteConfig = SQLiteConfig().apply {
         enforceForeignKeys(true)

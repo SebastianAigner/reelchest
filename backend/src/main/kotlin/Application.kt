@@ -26,6 +26,7 @@ import io.sebi.tagging.Tagger
 import io.sebi.ui.*
 import io.sebi.urldecoder.UrlDecoder
 import io.sebi.urldecoder.UrlDecoderImpl
+import io.sebi.utils.ReaderWriterLock
 import io.sebi.utils.creationTime
 import kotlinx.coroutines.*
 import org.slf4j.Logger
@@ -95,7 +96,9 @@ fun Application.module() {
     val urlDecoder: UrlDecoder = UrlDecoderImpl(networkManager)
     val videoStorage = FileSystemVideoStorage()
 
-    val metadataStorage: MetadataStorage = JdbcSqliteMetadataStorage()
+    // Create a shared ReaderWriterLock for SQLite database access
+    val sqliteReaderWriterLock = ReaderWriterLock()
+    val metadataStorage: MetadataStorage = JdbcSqliteMetadataStorage(sqliteReaderWriterLock)
     runBlocking { removeFilesScheduledForDeletion(metadataStorage, videoStorage) }
     val mediaLibrary = MediaLibrary(urlDecoder, videoStorage, metadataStorage)
     val downloadManager: DownloadManager =
