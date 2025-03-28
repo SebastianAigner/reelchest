@@ -45,6 +45,16 @@ class MultiplexingMetadataStorage(val metadataStorages: List<MetadataStorage>, v
     override suspend fun getDuplicate(id: String): Duplicates? {
         TODO("Not yet implemented")
     }
+
+    override suspend fun getTopDuplicates(limit: Int): List<Duplicates> {
+        // Get top duplicates from all storages
+        val allDuplicates = metadataStorages.flatMap { it.getTopDuplicates(limit) }
+
+        // Sort by distance and take the top 'limit' entries
+        return allDuplicates
+            .sortedBy { it.distance }
+            .take(limit)
+    }
 }
 
 fun <T> allEqual(list: List<T>): Boolean {

@@ -4,7 +4,6 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.sebi.api.dtos.DuplicateResponse
 import io.sebi.api.dtos.DuplicatesDTO
 import io.sebi.storage.Duplicates
 import io.sebi.storage.MetadataStorage
@@ -38,8 +37,10 @@ suspend fun RoutingContext.createDuplicateHandler(metadataStorage: MetadataStora
 /**
  * Handler for getting all duplicates.
  */
-suspend fun RoutingContext.listAllDuplicatesHandler() {
-    call.respond(emptyList<DuplicateResponse>())
+suspend fun RoutingContext.listAllDuplicatesHandler(metadataStorage: MetadataStorage) {
+    val topDuplicates = metadataStorage.getTopDuplicates(Integer.MAX_VALUE)
+    val duplicatesDTO = topDuplicates.map { DuplicatesDTO.from(it) }
+    call.respond(duplicatesDTO)
 }
 
 /**

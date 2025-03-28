@@ -287,4 +287,33 @@ class JdbcSqliteMetadataStorage(
             }
         }
     }
+
+    override suspend fun getTopDuplicates(limit: Int): List<Duplicates> {
+        return withContext(Dispatchers.IO) {
+            readerWriterLock.withReaderLock {
+                connection.prepareStatement(
+                    """
+                    SELECT * FROM duplicates
+                    ORDER BY distance ASC
+                    LIMIT ?
+                    """
+                ).use { stmt ->
+                    stmt.setInt(1, limit)
+                    stmt.executeQuery().use { rs ->
+                        val results = mutableListOf<Duplicates>()
+                        while (rs.next()) {
+                            results.add(
+                                Duplicates(
+                                    src_id = rs.getString("src_id"),
+                                    dup_id = rs.getString("dup_id"),
+                                    distance = rs.getLong("distance")
+                                )
+                            )
+                        }
+                        results
+                    }
+                }
+            }
+        }
+    }
 }

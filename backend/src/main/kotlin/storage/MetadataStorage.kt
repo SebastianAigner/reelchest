@@ -25,4 +25,5 @@ interface MetadataStorage {
     suspend fun listAllMetadata(): List<MediaLibraryEntry>
     suspend fun addDuplicate(id: String, dup: String, dist: Int)
     suspend fun getDuplicate(id: String): Duplicates?
+    suspend fun getTopDuplicates(limit: Int = 100): List<Duplicates>
 }

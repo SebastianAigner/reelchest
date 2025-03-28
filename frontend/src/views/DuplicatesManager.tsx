@@ -8,105 +8,113 @@ import {AutoTaggedMediaLibraryEntry} from "../models/AutoTaggedMediaLibraryEntry
 import {MainHeading} from "../components/Typography";
 import {commonStyles} from "../styles/common";
 import DuplicateResponse = IoSebi.DuplicateResponse;
+import DuplicatesDTO = IoSebi.DuplicatesDTO;
 
 /**
- * Hook to fetch duplicate data from the API using storedDuplicate endpoint
+ * Hook to fetch all media library entries
  */
-function useDuplicatesData() {
-    // First get all media library entries
-    const {
-        data: mediaLibraryEntries,
-        error: mediaLibraryError
-    } = useSWR<Array<MediaLibraryEntry>>(`/api/mediaLibrary`, fetcher);
-
-    // Then for each entry, get its stored duplicate if it exists
-    const duplicatesPromises = mediaLibraryEntries?.map(entry => {
-        return fetch(`/api/mediaLibrary/${entry.id}/storedDuplicate`)
-            .then(response => {
-                if (!response.ok) {
-                    if (response.status === 404) {
-                        // No duplicate found for this entry, which is fine
-                        return null;
-                    }
-                    throw new Error(`Error fetching duplicate for ${entry.id}: ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(duplicateDTO => {
-                if (!duplicateDTO) return null;
-
-                // Now fetch the duplicate entry details
-                return fetch(`/api/mediaLibrary/${duplicateDTO.dup_id}?auto=true`)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`Error fetching duplicate entry ${duplicateDTO.dup_id}: ${response.statusText}`);
-                        }
-                        return response.json();
-                    })
-                    .then(duplicateEntry => {
-                        if (!duplicateEntry) return null;
-
-                        // Create a DuplicateResponse-like object
-                        return {
-                            entry: entry,
-                            possibleDuplicate: duplicateEntry.mediaLibraryEntry,
-                            distance: duplicateDTO.distance
-                        };
-                    });
-            })
-            .catch(error => {
-                console.error(error);
-                return null;
-            });
-    }) || [];
-
-    // Use SWR's useSWR to handle the promises
-    const {data: duplicatesData, error: duplicatesError} = useSWR(
-        mediaLibraryEntries ? 'storedDuplicates' : null,
-        async () => {
-            const results = await Promise.all(duplicatesPromises);
-            return results.filter(Boolean); // Remove null entries
-        },
-        {
-            revalidateOnFocus: false,
-            dedupingInterval: 10000,
-            refreshInterval: 30000
-        }
+function useAllMediaLibraryEntries() {
+    const {data, error} = useSWR<Array<AutoTaggedMediaLibraryEntry>>(
+        "/api/mediaLibrary?auto=true",
+        fetcher
     );
 
-    // Sort duplicates by distance (lowest first) and take top 50
-    const sortedDuplicates = duplicatesData
-        ? [...duplicatesData].sort((a, b) => (a?.distance || 0) - (b?.distance || 0)).slice(0, 50)
-        : [];
-
     return {
-        duplicates: sortedDuplicates,
-        isLoading: (!mediaLibraryError && !mediaLibraryEntries) || (!duplicatesError && !duplicatesData),
-        isError: mediaLibraryError || duplicatesError
+        mediaLibraryEntries: data || [],
+        isLoading: !error && !data,
+        isError: error,
     };
 }
 
 /**
- * Hook to fetch and update a media library entry
+ * Hook to fetch duplicate data from the API using the top duplicates endpoint
+ * Optimized to reduce the number of API calls by fetching all media library entries at once
  */
-function useMediaLibraryEntry(id: string) {
-    const endpoint = `/api/mediaLibrary/${id}?auto=true`;
-    const {data, error} = useSWR<AutoTaggedMediaLibraryEntry>(endpoint, fetcher);
+function useDuplicatesData() {
+    // Fetch all media library entries in a single request
+    const {mediaLibraryEntries, isLoading: isLoadingEntries, isError: isErrorEntries} = useAllMediaLibraryEntries();
+
+    // Fetch the top duplicates
+    const {
+        data: duplicateDTOs,
+        error: duplicatesError
+    } = useSWR<Array<DuplicatesDTO>>('/api/mediaLibrary/duplicates', fetcher, {
+        revalidateOnFocus: false,
+        dedupingInterval: 10000,
+        refreshInterval: 30000
+    });
+
+    // Create a map of media library entries by ID for quick lookup
+    const entriesMap = React.useMemo(() => {
+        const map = new Map<string, MediaLibraryEntry>();
+        mediaLibraryEntries.forEach(entry => {
+            map.set(entry.mediaLibraryEntry.id, entry.mediaLibraryEntry);
+        });
+        return map;
+    }, [mediaLibraryEntries]);
+
+    // Join the duplicates with their corresponding media library entries
+    const duplicatesData = React.useMemo(() => {
+        if (!duplicateDTOs || !mediaLibraryEntries.length) return [];
+
+        // Create duplicate responses by joining the data
+        const duplicatesWithEntries = duplicateDTOs.map(dto => {
+            const sourceEntry = entriesMap.get(dto.src_id);
+            const dupEntry = entriesMap.get(dto.dup_id);
+
+            if (!sourceEntry || !dupEntry) return null;
+
+            return {
+                entry: sourceEntry,
+                possibleDuplicate: dupEntry,
+                distance: dto.distance
+            };
+        }).filter(Boolean) as DuplicateResponse[];
+
+        // Filter out repeated duplicates (where src:A, dst:B and src:B, dst:A exist)
+        const seenPairs = new Set<string>();
+        return duplicatesWithEntries.filter(duplicate => {
+            // Create a unique identifier for each pair, sorted to handle both directions
+            const ids = [duplicate.entry.id, duplicate.possibleDuplicate.id].sort();
+            const pairKey = ids.join('-');
+
+            // If we've seen this pair before, filter it out
+            if (seenPairs.has(pairKey)) {
+                return false;
+            }
+
+            // Otherwise, add it to the set and keep it
+            seenPairs.add(pairKey);
+            return true;
+        });
+    }, [duplicateDTOs, mediaLibraryEntries, entriesMap]);
 
     return {
-        entry: data,
-        isLoading: !error && !data,
-        isError: error,
-        mutateEntry: (newEntry: Partial<MediaLibraryEntry>) => {
-            if (!data?.mediaLibraryEntry) return;
-            const joinedEntry = {...data.mediaLibraryEntry, ...newEntry} as MediaLibraryEntry;
+        duplicates: duplicatesData || [],
+        isLoading: (!duplicatesError && !duplicateDTOs) || isLoadingEntries,
+        isError: duplicatesError || isErrorEntries
+    };
+}
 
-            axios.post(`/api/mediaLibrary/${id}`, joinedEntry).then(() => {
-                mutate(endpoint);
-                // Also mutate the duplicates list to reflect changes
-                mutate('storedDuplicates');
-            });
-        }
+/**
+ * Hook to update a media library entry
+ */
+function useMediaLibraryEntryUpdate(entry: MediaLibraryEntry) {
+    const id = entry.id;
+    const endpoint = `/api/mediaLibrary/${id}?auto=true`;
+
+    const updateEntry = (newEntry: Partial<MediaLibraryEntry>) => {
+        const joinedEntry = {...entry, ...newEntry} as MediaLibraryEntry;
+
+        axios.post(`/api/mediaLibrary/${id}`, joinedEntry).then(() => {
+            // Only mutate the necessary endpoints
+            mutate(endpoint);
+            mutate('/api/mediaLibrary?auto=true');
+        });
+    };
+
+    return {
+        updateEntry
     };
 }
 
@@ -114,12 +122,9 @@ function useMediaLibraryEntry(id: string) {
  * Component to display a single duplicate pair
  */
 function DuplicatePair({duplicate}: { duplicate: DuplicateResponse }) {
-    const {entry, isLoading, isError, mutateEntry} = useMediaLibraryEntry(duplicate.possibleDuplicate.id);
+    const {updateEntry} = useMediaLibraryEntryUpdate(duplicate.possibleDuplicate);
 
-    if (isLoading) return <div>Loading...</div>;
-    if (isError) return <div>Error loading duplicate</div>;
-
-    const isMarkedForDeletion = entry?.mediaLibraryEntry.markedForDeletion || false;
+    const isMarkedForDeletion = duplicate.possibleDuplicate.markedForDeletion || false;
 
     return (
         <div className="w-full mb-8 p-4 bg-white dark:bg-gray-800 rounded-xl shadow-md">
@@ -148,7 +153,7 @@ function DuplicatePair({duplicate}: { duplicate: DuplicateResponse }) {
                 <div className="flex flex-col items-center">
                     <button
                         className={`${commonStyles.greenButton} ${isMarkedForDeletion ? 'bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700' : ''}`}
-                        onClick={() => mutateEntry({markedForDeletion: !isMarkedForDeletion})}
+                        onClick={() => updateEntry({markedForDeletion: !isMarkedForDeletion})}
                     >
                         {isMarkedForDeletion ? "Unmark" : "Mark to Delete"}
                     </button>

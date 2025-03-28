@@ -46,4 +46,8 @@ class FileSystemMetadataStorage : MetadataStorage {
     override suspend fun getDuplicate(id: String): Duplicates? {
         TODO("Not yet implemented")
     }
+
+    override suspend fun getTopDuplicates(limit: Int): List<Duplicates> {
+        TODO("Not yet implemented")
+    }
 }

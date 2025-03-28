@@ -13,10 +13,10 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class BackendTest {
-
     @Test
     fun testHelloWorld() = runBlocking {
-        val server = embeddedServer(Netty, port = 0, host = "localhost") {
+
+    val server = embeddedServer(Netty, port = 0, host = "localhost") {
             routing {
                 get("/") {
                     call.respondText("Hello, World!")

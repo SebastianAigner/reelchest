@@ -39,7 +39,7 @@ fun Route.api(
             route("duplicates") {
                 get("{id}") { getDuplicateByIdHandler(metadataStorage) }
                 post("{id}") { createDuplicateHandler(metadataStorage) }
-                get { listAllDuplicatesHandler() }
+                get { listAllDuplicatesHandler(metadataStorage) }
             }
 
             route("hashing") {
