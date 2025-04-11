@@ -137,7 +137,7 @@ fun Application.module() {
     // Launch a coroutine that generates thumbnails once per hour
     launch(Dispatchers.IO) {
         // Initial delay before first thumbnail generation
-        delay(3.minutes)
+        delay(1.hours)
 
         // Continuously generate thumbnails once per hour
         while (true) {
