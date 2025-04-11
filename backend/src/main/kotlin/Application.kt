@@ -9,6 +9,7 @@ import io.sebi.downloader.DownloadManager
 import io.sebi.downloader.DownloadManagerImpl
 import io.sebi.downloader.IntoMediaLibraryDownloader
 import io.sebi.ffmpeg.globalFfmpegMutex
+import io.sebi.heavymutex.HeavyMutex
 import io.sebi.library.MediaLibrary
 import io.sebi.library.MediaLibraryEntry
 import io.sebi.library.file
@@ -130,9 +131,24 @@ fun Application.module() {
 //        duplicateCalculator.calculateDuplicates()
 //    }
 
+    // Create a mutex for thumbnail generation to prevent overlapping processes
+    val thumbnailGenerationMutex = HeavyMutex("ThumbnailGenerationMutex")
+
+    // Launch a coroutine that generates thumbnails once per hour
     launch(Dispatchers.IO) {
-        delay(3.hours)
-        generateThumbnails(mediaLibrary)
+        // Initial delay before first thumbnail generation
+        delay(3.minutes)
+
+        // Continuously generate thumbnails once per hour
+        while (true) {
+            // Use the mutex to prevent overlapping thumbnail generation processes
+            thumbnailGenerationMutex.withLock {
+                generateThumbnails(mediaLibrary)
+            }
+
+            // Wait for 1 hour before next thumbnail generation
+            delay(1.hours)
+        }
     }
 
     installPlugins()
@@ -151,15 +167,25 @@ fun Routing.setupStaticPaths() {
     staticResources("/", "frontend")
 }
 
+/**
+ * Generates thumbnails for all media library entries.
+ * This function is called periodically (once per hour) and is protected by a mutex
+ * to prevent overlapping invocations, as thumbnail generation can take a long time.
+ */
 private suspend fun generateThumbnails(mediaLibrary: MediaLibrary) {
     val logger = LoggerFactory.getLogger("Thumbnail Generation")
-    logger.info("starting thumbnail generation")
+    logger.info("Starting thumbnail generation")
     mediaLibrary.getEntries().forEach { mediaLibraryEntry: MediaLibraryEntry ->
         createThumbnails(mediaLibraryEntry, logger)
     }
+    logger.info("Thumbnail generation completed")
 }
 
-// todo: you should be an ffmpeg task.
+/**
+ * Creates thumbnails for a specific media library entry.
+ * This function uses FFmpeg to generate thumbnails and is protected by the globalFfmpegMutex
+ * to ensure that only one FFmpeg process runs at a time.
+ */
 private suspend fun createThumbnails(mediaLibraryEntry: MediaLibraryEntry, logger: Logger) {
     globalFfmpegMutex.withLock {
         mediaLibraryEntry.file?.let {
