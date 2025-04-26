@@ -16,7 +16,7 @@ suspend fun RoutingContext.uploadHandler(mediaLibrary: MediaLibrary) {
     val logger = LoggerFactory.getLogger("UploadHandler")
     logger.info("Starting upload handler.")
     logger.info("Receiving multipart data...")
-    val multipart = call.receiveMultipart()
+    val multipart = call.receiveMultipart(formFieldLimit = Long.MAX_VALUE)
     logger.info("Done.")
     var lastUploadedId: String? = null
 
