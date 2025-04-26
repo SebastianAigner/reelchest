@@ -192,6 +192,9 @@ private suspend fun createThumbnails(mediaLibraryEntry: MediaLibraryEntry, logge
             logger.info("Generating thumbnail for ${mediaLibraryEntry.id}")
             if (it.parentFile?.list()?.none { it.startsWith("thumb") } == true) {
                 val proc = ProcessBuilder(
+                    "nice",
+                    "-n",
+                    "19",
                     "ffmpeg",
                     "-y",
                     "-i",

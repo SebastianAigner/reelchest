@@ -146,6 +146,9 @@ suspend fun generateThumbnails(
 suspend fun generateDHashes(videoFile: File) {
     globalFfmpegMutex.withLock {
         val proc = ProcessBuilder(
+            "nice",
+            "-n",
+            "19",
             "ffmpeg",
             "-y",
             "-i",
