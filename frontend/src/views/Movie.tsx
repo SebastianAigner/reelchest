@@ -1,6 +1,6 @@
 import {Link, useHistory, useLocation, useParams} from "react-router-dom";
 import * as React from "react";
-import {useState} from "react";
+import {useRef, useState} from "react";
 import {MediaLibraryEntry} from "../models/MediaLibraryEntry";
 import {MainHeading, SubHeading} from "../components/Typography";
 import {TagBadge} from "../components/TagBadge";
@@ -79,6 +79,93 @@ let throttledApiEvent = _.throttle((id: string, time: number) => {
     })
 }, 1000)
 
+function formatTime(seconds: number): string {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+function generateFfmpegCommand(id: string, markIn: number, markOut: number): string {
+    const startTime = formatTime(markIn);
+    const duration = formatTime(markOut - markIn);
+    const videoUrl = `${window.location.origin}/api/video/${id}.mp4`;
+    const outputName = `clip_${startTime.replace(/:/g, 'm')}_to_${formatTime(markOut).replace(/:/g, 'm')}.mp4`;
+    return `ffmpeg -ss ${startTime} -i "${videoUrl}" -t ${duration} -c copy ${outputName}`;
+}
+
+interface ClipMarkerProps {
+    videoRef: React.RefObject<HTMLVideoElement>;
+    id: string;
+    markIn: number | null;
+    markOut: number | null;
+    setMarkIn: (time: number | null) => void;
+    setMarkOut: (time: number | null) => void;
+}
+
+function ClipMarker({videoRef, id, markIn, markOut, setMarkIn, setMarkOut}: ClipMarkerProps) {
+    const [copied, setCopied] = useState(false);
+
+    const handleMarkIn = () => {
+        if (videoRef.current) {
+            setMarkIn(videoRef.current.currentTime);
+        }
+    };
+
+    const handleMarkOut = () => {
+        if (videoRef.current) {
+            setMarkOut(videoRef.current.currentTime);
+        }
+    };
+
+    const handleCopyCommand = async () => {
+        if (markIn !== null && markOut !== null && markOut > markIn) {
+            const command = generateFfmpegCommand(id, markIn, markOut);
+            await navigator.clipboard.writeText(command);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }
+    };
+
+    const canGenerateCommand = markIn !== null && markOut !== null && markOut > markIn;
+
+    return (
+        <div className="my-4 p-4 border-2 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
+            <SubHeading>Clip Maker</SubHeading>
+            <div className="flex flex-wrap gap-2 mb-3">
+                <StyledButton onClick={handleMarkIn}>
+                    Mark In
+                </StyledButton>
+                <StyledButton onClick={handleMarkOut}>
+                    Mark Out
+                </StyledButton>
+                <StyledButton
+                    onClick={handleCopyCommand}
+                    disabled={!canGenerateCommand}
+                >
+                    {copied ? 'Copied!' : 'Copy FFMPEG Command'}
+                </StyledButton>
+            </div>
+            <div className="text-sm dark:text-gray-300">
+                <p>In: {markIn !== null ? formatTime(markIn) : '--:--:--'}</p>
+                <p>Out: {markOut !== null ? formatTime(markOut) : '--:--:--'}</p>
+                {markIn !== null && markOut !== null && (
+                    <p>Duration: {markOut > markIn ? formatTime(markOut - markIn) : 'Invalid (Out must be after In)'}</p>
+                )}
+            </div>
+            {canGenerateCommand && (
+                <div className="mt-3">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Command:</p>
+                    <code
+                        className="block text-xs bg-gray-200 dark:bg-gray-900 p-2 rounded overflow-x-auto whitespace-pre-wrap break-all dark:text-gray-300">
+                        {generateFfmpegCommand(id, markIn, markOut)}
+                    </code>
+                </div>
+            )}
+        </div>
+    );
+}
+
 export function Movie() {
     const {id} = useParams<Identifiable>();
     const location = useLocation();
@@ -92,6 +179,9 @@ export function Movie() {
     const {entry: duplicateEntry, isLoading: isDuplicateEntryLoading} = useMediaLibraryEntry(duplicate?.dup_id || id)
     // Only use duplicateEntry if duplicate exists and IDs match
     const validDuplicateEntry = duplicate && duplicateEntry && duplicate.dup_id === duplicateEntry.mediaLibraryEntry.id ? duplicateEntry : null
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const [markIn, setMarkIn] = useState<number | null>(null);
+    const [markOut, setMarkOut] = useState<number | null>(null);
     if (!entry) return <>
         <p>loading...</p>
     </>
@@ -100,32 +190,43 @@ export function Movie() {
             mutateEntry({name: value})
         }}/></MainHeading>
         {showPlayer && (
-            <video
-                src={`/api/video/${id}`}
-                width={"500px"}
-                controls={true}
-                onEnded={(e) => {
-                    e.preventDefault();
-                    console.log("[DEBUG_LOG] Video ended, attempting to play next video");
-                    const video = e.target as HTMLVideoElement;
-                    video.pause();
-                    const nextVideo = getNextVideo();
-                    if (nextVideo) {
-                        console.log("[DEBUG_LOG] Found next video, navigating to:", nextVideo.mediaLibraryEntry.id);
-                        history.push(`/movie/${nextVideo.mediaLibraryEntry.id}?autoplay=true`);
-                    }
-                }}
-                autoPlay={queryParams.get("autoplay") === "true"}
-                onPlay={() => {
-                if (!clicked) {
-                    setClicked(true)
-                    axios.get(`/api/mediaLibrary/${id}/hit`)
-                }
-            }} onTimeUpdate={(event) => {
-                let time = event.currentTarget.currentTime;
-                console.log(`updating time! ${time}`);
-                throttledApiEvent(id, time);
-            }}/>
+            <>
+                <video
+                    ref={videoRef}
+                    src={`/api/video/${id}`}
+                    width={"500px"}
+                    controls={true}
+                    onEnded={(e) => {
+                        e.preventDefault();
+                        console.log("[DEBUG_LOG] Video ended, attempting to play next video");
+                        const video = e.target as HTMLVideoElement;
+                        video.pause();
+                        const nextVideo = getNextVideo();
+                        if (nextVideo) {
+                            console.log("[DEBUG_LOG] Found next video, navigating to:", nextVideo.mediaLibraryEntry.id);
+                            history.push(`/movie/${nextVideo.mediaLibraryEntry.id}?autoplay=true`);
+                        }
+                    }}
+                    autoPlay={queryParams.get("autoplay") === "true"}
+                    onPlay={() => {
+                        if (!clicked) {
+                            setClicked(true)
+                            axios.get(`/api/mediaLibrary/${id}/hit`)
+                        }
+                    }} onTimeUpdate={(event) => {
+                    let time = event.currentTarget.currentTime;
+                    console.log(`updating time! ${time}`);
+                    throttledApiEvent(id, time);
+                }}/>
+                <ClipMarker
+                    videoRef={videoRef}
+                    id={id}
+                    markIn={markIn}
+                    markOut={markOut}
+                    setMarkIn={setMarkIn}
+                    setMarkOut={setMarkOut}
+                />
+            </>
         )}
 
         {getCurrentVideo()?.mediaLibraryEntry.id === id && (
