@@ -136,7 +136,7 @@ const UptimeBadge: React.FC = () => {
 
 const FfmpegMutexIndicator: React.FC = () => {
     const {data} = useSWR<FfmpegMutexState>("/api/ffmpeg/mutex", fetcher, {
-        refreshInterval: 2000,
+        refreshInterval: 500,
     });
     const locked = data?.locked;
     const isUnknown = locked === undefined;
