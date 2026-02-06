@@ -71,6 +71,7 @@ dependencies {
     implementation(libs.kotlin.retry)
 
     implementation(libs.sqlite.jdbc)
+    implementation(libs.guava)
 
     // Client API
     implementation(libs.kotlinx.rpc.krpc.client)

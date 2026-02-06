@@ -92,6 +92,8 @@ kotlin-retry = "com.michael-bull.kotlin-retry:kotlin-retry:1.0.9"
 
 sqlite-jdbc = "org.xerial:sqlite-jdbc:3.49.1.0"
 
+guava = "com.google.guava:guava:33.2.1-jre"
+
 kotlinx-datetime = "org.jetbrains.kotlinx:kotlinx-datetime:0.6.1"
 
 kotlin-scripting-compiler-embeddable = { group = "org.jetbrains.kotlin", name = "kotlin-scripting-compiler-embeddable", version.ref = "kotlin" }

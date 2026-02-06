@@ -46,7 +46,10 @@ class DownloadManagerImpl(
         }
     }
 
-    override val queuedDownloads: SuspendingQueue<DownloadTask> = SuspendingQueue<DownloadTask>()
+    private val downloadScheduler = DomainDownloadScheduler()
+
+    override val queuedDownloads: Iterable<DownloadTask>
+        get() = downloadScheduler.pendingSnapshot()
     override val finishedDownloads: SuspendingQueue<CompletedDownloadTask> = SuspendingQueue<CompletedDownloadTask>()
     override val problematicDownloads: MutableList<ProblematicTask> = mutableListOf<ProblematicTask>()
     override val downloadsInProgress: List<DownloadTask>
@@ -77,7 +80,7 @@ class DownloadManagerImpl(
     }
 
     override fun downloadProgressForId(id: String): Double? {
-        queuedDownloads.firstOrNull { it.originUrl.shaHashed() == id }?.let {
+        downloadScheduler.pendingSnapshot().firstOrNull { it.originUrl.shaHashed() == id }?.let {
             return it.progress
         }
 
@@ -94,30 +97,33 @@ class DownloadManagerImpl(
 
     override suspend fun enqueueTask(d: DownloadTask, skipDuplicatesCheck: Boolean) {
         queueMutex.withLock {
-        if (skipDuplicatesCheck) {
-            logger.info("Adding job with skipped duplicates check.")
-            queuedDownloads.add(d)
-            return
-        }
+            if (skipDuplicatesCheck) {
+                logger.info("Adding job with skipped duplicates check.")
+                downloadScheduler.enqueue(d)
+                return
+            }
 
-        val abortConditions = listOf(queuedDownloads.any { it.originUrl == d.originUrl } to "duplicate download job",
-            workers.mapNotNull { it.currentTask }.any { it.originUrl == d.originUrl } to "download job in progress",
-            (runBlocking { metadataStorage.retrieveMetadata(d.originUrl.shaHashed()) } != MetadataResult.None) to "URL already in metadata storage")
+            val abortConditions = listOf(
+                downloadScheduler.pendingSnapshot().any { it.originUrl == d.originUrl } to "duplicate download job",
+                workers.mapNotNull { it.currentTask }.any { it.originUrl == d.originUrl } to "download job in progress",
+                (runBlocking { metadataStorage.retrieveMetadata(d.originUrl.shaHashed()) } != MetadataResult.None) to "URL already in metadata storage"
+            )
 
-        abortConditions.firstOrNull { it.first }?.let {
-            logger.info("Attempting to add ${it.second}, not adding to queue.")
-            return
-        }
+            abortConditions.firstOrNull { it.first }?.let {
+                logger.info("Attempting to add ${it.second}, not adding to queue.")
+                return
+            }
 
-        logger.info("Adding download job.")
-        queuedDownloads.add(d)
+            logger.info("Adding download job.")
+            downloadScheduler.enqueue(d)
         }
     }
 
     override fun persistQueue() {
         logger.info("Persisting queue..")
         val dtos =
-            queuedDownloads.map { DownloadTaskDTO.from(it) } + problematicDownloads.map { DownloadTaskDTO.from(it) }
+            downloadScheduler.pendingSnapshot().map { DownloadTaskDTO.from(it) } +
+                    problematicDownloads.map { DownloadTaskDTO.from(it) }
         val queueFile = File(AppConfig.userConfigPath, "queue.json")
         queueFile.parentFile?.mkdirs()
         queueFile.writeText(Json.encodeToString(dtos))
@@ -147,15 +153,17 @@ class DownloadManagerImpl(
     }
 
     private val workers = mutableListOf<DownloadWorker>()
-    private fun CoroutineScope.startWorkers(n: Int = 1) {
+    private fun CoroutineScope.startWorkers(n: Int = AppConfig.downloadParallelism) {
         repeat(n) {
             val newWorker = DownloadWorker(networkManager = networkManager, provideDownload = {
                 downloadStartGate.awaitPermit()
-                queuedDownloads.remove()
+                downloadScheduler.takeNext()
             }, id = it, onComplete = {
+                downloadScheduler.release(it.originUrl)
                 finishedDownloads.add(it)
             }, onError = { task, error ->
                 // eof, connection reset or other stuff.
+                scope.launch { downloadScheduler.release(task.originUrl) }
                 logger.error("Worker $it failed with $error, adding to problematic tasks.")
                 logger.error(error.stackTraceToString())
                 problematicDownloads.add(ProblematicTask(task.originUrl, error))

@@ -7,6 +7,7 @@ object AppConfig {
     private const val DEFAULT_MEDIA_LIBRARY_PATH = "mediaLibrary"
     private const val DEFAULT_DATABASE_PATH = "database/db.sqlite"
     private const val DEFAULT_DOWNLOADS_PATH = "downloads"
+    private const val DEFAULT_DOWNLOAD_PARALLELISM = 4
 
     private var overrides = emptyMap<String, String>()
 
@@ -21,6 +22,10 @@ object AppConfig {
 
     val downloadsPath: String
         get() = overrides["downloads"] ?: System.getenv("REELCHEST_DOWNLOADS_PATH") ?: DEFAULT_DOWNLOADS_PATH
+
+    val downloadParallelism: Int
+        get() = System.getenv("REELCHEST_DOWNLOAD_PARALLELISM")?.toIntOrNull()
+            ?: DEFAULT_DOWNLOAD_PARALLELISM
 
     val databaseUrl: String
         get() = "jdbc:sqlite:$databasePath"
