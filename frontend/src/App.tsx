@@ -36,7 +36,12 @@ const NavigationBar: React.FC = () => {
                     <Link to="/search" className={commonStyles.navLink}>Search</Link>
                 </div>
                 <div>
-                    <Link to="/mediaLibrary" className={commonStyles.navLink}>Media Library</Link>
+                    <Link to="/mediaLibrary" className={commonStyles.navLink}>
+                        <span className="inline-flex items-center gap-2">
+                            Media Library
+                            <FfmpegMutexIndicator/>
+                        </span>
+                    </Link>
                 </div>
                 <div>
                     <Link to="/downloads" className={commonStyles.navLink}>Downloads</Link>
@@ -84,6 +89,11 @@ type UptimeConfig = {
     startedAt?: number;
 };
 
+type FfmpegMutexState = {
+    locked: boolean;
+    lockedAt?: number;
+};
+
 function formatDuration(milliseconds: number): string {
     if (!Number.isFinite(milliseconds) || milliseconds <= 0) return "0s";
     const totalSeconds = Math.floor(milliseconds / 1000);
@@ -121,6 +131,29 @@ const UptimeBadge: React.FC = () => {
             className="pointer-events-none absolute bottom-2 right-2 text-[10px] font-mono text-gray-500 dark:text-gray-400">
             up: {duration}
         </div>
+    );
+};
+
+const FfmpegMutexIndicator: React.FC = () => {
+    const {data} = useSWR<FfmpegMutexState>("/api/ffmpeg/mutex", fetcher, {
+        refreshInterval: 2000,
+    });
+    const locked = data?.locked;
+    const isUnknown = locked === undefined;
+    const label = isUnknown ? "FFmpeg status unknown" : locked ? "FFmpeg busy" : "FFmpeg idle";
+    const dotClass = isUnknown
+        ? "bg-gray-400 dark:bg-gray-500"
+        : locked
+            ? "bg-red-500"
+            : "bg-green-500";
+
+    return (
+        <span
+            className={`inline-flex h-2.5 w-2.5 rounded-full ${dotClass}`}
+            role="status"
+            aria-label={label}
+            title={label}
+        />
     );
 };
 

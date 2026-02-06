@@ -82,6 +82,10 @@
         - `requestQueueLimit` - Maximum number of queued requests
         - `runningLimit` - Maximum number of running requests
         - `responseWriteTimeoutSeconds` - Timeout for writing responses
+- `GET /api/ffmpeg/mutex` - Get FFmpeg mutex status
+    - Returns:
+        - `locked` - Whether the global FFmpeg mutex is currently held
+        - `lockedAt` - Lock acquisition time (milliseconds since epoch), only when locked
 - `GET /api/log` - Get system logs
 - `GET /api/status` - Get worker status
 - `POST /api/isUrlInLibraryOrProgress` - Check if URL exists in library or is being processed

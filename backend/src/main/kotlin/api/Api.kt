@@ -32,6 +32,9 @@ fun Route.api(
         get("config", RoutingContext::configHandler)
         get("log", RoutingContext::logHandler)
         get("status") { statusHandler(downloadManager) }
+        route("ffmpeg") {
+            get("mutex") { ffmpegMutexHandler() }
+        }
         route("mediaLibrary") {
             get { getMediaLibraryEntriesHandler(mediaLibrary, tagger) }
             post("isUrlInLibraryOrProgress") { isUrlInLibraryOrProgressHandler(downloadManager, mediaLibrary) }
