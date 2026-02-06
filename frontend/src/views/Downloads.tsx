@@ -1,5 +1,5 @@
 import * as React from "react";
-import useSWR from "swr";
+import {useAbortableSWR} from "../hooks/useAbortableSWR";
 import {fetcher} from "../utils";
 import axios from "axios";
 import {MainHeading, SectionHeading} from "../components/Typography";
@@ -8,7 +8,7 @@ import MetadatedDownloadQueueEntry = IoSebi.MetadatedDownloadQueueEntry;
 import ProblematicTaskDTO = IoSebi.ProblematicTaskDTO;
 
 function useQueue() {
-    const {data, error} = useSWR<Array<MetadatedDownloadQueueEntry>>("/api/queue", fetcher, {refreshInterval: 1000})
+    const {data, error} = useAbortableSWR<Array<MetadatedDownloadQueueEntry>>("/api/queue", fetcher, {refreshInterval: 1000})
     return {
         queue: data,
         isLoading: !error && !data,
@@ -20,7 +20,7 @@ function useProblematic() {
     const {
         data,
         error
-    } = useSWR<Array<ProblematicTaskDTO>>("/api/problematic", fetcher, {refreshInterval: 1000})
+    } = useAbortableSWR<Array<ProblematicTaskDTO>>("/api/problematic", fetcher, {refreshInterval: 1000})
     return {
         queue: data,
         isLoading: !error && !data,

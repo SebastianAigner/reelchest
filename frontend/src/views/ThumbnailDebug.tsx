@@ -1,7 +1,8 @@
 import React, {memo, useEffect, useMemo, useState} from 'react';
 import {MediaLibraryEntry} from "../models/MediaLibraryEntry";
 import axios from "axios";
-import useSWR, {mutate} from "swr";
+import {mutate} from "swr";
+import {useAbortableSWR} from "../hooks/useAbortableSWR";
 import {fetcher} from "../utils";
 import {useMediaInfo} from "../hooks/useMediaInfo";
 import {AutoTaggedMediaLibraryEntry} from "../models/AutoTaggedMediaLibraryEntry";
@@ -9,7 +10,7 @@ import {VList} from 'virtua';
 
 function useMediaLibraryEntry(id: string) {
     const endpoint = `/api/mediaLibrary/${id}?auto=true`;
-    const {data, error} = useSWR<AutoTaggedMediaLibraryEntry>(endpoint, fetcher);
+    const {data, error} = useAbortableSWR<AutoTaggedMediaLibraryEntry>(endpoint, fetcher);
 
     return {
         entry: data,

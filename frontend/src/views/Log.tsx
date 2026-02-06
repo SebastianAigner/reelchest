@@ -1,12 +1,12 @@
 import * as React from "react";
-import useSWR from "swr";
+import {useAbortableSWR} from "../hooks/useAbortableSWR";
 import {fetcher} from "../utils";
 import {MainHeading} from "../components/Typography";
 import {commonStyles} from "../styles/common";
 import LogEntry = IoSebi.LogEntry;
 
 function useLog() {
-    const {data, error} = useSWR<Array<LogEntry>>(`/api/log`, fetcher, {refreshInterval: 1000})
+    const {data, error} = useAbortableSWR<Array<LogEntry>>(`/api/log`, fetcher, {refreshInterval: 1000})
     return {
         log: data,
         isLoading: !error && !data,

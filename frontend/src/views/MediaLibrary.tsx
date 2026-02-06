@@ -8,7 +8,7 @@ import {FlexGrow, ResponsiveGrid, ScrollableHStack} from "../components/Layout";
 import {StyledInput} from "../components/StyledInput";
 import {AutoTaggedMediaLibraryEntry} from "../models/AutoTaggedMediaLibraryEntry";
 import {usePlaylist} from "../context/PlaylistContext";
-import useSWR from "swr";
+import {useAbortableSWR} from "../hooks/useAbortableSWR";
 import {fetcher} from "../utils";
 import {VList} from "virtua";
 import {chunk} from "underscore";
@@ -20,7 +20,7 @@ interface MyPair {
 }
 
 function usePopularTags() {
-    const {data, error} = useSWR<Array<MyPair>>(`/api/autotags/popular`, fetcher)
+    const {data, error} = useAbortableSWR<Array<MyPair>>(`/api/autotags/popular`, fetcher)
     return {
         popTags: data,
         isLoading: !error && !data,
@@ -30,7 +30,7 @@ function usePopularTags() {
 
 
 function useMediaLibraryEntries() {
-    const {data, error} = useSWR<Array<AutoTaggedMediaLibraryEntry>>(
+    const {data, error} = useAbortableSWR<Array<AutoTaggedMediaLibraryEntry>>(
         "/api/mediaLibrary?auto=true",
         fetcher
     );

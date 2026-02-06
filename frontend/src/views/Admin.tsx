@@ -1,5 +1,5 @@
 import * as React from "react";
-import useSWR from "swr";
+import {useAbortableSWR} from "../hooks/useAbortableSWR";
 import {fetcher} from "../utils";
 import {MainHeading, SectionHeading} from "../components/Typography";
 import {commonStyles} from "../styles/common";
@@ -7,7 +7,7 @@ import {AutoTaggedMediaLibraryEntry} from "../models/AutoTaggedMediaLibraryEntry
 import {StyledButton} from "../components/StyledButton";
 
 function useMediaLibraryEntries() {
-    const {data, error} = useSWR<Array<AutoTaggedMediaLibraryEntry>>(
+    const {data, error} = useAbortableSWR<Array<AutoTaggedMediaLibraryEntry>>(
         "/api/mediaLibrary?auto=true",
         fetcher
     );
@@ -20,7 +20,7 @@ function useMediaLibraryEntries() {
 }
 
 function useDiskUsage() {
-    const {data, error} = useSWR<{
+    const {data, error} = useAbortableSWR<{
         path: string;
         totalBytes: number;
         freeBytes: number;
@@ -39,7 +39,7 @@ type ApplicationConfig = {
 };
 
 function useApplicationConfig() {
-    const {data, error} = useSWR<ApplicationConfig>("/api/config", fetcher);
+    const {data, error} = useAbortableSWR<ApplicationConfig>("/api/config", fetcher);
 
     return {
         config: data,

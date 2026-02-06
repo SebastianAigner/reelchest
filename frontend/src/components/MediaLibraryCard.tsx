@@ -1,6 +1,6 @@
 import {MediaLibraryEntry} from "../models/MediaLibraryEntry";
 import * as React from "react";
-import {useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {LazyLoadImage} from "react-lazy-load-image-component";
 import axios from "axios";
 import {Link} from "react-router-dom";
@@ -16,31 +16,65 @@ export function MediaLibraryCard({item}: { item: MediaLibraryEntry }) {
     const [showingVideo, setShowingVideo] = useState(false)
     const {ref, inView} = useInView({threshold: 0.1});
     const {isAudio} = useMediaInfo(item.id, inView)
+    const hitAbortRef = useRef<AbortController | null>(null);
+    const mediaElementRef = useRef<HTMLMediaElement | null>(null);
+
+    useEffect(() => {
+        if (inView) return;
+        hitAbortRef.current?.abort();
+        hitAbortRef.current = null;
+        if (mediaElementRef.current) {
+            mediaElementRef.current.pause();
+            mediaElementRef.current.removeAttribute("src");
+            mediaElementRef.current.load();
+        }
+    }, [inView]);
+
+    useEffect(() => {
+        return () => {
+            hitAbortRef.current?.abort();
+        };
+    }, []);
     let playerOrPicture
     if (!showingVideo) {
         playerOrPicture =
             <LazyLoadImage
                 className={commonStyles.cardImage}
                 effect={"opacity"}
-                src={isAudio ? audioPlaceholder : `/api/mediaLibrary/${item.id}/randomThumb`}
+                src={inView ? (isAudio ? audioPlaceholder : `/api/mediaLibrary/${item.id}/randomThumb`) : ""}
                 onError={(e: any) => {
+                    if (!e.target.getAttribute("src")) return;
                     e.target.src = placeholderImage;
                 }}
                 onClick={() => {
                     setShowingVideo(true)
-                    axios.get(`/api/mediaLibrary/${item.id}/hit`)
+                    hitAbortRef.current?.abort();
+                    const controller = new AbortController();
+                    hitAbortRef.current = controller;
+                    void axios.get(`/api/mediaLibrary/${item.id}/hit`, {signal: controller.signal})
+                        .catch((error) => {
+                            if (error?.code === "ERR_CANCELED") return;
+                            console.error("Failed to record media hit.", error);
+                        })
+                        .finally(() => {
+                            if (hitAbortRef.current === controller) {
+                                hitAbortRef.current = null;
+                            }
+                        });
                 }}/>
     } else {
         playerOrPicture = isAudio ? (
             <audio
                 className={commonStyles.cardImage}
                 style={{background: '#2C2C2C'}}
-                src={`/api/video/${item.id}`}
+                src={inView ? `/api/video/${item.id}` : ""}
+                ref={mediaElementRef as React.RefObject<HTMLAudioElement>}
                 controls={true}/>
         ) : (
             <video
                 className={commonStyles.cardImage}
-                src={`/api/video/${item.id}`}
+                src={inView ? `/api/video/${item.id}` : ""}
+                ref={mediaElementRef as React.RefObject<HTMLVideoElement>}
                 controls={true}/>
         )
     }

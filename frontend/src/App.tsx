@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import useSWR from "swr";
+import {useAbortableSWR} from "./hooks/useAbortableSWR";
 import {HashRouter, Link, Route, Switch} from "react-router-dom";
 import {ThumbnailDebug} from "./views/ThumbnailDebug";
 import {MediaLibrary} from "./views/MediaLibrary";
@@ -92,6 +92,7 @@ type UptimeConfig = {
 type FfmpegMutexState = {
     locked: boolean;
     lockedAt?: number;
+    label?: string;
 };
 
 function formatDuration(milliseconds: number): string {
@@ -111,7 +112,7 @@ function formatDuration(milliseconds: number): string {
 }
 
 const UptimeBadge: React.FC = () => {
-    const {data} = useSWR<UptimeConfig>("/api/config", fetcher);
+    const {data} = useAbortableSWR<UptimeConfig>("/api/config", fetcher);
     const [now, setNow] = React.useState(() => Date.now());
 
     React.useEffect(() => {
@@ -135,12 +136,13 @@ const UptimeBadge: React.FC = () => {
 };
 
 const FfmpegMutexIndicator: React.FC = () => {
-    const {data} = useSWR<FfmpegMutexState>("/api/ffmpeg/mutex", fetcher, {
+    const {data} = useAbortableSWR<FfmpegMutexState>("/api/ffmpeg/mutex", fetcher, {
         refreshInterval: 500,
     });
     const locked = data?.locked;
     const isUnknown = locked === undefined;
-    const label = isUnknown ? "FFmpeg status unknown" : locked ? "FFmpeg busy" : "FFmpeg idle";
+    const statusLabel = isUnknown ? "FFmpeg status unknown" : locked ? "FFmpeg busy" : "FFmpeg idle";
+    const detailLabel = locked ? (data?.label ?? "FFmpeg busy") : null;
     const dotClass = isUnknown
         ? "bg-gray-400 dark:bg-gray-500"
         : locked
@@ -148,12 +150,19 @@ const FfmpegMutexIndicator: React.FC = () => {
             : "bg-green-500";
 
     return (
-        <span
-            className={`inline-flex h-2.5 w-2.5 rounded-full ${dotClass}`}
-            role="status"
-            aria-label={label}
-            title={label}
-        />
+        <span className="inline-flex items-center gap-1">
+            <span
+                className={`inline-flex h-2.5 w-2.5 rounded-full ${dotClass}`}
+                role="status"
+                aria-label={statusLabel}
+                title={statusLabel}
+            />
+            {detailLabel && (
+                <span className="text-[10px] font-mono text-gray-500 dark:text-gray-400">
+                    {detailLabel}
+                </span>
+            )}
+        </span>
     );
 };
 

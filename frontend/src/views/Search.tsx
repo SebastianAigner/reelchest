@@ -8,12 +8,12 @@ import {MainHeading} from "../components/Typography";
 import {HStack, ResponsiveGrid} from "../components/Layout";
 import {commonStyles} from "../styles/common";
 import {INPUT_ACTION, SimpleInputField} from "../components/SimpleInputField";
-import useSWR from "swr";
+import {useAbortableSWR} from "../hooks/useAbortableSWR";
 import {fetcher} from "../utils";
 import {LoadingSpinner} from "../components/LoadingSpinner";
 
 export function Search() {
-    const {data, error} = useSWR<Array<string>>(`/api/searchers`, fetcher)
+    const {data, error} = useAbortableSWR<Array<string>>(`/api/searchers`, fetcher)
 
     const [searchUrl, setSearchUrl] = useState<string>("")
     const [results, setResults] = useState<Array<SearchResult>>()

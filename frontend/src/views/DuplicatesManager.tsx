@@ -1,5 +1,6 @@
 import * as React from "react";
-import useSWR, {mutate} from "swr";
+import {mutate} from "swr";
+import {useAbortableSWR} from "../hooks/useAbortableSWR";
 import {fetcher} from "../utils";
 import {MediaLibraryEntry} from "../models/MediaLibraryEntry";
 import {MediaLibraryCard} from "../components/MediaLibraryCard";
@@ -15,7 +16,7 @@ import DuplicatesDTO = IoSebi.DuplicatesDTO;
  * Hook to fetch all media library entries
  */
 function useAllMediaLibraryEntries() {
-    const {data, error} = useSWR<Array<AutoTaggedMediaLibraryEntry>>(
+    const {data, error} = useAbortableSWR<Array<AutoTaggedMediaLibraryEntry>>(
         "/api/mediaLibrary?auto=true",
         fetcher
     );
@@ -39,7 +40,7 @@ function useDuplicatesData() {
     const {
         data: duplicateDTOs,
         error: duplicatesError
-    } = useSWR<Array<DuplicatesDTO>>('/api/mediaLibrary/duplicates', fetcher, {
+    } = useAbortableSWR<Array<DuplicatesDTO>>('/api/mediaLibrary/duplicates', fetcher, {
         revalidateOnFocus: false,
         dedupingInterval: 10000,
         refreshInterval: 30000

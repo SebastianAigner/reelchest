@@ -10,7 +10,8 @@ import axios from "axios";
 import {commonStyles} from "../styles/common";
 import {StyledButton} from "../components/StyledButton";
 import {MarkForDeletionButton} from "../components/MarkForDeletionButton";
-import useSWR, {mutate} from "swr";
+import {mutate} from "swr";
+import {useAbortableSWR} from "../hooks/useAbortableSWR";
 import {fetcher} from "../utils";
 import EdiText from "react-editext";
 import {INPUT_ACTION, SimpleInputField} from "../components/SimpleInputField";
@@ -44,7 +45,7 @@ interface Identifiable {
 
 function useStoredDuplicate(id: string) {
     const endpoint = `/api/mediaLibrary/${id}/storedDuplicate`
-    const {data, error} = useSWR<DuplicatesDTO>(endpoint, fetcher)
+    const {data, error} = useAbortableSWR<DuplicatesDTO>(endpoint, fetcher)
     return {
         duplicate: data,
         isLoading: !error && !data,
@@ -54,7 +55,7 @@ function useStoredDuplicate(id: string) {
 
 function useMediaLibraryEntry(id: string) {
     const endpoint = `/api/mediaLibrary/${id}?auto=true`
-    const {data, error} = useSWR<AutoTaggedMediaLibraryEntry>(endpoint, fetcher)
+    const {data, error} = useAbortableSWR<AutoTaggedMediaLibraryEntry>(endpoint, fetcher)
     return {
         entry: data,
         isLoading: !error && !data,
