@@ -9,6 +9,7 @@ import io.sebi.api.dtos.UrlRequest
 import io.sebi.downloader.*
 import io.sebi.urldecoder.UrlDecoder
 import io.sebi.urldecoder.makeDownloadTask
+import kotlinx.coroutines.launch
 
 /**
  * Handler for downloading a URL.
@@ -20,9 +21,11 @@ suspend fun RoutingContext.downloadUrlHandler(
 ) {
     val text = call.receive<UrlRequest>()
     println(text)
-    downloadManager.enqueueTask(
-        urlDecoder.makeDownloadTask(originUrl = text.url, onCompleteDownload)
-    )
+    call.application.launch {
+        downloadManager.enqueueTask(
+            urlDecoder.makeDownloadTask(originUrl = text.url, onCompleteDownload)
+        )
+    }
     call.respondText("OK", status = HttpStatusCode.OK)
 }
 

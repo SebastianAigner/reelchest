@@ -13,6 +13,7 @@ import io.sebi.library.*
 import io.sebi.storage.MetadataStorage
 import io.sebi.tagging.Tagger
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -56,7 +57,9 @@ suspend fun RoutingContext.getMediaLibraryEntryByIdHandler(metadataStorage: Meta
  */
 suspend fun RoutingContext.recordHitHandler(metadataStorage: MetadataStorage) {
     val id = call.parameters["id"]!!
-    metadataStorage.retrieveMetadata(id).just()?.addHitAndPersist(metadataStorage)
+    call.application.launch {
+        metadataStorage.retrieveMetadata(id).just()?.addHitAndPersist(metadataStorage)
+    }
     call.respond(HttpStatusCode.OK)
 }
 
@@ -96,7 +99,9 @@ suspend fun RoutingContext.getMediaInformationHandler(metadataStorage: MetadataS
  */
 suspend fun RoutingContext.updateMediaLibraryEntryHandler(metadataStorage: MetadataStorage) {
     val newEntry = call.receive<MediaLibraryEntry>()
-    newEntry.persist(metadataStorage)
+    call.application.launch {
+        newEntry.persist(metadataStorage)
+    }
     call.respond(HttpStatusCode.OK)
 }
 

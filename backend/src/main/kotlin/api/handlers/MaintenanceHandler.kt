@@ -5,7 +5,7 @@ import io.ktor.server.routing.*
 import io.sebi.config.AppConfig
 import io.sebi.storage.MetadataStorage
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.async
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.slf4j.LoggerFactory
@@ -14,7 +14,7 @@ import java.io.File
 private val maintenanceLogger = LoggerFactory.getLogger("Maintenance")
 
 suspend fun RoutingContext.scanOrphanedMediaHandler(metadataStorage: MetadataStorage) {
-    withContext(Dispatchers.IO) {
+    val job = call.application.async(Dispatchers.IO) {
         val tombstones = metadataStorage.listTombstones()
         var orphansFound = 0
         var orphansDeleted = 0
@@ -58,11 +58,13 @@ suspend fun RoutingContext.scanOrphanedMediaHandler(metadataStorage: MetadataSto
             }
         }
 
-        call.respond(buildJsonObject {
+        buildJsonObject {
             put("orphansFound", orphansFound)
             put("orphansDeleted", orphansDeleted)
             put("failedDeletions", failedDeletions)
             put("bytesFreed", bytesFreed)
-        })
+        }
     }
+
+    call.respond(job.await())
 }

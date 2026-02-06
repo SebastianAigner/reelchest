@@ -4,6 +4,8 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
 
 /**
@@ -19,7 +21,9 @@ suspend fun RoutingContext.userConfigReadHandler(fileName: String) {
 suspend fun RoutingContext.userConfigWriteHandler(fileName: String) {
     val newRules = call.receive<String>()
     if (newRules.isNotEmpty()) {
-        File("userConfig/$fileName.txt").writeText(newRules)
+        call.application.launch(Dispatchers.IO) {
+            File("userConfig/$fileName.txt").writeText(newRules)
+        }
     }
     call.respond(HttpStatusCode.OK)
 }

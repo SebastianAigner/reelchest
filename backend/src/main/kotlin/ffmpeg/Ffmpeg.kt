@@ -5,6 +5,8 @@ import io.sebi.phash.DHash
 import io.sebi.phash.JpegSplitter
 import io.sebi.phash.writeULongs
 import io.sebi.process.runExternalProcess
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runInterruptible
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -12,6 +14,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.jetbrains.annotations.Blocking
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.util.concurrent.TimeUnit
 import javax.imageio.ImageIO
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -164,22 +167,35 @@ suspend fun generateDHashes(videoFile: File) {
             .redirectError(ProcessBuilder.Redirect.INHERIT)
             .start()
 
-        val output = proc.inputStream.buffered()
+        try {
+            val output = proc.inputStream.buffered()
+            val hashColl = mutableListOf<DHash>()
+            JpegSplitter.split(
+                output,
+                onConcludeFile = {
+                    val hash = DHash.fromImage(ImageIO.read(it.inputStream()))
+                    hashColl += hash
+                })
 
-        val hashColl = mutableListOf<DHash>()
-        JpegSplitter.split(
-            output,
-            onConcludeFile = {
-                val hash = DHash.fromImage(ImageIO.read(it.inputStream()))
-                hashColl += hash
-            })
+            runInterruptible(Dispatchers.IO) {
+                proc.waitFor()
+            }
 
-        proc.waitFor()
-
-        println("Saving ${hashColl.count()} hashes for later.")
-        File(
-            videoFile.parent, "dhashes.bin"
-        ).writeULongs(hashColl.map { it.raw })
+            println("Saving ${hashColl.count()} hashes for later.")
+            File(
+                videoFile.parent, "dhashes.bin"
+            ).writeULongs(hashColl.map { it.raw })
+        } finally {
+            if (proc.isAlive) {
+                proc.destroy()
+                if (!proc.waitFor(250, TimeUnit.MILLISECONDS)) {
+                    proc.destroyForcibly()
+                }
+            }
+            runCatching { proc.inputStream.close() }
+            runCatching { proc.errorStream.close() }
+            runCatching { proc.outputStream.close() }
+        }
     }
 }
 
@@ -200,7 +216,21 @@ suspend fun getMediaType(inputFile: File): MediaTypeInfo {
             inputFile.absolutePath
         ).start()
 
-        val output = process.inputStream.bufferedReader().readText()
+        val output = try {
+            runInterruptible(Dispatchers.IO) {
+                process.inputStream.bufferedReader().readText()
+            }
+        } finally {
+            if (process.isAlive) {
+                process.destroy()
+                if (!process.waitFor(250, TimeUnit.MILLISECONDS)) {
+                    process.destroyForcibly()
+                }
+            }
+            runCatching { process.inputStream.close() }
+            runCatching { process.errorStream.close() }
+            runCatching { process.outputStream.close() }
+        }
 
         val json = Json.parseToJsonElement(output)
         val streams = json.jsonObject["streams"]?.jsonArray
