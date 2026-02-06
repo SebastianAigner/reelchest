@@ -142,6 +142,9 @@ suspend fun postProcessAudioAndVideo(vid: DASHVideo, aud: DASHAudio): MP4File {
     return globalFfmpegMutex.withLock {
         val fileName = UUID.randomUUID().toString()
         ProcessBuilder(
+            "nice",
+            "-n",
+            "19",
             "ffmpeg",
             "-y",
             "-i",
@@ -173,7 +176,18 @@ fun postProcessTransportStream(l: List<TSFile>): TSFile {
 
 fun postProcessTsToMp4(ts: TSFile): MP4File {
     val fileName = UUID.randomUUID().toString()
-    ProcessBuilder("ffmpeg", "-y", "-i", ts.f.name, "-c:v", "copy", "$fileName.mp4").directory(ts.f.parentFile)
+    ProcessBuilder(
+        "nice",
+        "-n",
+        "19",
+        "ffmpeg",
+        "-y",
+        "-i",
+        ts.f.name,
+        "-c:v",
+        "copy",
+        "$fileName.mp4"
+    ).directory(ts.f.parentFile)
         .inheritIO().start().waitFor()
     return MP4File(File(ts.f.parent, "$fileName.mp4"))
 }

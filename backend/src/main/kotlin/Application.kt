@@ -11,7 +11,7 @@ import io.sebi.downloader.DiskSpaceDownloadStartGate
 import io.sebi.downloader.DownloadManager
 import io.sebi.downloader.DownloadManagerImpl
 import io.sebi.downloader.IntoMediaLibraryDownloader
-import io.sebi.ffmpeg.globalFfmpegMutex
+import io.sebi.ffmpeg.generateThumbnails
 import io.sebi.heavymutex.HeavyMutex
 import io.sebi.library.MediaLibrary
 import io.sebi.library.MediaLibraryEntry
@@ -41,7 +41,6 @@ import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.time.LocalTime
-import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 
@@ -215,31 +214,10 @@ private suspend fun generateThumbnails(mediaLibrary: MediaLibrary) {
  * to ensure that only one FFmpeg process runs at a time.
  */
 private suspend fun createThumbnails(mediaLibraryEntry: MediaLibraryEntry, logger: Logger) {
-    globalFfmpegMutex.withLock {
-        mediaLibraryEntry.file?.let {
-            logger.info("Generating thumbnail for ${mediaLibraryEntry.id}")
-            if (it.parentFile?.list()?.none { it.startsWith("thumb") } == true) {
-                val proc = ProcessBuilder(
-                    "nice",
-                    "-n",
-                    "19",
-                    "ffmpeg",
-                    "-y",
-                    "-i",
-                    it.name,
-                    "-q:v",
-                    "5",
-                    "-vf",
-                    "fps=1/10",
-                    "thumb%04d.jpg",
-                ).directory(it.parentFile)
-                    .inheritIO()
-                    .start()
-
-                proc.waitFor(60, TimeUnit.SECONDS)
-                proc.destroy()
-                proc.waitFor()
-            }
+    mediaLibraryEntry.file?.let {
+        logger.info("Generating thumbnail for ${mediaLibraryEntry.id}")
+        if (it.parentFile?.list()?.none { entry -> entry.startsWith("thumb") } == true) {
+            generateThumbnails(it, logger)
         }
     }
 }

@@ -29,7 +29,7 @@ class FfmpegTask(val parameters: List<String>) {
         customStdoutHandler: ((String) -> Unit)? = null,
         customStderrHandler: ((String) -> Unit)? = null,
     ): FfmpegProcessResult {
-        logger.info("Executing ffmpeg command with parameters: ${parameters.joinToString(" ")}")
+        logger.info("Executing ffmpeg (nice -n 19) with parameters: ${parameters.joinToString(" ")}")
         if (directory != null) {
             logger.info("Working directory: ${directory.absolutePath}")
         }
@@ -40,7 +40,7 @@ class FfmpegTask(val parameters: List<String>) {
             val stderr = mutableListOf<String>()
             try {
                 runExternalProcess(
-                    "ffmpeg", *parameters.toTypedArray(),
+                    "nice", "-n", "19", "ffmpeg", *parameters.toTypedArray(),
                     stdoutHandler = StdoutHandler.Lines {
                         stdout.add(it)
                         logger.info("[FFMPEG-OUT] $it")
