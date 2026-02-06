@@ -24,6 +24,7 @@ If a subproject needs different instructions, add a nested `AGENTS.md` in that f
 ### Backend (Ktor)
 
 - Run from repo root: `./gradlew :backend:run` (or `./gradlew run` if configured in IDE).
+- Gradle dependency versions are managed via version catalogs (`libs.versions.toml`).
 - Default port: `8080` (see `backend/src/main/resources/application.conf`).
 - The Gradle run task sets working dir to repo root; media folders are expected there.
 - Optional env: `DLMGR_TMP_DIR` to override JVM temp dir.

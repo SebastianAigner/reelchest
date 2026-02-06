@@ -4,6 +4,7 @@ import io.ktor.server.application.*
 import io.ktor.server.http.content.*
 import io.ktor.server.routing.*
 import io.sebi.api.api
+import io.sebi.api.handlers.triggerOrphanScan
 import io.sebi.autoscrape.setupAutoscraper
 import io.sebi.downloader.DownloadManager
 import io.sebi.downloader.DownloadManagerImpl
@@ -16,6 +17,7 @@ import io.sebi.library.file
 import io.sebi.library.id
 import io.sebi.network.NetworkManager
 import io.sebi.phash.ensureDHashes
+import io.sebi.scheduler.scheduleDailyAt
 import io.sebi.setup.cleanupDownloadDirectory
 import io.sebi.setup.removeFilesScheduledForDeletion
 import io.sebi.storage.FileSystemVideoStorage
@@ -36,6 +38,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.time.LocalTime
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
@@ -96,6 +99,7 @@ fun setFileDates(metadataStorage: MetadataStorage) {
 @Suppress("unused") // Referenced in application.conf
 fun Application.module() {
     AppLifecycle.startedAt
+    val application = this
     cleanupDownloadDirectory()
 
     val networkManager = NetworkManager()
@@ -151,6 +155,26 @@ fun Application.module() {
             delay(1.hours)
         }
     }
+
+    val schedulerLogger = LoggerFactory.getLogger("Scheduler")
+    scheduleDailyAt(
+        time = LocalTime.of(3, 0),
+        dispatcher = Dispatchers.IO,
+        onError = { schedulerLogger.warn("Scheduled orphan scan failed.", it) },
+        task = {
+            schedulerLogger.info("Starting scheduled orphaned media cleanup.")
+            triggerOrphanScan(metadataStorage, application)
+        }
+    )
+    scheduleDailyAt(
+        time = LocalTime.of(4, 0),
+        dispatcher = Dispatchers.IO,
+        onError = { schedulerLogger.warn("Scheduled deletion of marked media failed.", it) },
+        task = {
+            schedulerLogger.info("Starting scheduled deletion of files marked for deletion.")
+            removeFilesScheduledForDeletion(metadataStorage, videoStorage)
+        }
+    )
 
     installPlugins()
 

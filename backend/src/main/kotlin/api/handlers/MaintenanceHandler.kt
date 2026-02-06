@@ -168,3 +168,7 @@ suspend fun RoutingContext.scanOrphanedMediaHandler(metadataStorage: MetadataSto
 suspend fun RoutingContext.orphanScanStatusHandler() {
     call.respond(buildOrphanScanJson(orphanScanStateFlow.value))
 }
+
+suspend fun triggerOrphanScan(metadataStorage: MetadataStorage, application: Application) {
+    startOrphanScan(metadataStorage, application)
+}

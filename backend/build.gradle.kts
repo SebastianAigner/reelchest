@@ -37,6 +37,7 @@ repositories {
 
 dependencies {
     implementation(project(":process"))
+    implementation(project(":scheduler"))
     implementation(kotlin("test"))
     implementation(libs.logback.classic)
     implementation(libs.ktor.server.netty)

@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm")
+    alias(libs.plugins.org.jetbrains.kotlin.jvm)
 }
 
 group = "io.sebi"
@@ -15,5 +15,5 @@ dependencies {
 }
 
 kotlin {
-    jvmToolchain(11)
+    jvmToolchain(libs.versions.jvm.toolchain.get().toInt())
 }
