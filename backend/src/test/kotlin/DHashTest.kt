@@ -1,69 +1,45 @@
 package io.sebi.phash
 
-import io.sebi.ffmpeg.generateDHashes
-import kotlinx.coroutines.runBlocking
+import java.io.DataInputStream
 import java.io.File
-import java.net.URL
+import javax.imageio.ImageIO
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-private object TestPaths {
-    private val projectRoot = File(System.getProperty("user.dir"))
-    val videoFile = File(projectRoot, "src/test/resources/ForBiggerJoyrides.mp4").absoluteFile
-    val expectedHashesFile = File(projectRoot, "src/test/resources/ForBiggerJoyrides.dhashes.bin").absoluteFile
-    const val VIDEO_URL = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4"
-}
-
-/**
- * Downloads the test video from the specified URL.
- * This function ensures the video file exists locally by downloading it if necessary.
- */
-private fun downloadVideo() {
-    println("Downloading test video from ${TestPaths.VIDEO_URL}")
-    TestPaths.videoFile.parentFile.mkdirs()
-    URL(TestPaths.VIDEO_URL).openStream().use { input ->
-        TestPaths.videoFile.outputStream().use { output ->
-            input.copyTo(output)
-        }
-    }
-    println("Video downloaded to ${TestPaths.videoFile.absolutePath}")
-}
-
-fun main() = runBlocking {
-    if (!TestPaths.videoFile.exists()) {
-        downloadVideo()
-    }
-
-    println("Generating reference hashes from ${TestPaths.videoFile.absolutePath}")
-    generateDHashes(TestPaths.videoFile)
-    val generatedHashesFile = File(TestPaths.videoFile.parent, "dhashes.bin")
-    generatedHashesFile.copyTo(TestPaths.expectedHashesFile, overwrite = true)
-    println("Generated reference hashes and saved them to ${TestPaths.expectedHashesFile.absolutePath}")
-}
-
 class DHashTest {
-    @OptIn(ExperimentalUnsignedTypes::class, ExperimentalUnsignedTypes::class)
-    @Test(timeout = 5000L)
-    fun `test DHash generation consistency`(): Unit = runBlocking {
-        if (!TestPaths.videoFile.exists()) {
-            downloadVideo()
+    @Test
+    fun `dhash matches pre-extracted frames`() {
+        val projectRoot = File(System.getProperty("user.dir"))
+        val framesDir = File(projectRoot, "src/test/resources/dhash-frames")
+        val expectedHashesFile = File(projectRoot, "src/test/resources/ForBiggerJoyrides.frames.dhashes.bin")
+
+        check(framesDir.isDirectory) {
+            "Missing extracted frames at ${framesDir.absolutePath}"
+        }
+        check(expectedHashesFile.isFile) {
+            "Missing expected hashes at ${expectedHashesFile.absolutePath}"
         }
 
-        if (!TestPaths.expectedHashesFile.exists()) {
-            error("Reference hashes not found. Please run the main function in DHashTest.kt first to generate them.")
+        val frames = framesDir.listFiles { file ->
+            file.isFile && file.name.endsWith(".jpg")
+        }?.sortedBy { it.name } ?: emptyList()
+
+        check(frames.isNotEmpty()) { "No frames found in ${framesDir.absolutePath}" }
+
+        val expectedHashes = DataInputStream(expectedHashesFile.inputStream()).use { dis ->
+            val count = (expectedHashesFile.length() / Long.SIZE_BYTES).toInt()
+            LongArray(count) { dis.readLong() }
         }
 
-        // Generate new hashes
-        generateDHashes(TestPaths.videoFile)
-        val newHashesFile = File(TestPaths.videoFile.parent, "dhashes.bin")
+        assertEquals(expectedHashes.size, frames.size, "Expected hash count should match frame count")
 
-        // Compare with expected hashes
-        val expectedHashes = TestPaths.expectedHashesFile.readULongs()
-        val newHashes = newHashesFile.readULongs()
+        val actualHashes = frames.map { frame ->
+            val image = ImageIO.read(frame) ?: error("Failed to read frame ${frame.name}")
+            DHash.fromImage(image).raw.toLong()
+        }
 
-        assertEquals(expectedHashes.size, newHashes.size, "Number of generated hashes should match")
-        expectedHashes.zip(newHashes).forEachIndexed { index, (expected, actual) ->
-            assertEquals(expected, actual, "Hash at position $index should match")
+        actualHashes.forEachIndexed { index, actual ->
+            assertEquals(expectedHashes[index], actual, "Hash at position $index should match")
         }
     }
 }
