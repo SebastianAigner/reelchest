@@ -11,29 +11,54 @@ class HeavyMutex(
     private val logger: Logger = LoggerFactory.getLogger(HeavyMutex::class.java),
 ) {
     private val mutex = Mutex()
+    @Volatile
     var lockedAt = Clock.System.now()
+        private set
+    @Volatile
+    var lockedLabel: String? = null
+        private set
     val isLocked: Boolean
         get() = mutex.isLocked
-    suspend fun lock() {
+
+    suspend fun lock(label: String) {
         mutex.lock()
-        lockedAt = Clock.System.now()
+        setLockMetadata(label)
     }
 
     fun unlock() {
-        val timeHeld = Clock.System.now() - lockedAt
-        logger.debug("{} lock held for {}", name, timeHeld)
+        logLockDuration()
+        clearLockMetadata()
         mutex.unlock()
     }
 
-    suspend fun <T> withLock(block: suspend () -> T): T {
+    suspend fun <T> withLock(label: String, block: suspend () -> T): T {
         return mutex.withLock {
-            lockedAt = Clock.System.now()
+            setLockMetadata(label)
             try {
                 block()
             } finally {
-                val timeHeld = Clock.System.now() - lockedAt
-                logger.debug("{} lock held for {}", name, timeHeld)
+                logLockDuration()
+                clearLockMetadata()
             }
+        }
+    }
+
+    private fun setLockMetadata(label: String) {
+        lockedAt = Clock.System.now()
+        lockedLabel = label
+    }
+
+    private fun clearLockMetadata() {
+        lockedLabel = null
+    }
+
+    private fun logLockDuration() {
+        val timeHeld = Clock.System.now() - lockedAt
+        val label = lockedLabel
+        if (label.isNullOrBlank()) {
+            logger.debug("{} lock held for {}", name, timeHeld)
+        } else {
+            logger.debug("{} lock ({}) held for {}", name, label, timeHeld)
         }
     }
 }

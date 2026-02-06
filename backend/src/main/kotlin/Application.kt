@@ -149,7 +149,7 @@ fun Application.module() {
         // Continuously generate thumbnails once per hour
         while (true) {
             // Use the mutex to prevent overlapping thumbnail generation processes
-            thumbnailGenerationMutex.withLock {
+            thumbnailGenerationMutex.withLock("Scheduled thumbnail generation") {
                 generateThumbnails(mediaLibrary)
             }
 

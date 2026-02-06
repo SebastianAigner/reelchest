@@ -139,7 +139,7 @@ object DashPostProcessor : PostProcessor() {
 }
 
 suspend fun postProcessAudioAndVideo(vid: DASHVideo, aud: DASHAudio): MP4File {
-    return globalFfmpegMutex.withLock {
+    return globalFfmpegMutex.withLock("DASH remux") {
         val fileName = UUID.randomUUID().toString()
         ProcessBuilder(
             "nice",

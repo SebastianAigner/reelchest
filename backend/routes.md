@@ -86,6 +86,7 @@
     - Returns:
         - `locked` - Whether the global FFmpeg mutex is currently held
         - `lockedAt` - Lock acquisition time (milliseconds since epoch), only when locked
+        - `label` - Lock label describing the current FFmpeg task, only when locked
 - `GET /api/log` - Get system logs
 - `GET /api/status` - Get worker status
 - `POST /api/isUrlInLibraryOrProgress` - Check if URL exists in library or is being processed

@@ -36,7 +36,11 @@ class TestLogger : Logger {
     override fun isDebugEnabled(marker: Marker?): Boolean = true
     override fun debug(msg: String?) {}
     override fun debug(format: String?, arg: Any?) {}
-    override fun debug(format: String?, vararg arguments: Any?) {}
+    override fun debug(format: String?, vararg arguments: Any?) {
+        arguments.firstOrNull { it is kotlin.time.Duration }?.let {
+            lastDurationMs = (it as kotlin.time.Duration).inWholeMilliseconds
+        }
+    }
     override fun debug(msg: String?, t: Throwable?) {}
     override fun debug(marker: Marker?, msg: String?) {}
     override fun debug(marker: Marker?, format: String?, arg: Any?) {}
@@ -86,7 +90,7 @@ class HeavyMutexTest {
     fun testHeavyMutexLocking(): Unit = runBlocking {
         val testLogger = TestLogger()
         val heavyMutex = HeavyMutex("Heavy", testLogger)
-        heavyMutex.withLock {
+        heavyMutex.withLock("test lock") {
             delay(100)
         }
 

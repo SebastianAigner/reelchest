@@ -5,6 +5,7 @@ import io.ktor.http.content.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.utils.io.jvm.javaio.copyTo
 import io.sebi.ffmpeg.FfmpegTask
 import io.sebi.utils.copyToTempFile
 import io.sebi.utils.createZipFile
@@ -58,7 +59,10 @@ suspend fun RoutingContext.shiftSubtitlesHandler() {
             "-c",
             "copy",
             shiftedSF.absolutePathString()
-        ).execute(tempSF.parent.toFile())
+        ).execute(
+            directory = tempSF.parent.toFile(),
+            mutexLabel = "Shift subtitles"
+        )
         shiftedSF
     }
     if (shiftedFiles.size == 1) {
@@ -106,18 +110,20 @@ suspend fun RoutingContext.embedSubtitlesHandler() {
         LoggerFactory.getLogger("SubtitleApi").error("Missing files in the request.")
         return
     }
+    val videoPart = requireNotNull(videoFile)
+    val subtitlePart = requireNotNull(subtitleFile)
 
     val tempDir = Files.createTempDirectory("subtitle_api_temp")
     val videoFilePath = tempDir.resolve("video_file")
     val subtitleFilePath = tempDir.resolve("subtitle_file.srt")
-    videoFile!!.streamProvider().use { input ->
+    withContext(Dispatchers.IO) {
+        val videoChannel = videoPart.provider()
         videoFilePath.outputStream().use { output ->
-            input.copyTo(output)
+            videoChannel.copyTo(output)
         }
-    }
-    subtitleFile!!.streamProvider().use { input ->
+        val subtitleChannel = subtitlePart.provider()
         subtitleFilePath.outputStream().use { output ->
-            input.copyTo(output)
+            subtitleChannel.copyTo(output)
         }
     }
 
@@ -138,7 +144,10 @@ suspend fun RoutingContext.embedSubtitlesHandler() {
             "-c:a", "copy",
             "-c:s", "mov_text",
             "outfile.mkv"
-        ).execute(tempDir.toFile())
+        ).execute(
+            directory = tempDir.toFile(),
+            mutexLabel = "Embed subtitles"
+        )
         println(res.stdout)
         println(res.stderr.joinToString("\n"))
     }

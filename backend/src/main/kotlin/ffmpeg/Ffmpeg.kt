@@ -26,6 +26,7 @@ class FfmpegTask(val parameters: List<String>) {
 
     suspend fun execute(
         directory: File?,
+        mutexLabel: String,
         customStdoutHandler: ((String) -> Unit)? = null,
         customStderrHandler: ((String) -> Unit)? = null,
     ): FfmpegProcessResult {
@@ -34,7 +35,7 @@ class FfmpegTask(val parameters: List<String>) {
             logger.info("Working directory: ${directory.absolutePath}")
         }
 
-        return globalFfmpegMutex.withLock {
+        return globalFfmpegMutex.withLock(mutexLabel) {
             logger.info("Acquired ffmpeg mutex")
             val stdout = mutableListOf<String>()
             val stderr = mutableListOf<String>()
@@ -125,6 +126,7 @@ suspend fun generateThumbnails(
     val (out, err) = try {
         FfmpegTask(ffmpegParameters).execute(
             directory = videoFile.parentFile,
+            mutexLabel = "Thumbnail generation",
             customStdoutHandler = { onStdoutLine(it) },
             customStderrHandler = { onStderrLine(it) }
         )
@@ -145,7 +147,7 @@ suspend fun generateThumbnails(
 
 @Blocking
 suspend fun generateDHashes(videoFile: File) {
-    globalFfmpegMutex.withLock {
+    globalFfmpegMutex.withLock("DHash generation") {
         val hashColl = mutableListOf<DHash>()
         runExternalProcess(
             "nice",
@@ -192,7 +194,7 @@ data class MediaTypeInfo(
 )
 
 suspend fun getMediaType(inputFile: File): MediaTypeInfo {
-    return globalFfmpegMutex.withLock {
+    return globalFfmpegMutex.withLock("Media type probe") {
         val stdout = mutableListOf<String>()
         val stderr = mutableListOf<String>()
         val exitCode = runExternalProcess(
@@ -230,7 +232,7 @@ suspend fun getMediaType(inputFile: File): MediaTypeInfo {
 
 val durationRegex = """(\d+\.?\d*)""".toRegex()
 suspend fun getVideoDuration(inputFile: File): Duration {
-    return globalFfmpegMutex.withLock {
+    return globalFfmpegMutex.withLock("Video duration probe") {
         val stdout = mutableListOf<String>()
         val stderr = mutableListOf<String>()
         val exitCode = runExternalProcess(
