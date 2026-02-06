@@ -11,6 +11,7 @@
 /downloads
 /userConfig
 /database
+/test_media_library
 cache.map
 migrations
 .gradle

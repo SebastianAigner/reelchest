@@ -73,3 +73,4 @@ If a subproject needs different instructions, add a nested `AGENTS.md` in that f
 
 - Ask before running long or destructive commands.
 - When you change behavior, add or update tests.
+- Prefer `withTimeoutOrNull` over `withTimeout` in coroutine code.
