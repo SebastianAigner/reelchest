@@ -37,6 +37,8 @@
 
 - `GET /api/mediaLibrary/debug/missing-thumbnails` - List entries without thumbnails
 - `POST /api/mediaLibrary/debug/regenerate-thumbnail/{id}` - Regenerate thumbnails
+- `POST /api/mediaLibrary/debug/scan-orphans` - Start orphan scan (returns progress snapshot)
+- `GET /api/mediaLibrary/debug/scan-orphans` - Get orphan scan progress
 
 ## Download Manager Routes
 
@@ -69,6 +71,7 @@
 - `GET /api/config` - Get current application configuration
     - Returns:
         - `development` - Development mode status
+      - `startedAt` - Server start timestamp (milliseconds since epoch)
         - `port` - Server port
         - `shutdownUrl` - Shutdown endpoint URL
         - `connectionGroupSize` - Size of connection thread pool

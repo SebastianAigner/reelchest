@@ -47,12 +47,17 @@ If a subproject needs different instructions, add a nested `AGENTS.md` in that f
 - DHash setup: run `backend/src/test/kotlin/DHashTest.kt` main once to download test video and generate reference
   hashes (see README).
 - Frontend: run `yarn typecheck`; add tests if introducing new UI logic.
+- Validate work by running relevant tests and building the application; write tests for new code or behavior changes.
+- To confirm a task is fulfilled, always compile/build the application; do not assume it compiles without verification.
 
 ## Code Style & Conventions
 
 - Prefer small, surgical changes; avoid unrelated reformatting.
 - Follow existing Kotlin/TypeScript/Rust idioms already in the file you edit.
 - Preserve public APIs unless explicitly changing them; update documentation if you do.
+- This is a coroutine-based system; prefer coroutine-friendly APIs over blocking/threading approaches where possible.
+- Strongly prefer value semantics: keep data classes immutable (val fields, read-only collections) and copy instead of
+  mutating.
 
 ## Media/FFmpeg Safety
 

@@ -95,6 +95,7 @@ fun setFileDates(metadataStorage: MetadataStorage) {
 
 @Suppress("unused") // Referenced in application.conf
 fun Application.module() {
+    AppLifecycle.startedAt
     cleanupDownloadDirectory()
 
     val networkManager = NetworkManager()

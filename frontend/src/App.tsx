@@ -1,5 +1,6 @@
 import * as React from "react";
 
+import useSWR from "swr";
 import {HashRouter, Link, Route, Switch} from "react-router-dom";
 import {ThumbnailDebug} from "./views/ThumbnailDebug";
 import {MediaLibrary} from "./views/MediaLibrary";
@@ -17,6 +18,7 @@ import {NavGrid, VStack} from "./components/Layout";
 import {ThemeProvider, useTheme} from "./context/ThemeContext";
 import {commonStyles} from "./styles/common";
 import {PlaylistProvider} from "./context/PlaylistContext";
+import {fetcher} from "./utils";
 
 // Navigation bar supports conditional rendering by setting showNav to false.
 // However, this is part of the actual location, not the react hash router emulated string. So:
@@ -78,13 +80,57 @@ const NavigationBar: React.FC = () => {
     </NavGrid>;
 }
 
+type UptimeConfig = {
+    startedAt?: number;
+};
+
+function formatDuration(milliseconds: number): string {
+    if (!Number.isFinite(milliseconds) || milliseconds <= 0) return "0s";
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const seconds = totalSeconds % 60;
+    const totalMinutes = Math.floor(totalSeconds / 60);
+    const minutes = totalMinutes % 60;
+    const totalHours = Math.floor(totalMinutes / 60);
+    const hours = totalHours % 24;
+    const days = Math.floor(totalHours / 24);
+
+    if (days > 0) return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
+    if (hours > 0) return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+    if (minutes > 0) return seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`;
+    return `${seconds}s`;
+}
+
+const UptimeBadge: React.FC = () => {
+    const {data} = useSWR<UptimeConfig>("/api/config", fetcher);
+    const [now, setNow] = React.useState(() => Date.now());
+
+    React.useEffect(() => {
+        if (!data?.startedAt) return;
+        const intervalId = window.setInterval(() => {
+            setNow(Date.now());
+        }, 1000);
+        return () => window.clearInterval(intervalId);
+    }, [data?.startedAt]);
+
+    const duration = data?.startedAt
+        ? formatDuration(Math.max(0, now - data.startedAt))
+        : "--";
+
+    return (
+        <div
+            className="pointer-events-none absolute bottom-2 right-2 text-[10px] font-mono text-gray-500 dark:text-gray-400">
+            up: {duration}
+        </div>
+    );
+};
+
 const App: React.FC = () => {
     return (
         <HashRouter>
             <ThemeProvider>
                 <PlaylistProvider>
                     <div
-                    className={"min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200"}>
+                        className={"relative min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200"}>
                         <VStack className={"min-h-screen p-8 bg-inherit"}>
                         <NavigationBar/>
 
@@ -135,6 +181,7 @@ const App: React.FC = () => {
                             </Route>
                         </Switch>
                     </VStack>
+                        <UptimeBadge/>
                 </div>
                 </PlaylistProvider>
             </ThemeProvider>

@@ -55,6 +55,15 @@ type OrphanScanResult = {
     bytesFreed: number;
 };
 
+type OrphanScanProgress = OrphanScanResult & {
+    status: "idle" | "running" | "completed" | "failed";
+    totalTombstones: number;
+    processed: number;
+    startedAt?: number;
+    finishedAt?: number;
+    error?: string;
+};
+
 function formatBytes(bytes: number): string {
     if (!Number.isFinite(bytes)) return "0 B";
     if (bytes < 1024) return `${bytes} B`;
@@ -75,17 +84,44 @@ export function Admin() {
     const markedForDeletionCount = React.useMemo(() => {
         return entries.filter(entry => entry.mediaLibraryEntry.markedForDeletion).length;
     }, [entries]);
-    const [scanResult, setScanResult] = React.useState<OrphanScanResult | null>(null);
+    const [scanProgress, setScanProgress] = React.useState<OrphanScanProgress | null>(null);
     const [scanError, setScanError] = React.useState<string | null>(null);
     const [isScanning, setIsScanning] = React.useState(false);
     const [shutdownError, setShutdownError] = React.useState<string | null>(null);
     const [shutdownStatus, setShutdownStatus] = React.useState<string | null>(null);
     const [isShuttingDown, setIsShuttingDown] = React.useState(false);
+    const scanProgressPercent = React.useMemo(() => {
+        if (!scanProgress) return 0;
+        if (scanProgress.totalTombstones > 0) {
+            return Math.min(
+                100,
+                Math.round((scanProgress.processed / scanProgress.totalTombstones) * 100)
+            );
+        }
+        return scanProgress.status === "running" ? 0 : 100;
+    }, [scanProgress]);
+
+    const fetchOrphanScanStatus = React.useCallback(async () => {
+        const response = await fetch("/api/mediaLibrary/debug/scan-orphans");
+        if (!response.ok) {
+            throw new Error(`Request failed with ${response.status}`);
+        }
+        const data = await response.json();
+        setScanProgress(data);
+        if (data.status === "running") {
+            setIsScanning(true);
+            return;
+        }
+        setIsScanning(false);
+        if (data.status === "failed") {
+            setScanError(data.error ?? "Failed to scan for orphans.");
+        }
+    }, []);
 
     const runOrphanScan = async () => {
         setIsScanning(true);
         setScanError(null);
-        setScanResult(null);
+        setScanProgress(null);
         try {
             const response = await fetch("/api/mediaLibrary/debug/scan-orphans", {
                 method: "POST"
@@ -94,13 +130,35 @@ export function Admin() {
                 throw new Error(`Request failed with ${response.status}`);
             }
             const data = await response.json();
-            setScanResult(data);
+            setScanProgress(data);
+            if (data.status !== "running") {
+                setIsScanning(false);
+                if (data.status === "failed") {
+                    setScanError(data.error ?? "Failed to scan for orphans.");
+                }
+            }
         } catch (err) {
-            setScanError(err instanceof Error ? err.message : "Failed to scan for orphans.");
-        } finally {
             setIsScanning(false);
+            setScanError(err instanceof Error ? err.message : "Failed to scan for orphans.");
         }
     };
+
+    React.useEffect(() => {
+        fetchOrphanScanStatus().catch(() => {
+            // Ignore initial fetch errors; user action will surface errors.
+        });
+    }, [fetchOrphanScanStatus]);
+
+    React.useEffect(() => {
+        if (!isScanning) return;
+        const intervalId = window.setInterval(() => {
+            fetchOrphanScanStatus().catch(err => {
+                setIsScanning(false);
+                setScanError(err instanceof Error ? err.message : "Failed to scan for orphans.");
+            });
+        }, 1000);
+        return () => window.clearInterval(intervalId);
+    }, [fetchOrphanScanStatus, isScanning]);
 
     const requestShutdown = async () => {
         if (!config?.shutdownUrl) {
@@ -150,11 +208,11 @@ export function Admin() {
                 Disk space (media library)
             </div>
             <div className="text-3xl font-semibold mt-2">
-                {isDiskLoading ? "Loading..." : formatBytes(usage?.freeBytes ?? 0)} free
+                {isDiskLoading ? "Loading..." : formatBytes(usage?.usableBytes ?? 0)} usable
             </div>
             {!isDiskLoading && usage && (
                 <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-                    {formatBytes(usage?.usableBytes ?? 0)} usable · {formatBytes(usage?.totalBytes ?? 0)} total
+                    {formatBytes(usage?.freeBytes ?? 0)} free · {formatBytes(usage?.totalBytes ?? 0)} total
                 </div>
             )}
             {isDiskError && (
@@ -176,12 +234,31 @@ export function Admin() {
                     {isScanning ? "Scanning..." : "Scan for Orphans"}
                 </StyledButton>
             </div>
-            {scanResult && (
+            {scanProgress && scanProgress.status !== "idle" && (
                 <div className="mt-4 text-sm text-gray-700 dark:text-gray-200">
-                    <div>Orphans found: {scanResult.orphansFound}</div>
-                    <div>Orphans deleted: {scanResult.orphansDeleted}</div>
-                    <div>Failed deletions: {scanResult.failedDeletions}</div>
-                    <div>Space freed: {formatBytes(scanResult.bytesFreed)}</div>
+                    <div
+                        className="flex items-center justify-between text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                        <span>Progress</span>
+                        <span>{scanProgressPercent}%</span>
+                    </div>
+                    <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                        <div
+                            className="h-full bg-emerald-500 transition-[width] duration-300"
+                            style={{
+                                width: `${scanProgressPercent}%`
+                            }}
+                        />
+                    </div>
+                    <div className="mt-3 grid gap-y-1 text-sm">
+                        <div>Status: {scanProgress.status}</div>
+                        <div>
+                            Processed: {scanProgress.processed} / {scanProgress.totalTombstones}
+                        </div>
+                        <div>Orphans found: {scanProgress.orphansFound}</div>
+                        <div>Orphans deleted: {scanProgress.orphansDeleted}</div>
+                        <div>Failed deletions: {scanProgress.failedDeletions}</div>
+                        <div>Space freed: {formatBytes(scanProgress.bytesFreed)}</div>
+                    </div>
                 </div>
             )}
             {scanError && (

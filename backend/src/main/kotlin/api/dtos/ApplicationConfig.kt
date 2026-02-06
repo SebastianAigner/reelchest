@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ApplicationConfig(
     val development: Boolean,
+    val startedAt: Long,
     val port: Int,
     val shutdownUrl: String,
     val connectionGroupSize: Int,

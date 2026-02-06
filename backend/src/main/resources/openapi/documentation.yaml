@@ -401,6 +401,36 @@ paths:
                 Example#2:
                   value: "Entry not found"
   /api/mediaLibrary/debug/scan-orphans:
+    get:
+      description: ""
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "object"
+                properties:
+                  status:
+                    type: "string"
+                  totalTombstones:
+                    type: "integer"
+                  processed:
+                    type: "integer"
+                  orphansFound:
+                    type: "integer"
+                  orphansDeleted:
+                    type: "integer"
+                  failedDeletions:
+                    type: "integer"
+                  bytesFreed:
+                    type: "integer"
+                  startedAt:
+                    type: "integer"
+                  finishedAt:
+                    type: "integer"
+                  error:
+                    type: "string"
     post:
       description: ""
       responses:
@@ -411,6 +441,12 @@ paths:
               schema:
                 type: "object"
                 properties:
+                  status:
+                    type: "string"
+                  totalTombstones:
+                    type: "integer"
+                  processed:
+                    type: "integer"
                   orphansFound:
                     type: "integer"
                   orphansDeleted:
@@ -419,6 +455,12 @@ paths:
                     type: "integer"
                   bytesFreed:
                     type: "integer"
+                  startedAt:
+                    type: "integer"
+                  finishedAt:
+                    type: "integer"
+                  error:
+                    type: "string"
   /api/mediaLibrary/disk-usage:
     get:
       description: ""
@@ -808,6 +850,9 @@ components:
       properties:
         development:
           type: "boolean"
+        startedAt:
+          type: "integer"
+          format: "int64"
         port:
           type: "integer"
           format: "int32"
@@ -839,6 +884,7 @@ components:
           format: "int32"
       required:
         - "development"
+        - "startedAt"
         - "port"
         - "shutdownUrl"
         - "connectionGroupSize"

@@ -6,7 +6,10 @@ import io.ktor.http.*
 import io.sebi.config.AppConfig
 import io.sebi.storage.JdbcSqliteMetadataStorage
 import io.sebi.utils.ReaderWriterLock
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
@@ -14,6 +17,21 @@ import java.util.*
 import kotlin.test.*
 
 class AdminMaintenanceTest : MediaLibraryTestBase() {
+    private suspend fun awaitOrphanScanCompletion(client: io.ktor.client.HttpClient, port: Int): JsonObject? {
+        return withTimeoutOrNull(5000) {
+            while (true) {
+                val response = client.get("http://localhost:$port/api/mediaLibrary/debug/scan-orphans")
+                val json = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+                val status = json["status"]?.jsonPrimitive?.content
+                if (status != "running") {
+                    return@withTimeoutOrNull json
+                }
+                delay(100)
+            }
+            error("Unreachable")
+        }
+    }
+
     @Test
     fun testDiskUsageEndpoint() {
         withTestServer { _, client, port ->
@@ -50,8 +68,10 @@ class AdminMaintenanceTest : MediaLibraryTestBase() {
 
             val response = client.post("http://localhost:$port/api/mediaLibrary/debug/scan-orphans")
             assertEquals(HttpStatusCode.OK, response.status)
-            val json = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+            val json = awaitOrphanScanCompletion(client, port)
+            assertNotNull(json, "Orphan scan did not complete in time.")
 
+            assertEquals("completed", json["status"]?.jsonPrimitive?.content)
             assertEquals(1, json["orphansFound"]?.jsonPrimitive?.content?.toInt())
             assertEquals(1, json["orphansDeleted"]?.jsonPrimitive?.content?.toInt())
             assertEquals(0, json["failedDeletions"]?.jsonPrimitive?.content?.toInt())

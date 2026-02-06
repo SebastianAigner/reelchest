@@ -2,6 +2,7 @@ package io.sebi.api.handlers
 
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.sebi.AppLifecycle
 import io.sebi.api.dtos.ApplicationConfig
 
 /**
@@ -14,6 +15,7 @@ suspend fun RoutingContext.configHandler() {
     call.respond(
         ApplicationConfig(
             development = call.application.developmentMode, // TODO: Ktor 3 API?
+            startedAt = AppLifecycle.startedAt,
             port = config.property("ktor.deployment.port").getString().toInt(),
             shutdownUrl = config.property("ktor.deployment.shutdown.url").getString(),
             connectionGroupSize = config
