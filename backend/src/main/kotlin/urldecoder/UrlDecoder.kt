@@ -37,6 +37,16 @@ data class MetadataResponse(val title: String, val tags: List<String>)
 @Serializable
 data class DecryptResponse(val urls: List<String>, val type: DecryptedMediaType)
 
+@Serializable
+data class ErrorResponse(val errorCode: String, val message: String)
+
+class DecryptServiceException(
+    val endpoint: String,
+    val errorCode: String,
+    message: String,
+    val status: HttpStatusCode? = null,
+) : RuntimeException(message)
+
 enum class DecryptedMediaType {
     SINGLE_FILE, M3U8, DASH, NONE
 }
@@ -72,35 +82,52 @@ class UrlDecoderImpl(val networkManager: NetworkManager) : UrlDecoder {
     }
 
     override suspend fun decodeUrl(url: String): DecryptResponse? {
-        return configurations.firstNotNullOfOrNull config@{ decoder ->
+        for (decoder in configurations) {
             logger.info("Trying $decoder")
             val req = internalClient.post(decoder.endpoint + "/decrypt") {
                 contentType(ContentType.Application.Json)
                 setBody(DecryptRequest(url))
             }
 
-            return if (req.status.isSuccess()) {
+            if (req.status.isSuccess()) {
                 val resultingUrl = req.body<DecryptResponse>()
-                if (resultingUrl.urls.isNotEmpty()) resultingUrl else null
-            } else null
+                if (resultingUrl.urls.isNotEmpty()) return resultingUrl
+                continue
+            }
+
+            val errorBody = runCatching { req.body<ErrorResponse>() }.getOrNull()
+            if (errorBody?.errorCode == "NO_MATCH") {
+                logger.info("$decoder didn't find.")
+                continue
+            }
+            val message = errorBody?.message ?: "Decoder ${decoder.endpoint} failed with status ${req.status}"
+            val errorCode = errorBody?.errorCode ?: "DECODER_ERROR"
+            throw DecryptServiceException(decoder.endpoint, errorCode, message, req.status)
         }
+        return null
     }
 
     override suspend fun getMetadata(url: String): MetadataResponse? {
-        return configurations.firstNotNullOfOrNull { decoder ->
+        for (decoder in configurations) {
             val metadata = internalClient.post(decoder.endpoint + "/metadata") {
                 contentType(ContentType.Application.Json)
                 setBody(DecryptRequest(url))
             }
 
-            return if (metadata.status.isSuccess()) {
-                metadata.body<MetadataResponse>()
-            } else {
-                // nothing found
-                logger.info("$decoder didn't find.")
-                null
+            if (metadata.status.isSuccess()) {
+                return metadata.body<MetadataResponse>()
             }
+
+            val errorBody = runCatching { metadata.body<ErrorResponse>() }.getOrNull()
+            if (errorBody?.errorCode == "NO_MATCH") {
+                logger.info("$decoder didn't find.")
+                continue
+            }
+            val message = errorBody?.message ?: "Decoder ${decoder.endpoint} failed with status ${metadata.status}"
+            val errorCode = errorBody?.errorCode ?: "DECODER_ERROR"
+            throw DecryptServiceException(decoder.endpoint, errorCode, message, metadata.status)
         }
+        return null
     }
 }
 
@@ -211,7 +238,8 @@ fun UrlDecoder.makeDownloadTask(originUrl: String, onComplete: suspend (Complete
 class LazyDecoder(val originUrl: String) {
     var mediaType: DecryptedMediaType? = null
     suspend fun decode(u: UrlDecoder): List<String> {
-        val decoded = u.decodeUrl(originUrl) ?: error("Couldn't create DDLs for $originUrl")
+        val decoded = u.decodeUrl(originUrl)
+            ?: throw DecryptServiceException("local", "NO_MATCH", "No decoder could decrypt $originUrl")
         mediaType = decoded.type
         return decoded.urls
     }
