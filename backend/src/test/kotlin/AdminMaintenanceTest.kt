@@ -10,6 +10,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
+import java.util.*
 import kotlin.test.*
 
 class AdminMaintenanceTest : MediaLibraryTestBase() {
@@ -39,7 +40,7 @@ class AdminMaintenanceTest : MediaLibraryTestBase() {
     fun testScanOrphansDeletesMediaAndThumbs() {
         withTestServer { _, client, port ->
             val metadataStorage = JdbcSqliteMetadataStorage(ReaderWriterLock())
-            val id = "orphan-test"
+            val id = "orphan-test-${UUID.randomUUID()}"
             metadataStorage.deleteMetadata(id)
 
             val entryDir = File(AppConfig.mediaLibraryPath, id).apply { mkdirs() }
