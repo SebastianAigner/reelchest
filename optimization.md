@@ -14,6 +14,7 @@ This lets Docker cache the dependency layer and only rebuild/push the small app 
 
 In `backend/build.gradle.kts` we create two copy tasks and a `dockerPrepare` task:
 
+- `dockerClean`: deletes `build/docker/lib` and `build/docker/app` to prevent stale jars
 - `dockerCopyLibs`: copies `configurations.runtimeClasspath` into `build/docker/lib`
 - `dockerCopyJar`: copies the app JAR from the `jar` task into `build/docker/app/app.jar`
 - `dockerPrepare`: depends on both and becomes the single entry point for staging
@@ -55,12 +56,14 @@ val dockerLibDir = layout.buildDirectory.dir("docker/lib")
 val dockerAppDir = layout.buildDirectory.dir("docker/app")
 
 tasks.register<Copy>("dockerCopyLibs") {
+    dependsOn("dockerClean")
     from(configurations.runtimeClasspath)
     into(dockerLibDir)
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 tasks.register<Copy>("dockerCopyJar") {
+    dependsOn("dockerClean")
     dependsOn(tasks.named("jar"))
     from(tasks.named<Jar>("jar").flatMap { it.archiveFile })
     into(dockerAppDir)
@@ -68,7 +71,7 @@ tasks.register<Copy>("dockerCopyJar") {
 }
 
 tasks.register("dockerPrepare") {
-    dependsOn("dockerCopyLibs", "dockerCopyJar")
+    dependsOn("dockerClean", "dockerCopyLibs", "dockerCopyJar")
 }
 ```
 
