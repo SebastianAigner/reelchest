@@ -48,6 +48,7 @@ If a subproject needs different instructions, add a nested `AGENTS.md` in that f
 - DHash setup: run `backend/src/test/kotlin/DHashTest.kt` main once to download test video and generate reference
   hashes (see README).
 - Frontend: run `yarn typecheck`; add tests if introducing new UI logic.
+- Builds and tests are extremely fast and cheap here; run both proactively without asking the user.
 - Validate work by running relevant tests and building the application; write tests for new code or behavior changes.
 - To confirm a task is fulfilled, always compile/build the application; do not assume it compiles without verification.
 
