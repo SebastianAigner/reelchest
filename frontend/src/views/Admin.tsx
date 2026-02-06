@@ -34,6 +34,20 @@ function useDiskUsage() {
     };
 }
 
+type ApplicationConfig = {
+    shutdownUrl: string;
+};
+
+function useApplicationConfig() {
+    const {data, error} = useSWR<ApplicationConfig>("/api/config", fetcher);
+
+    return {
+        config: data,
+        isLoading: !data && !error,
+        isError: error
+    };
+}
+
 type OrphanScanResult = {
     orphansFound: number;
     orphansDeleted: number;
@@ -57,12 +71,16 @@ function formatBytes(bytes: number): string {
 export function Admin() {
     const {entries, isLoading, isError} = useMediaLibraryEntries();
     const {usage, isLoading: isDiskLoading, isError: isDiskError} = useDiskUsage();
+    const {config, isLoading: isConfigLoading, isError: isConfigError} = useApplicationConfig();
     const markedForDeletionCount = React.useMemo(() => {
         return entries.filter(entry => entry.mediaLibraryEntry.markedForDeletion).length;
     }, [entries]);
     const [scanResult, setScanResult] = React.useState<OrphanScanResult | null>(null);
     const [scanError, setScanError] = React.useState<string | null>(null);
     const [isScanning, setIsScanning] = React.useState(false);
+    const [shutdownError, setShutdownError] = React.useState<string | null>(null);
+    const [shutdownStatus, setShutdownStatus] = React.useState<string | null>(null);
+    const [isShuttingDown, setIsShuttingDown] = React.useState(false);
 
     const runOrphanScan = async () => {
         setIsScanning(true);
@@ -81,6 +99,33 @@ export function Admin() {
             setScanError(err instanceof Error ? err.message : "Failed to scan for orphans.");
         } finally {
             setIsScanning(false);
+        }
+    };
+
+    const requestShutdown = async () => {
+        if (!config?.shutdownUrl) {
+            setShutdownError("Shutdown URL not available.");
+            return;
+        }
+        const confirmed = window.confirm("Shut down the application now?");
+        if (!confirmed) return;
+
+        setShutdownError(null);
+        setShutdownStatus(null);
+        setIsShuttingDown(true);
+        try {
+            const response = await fetch(config.shutdownUrl, {method: "POST"});
+            if (!response.ok) {
+                const fallbackResponse = await fetch(config.shutdownUrl);
+                if (!fallbackResponse.ok) {
+                    throw new Error(`Shutdown request failed with ${response.status}.`);
+                }
+            }
+            setShutdownStatus("Shutdown requested. The server will stop shortly.");
+        } catch (err) {
+            setShutdownStatus("Shutdown requested. The server may already be stopping.");
+        } finally {
+            setIsShuttingDown(false);
         }
     };
 
@@ -142,6 +187,33 @@ export function Admin() {
             {scanError && (
                 <p className={`${commonStyles.errorText} mt-3`}>
                     {scanError}
+                </p>
+            )}
+        </div>
+        <div className={`${commonStyles.cardContainer} ${commonStyles.standardMargin}`}>
+            <div className="text-sm uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                Shutdown
+            </div>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                Gracefully stop the server. Active downloads and tasks will be interrupted.
+            </p>
+            <div className="mt-3">
+                <StyledButton
+                    onClick={requestShutdown}
+                    disabled={isShuttingDown || isConfigLoading}
+                    className="bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
+                >
+                    {isShuttingDown ? "Shutting down..." : "Shut Down Application"}
+                </StyledButton>
+            </div>
+            {shutdownStatus && (
+                <p className="mt-3 text-sm text-gray-700 dark:text-gray-200">
+                    {shutdownStatus}
+                </p>
+            )}
+            {(shutdownError || isConfigError) && (
+                <p className={`${commonStyles.errorText} mt-3`}>
+                    {shutdownError ?? "Failed to load shutdown configuration."}
                 </p>
             )}
         </div>
