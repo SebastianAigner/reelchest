@@ -218,10 +218,9 @@ private suspend fun generateThumbnails(mediaLibrary: MediaLibrary) {
  * to ensure that only one FFmpeg process runs at a time.
  */
 private suspend fun createThumbnails(mediaLibraryEntry: MediaLibraryEntry, logger: Logger) {
-    mediaLibraryEntry.file?.let {
-        logger.info("Generating thumbnail for ${mediaLibraryEntry.id}")
-        if (it.parentFile?.list()?.none { entry -> entry.startsWith("thumb") } == true) {
-            generateThumbnails(it, logger)
-        }
+    val mediaFile = mediaLibraryEntry.file
+    logger.info("Generating thumbnail for ${mediaLibraryEntry.id}")
+    if (mediaFile.parentFile?.list()?.none { entry -> entry.startsWith("thumb") } == true) {
+        generateThumbnails(mediaFile, logger)
     }
 }

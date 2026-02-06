@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory
 suspend fun RoutingContext.getThumbnailsHandler(mediaLibrary: MediaLibrary) {
     val id = call.parameters["id"]!!
     val entry = mediaLibrary.findById(id)!!
-    val out = entry.file!!.parentFile.list()!!.filter { it.startsWith("thumb") }.sorted()
+    val out = entry.file.parentFile.list()!!.filter { it.startsWith("thumb") }.sorted()
     call.respond(out)
 }
 
@@ -57,41 +57,40 @@ suspend fun RoutingContext.regenerateThumbnailHandler(mediaLibrary: MediaLibrary
     call.response.header("Cache-Control", "no-cache")
     call.response.header("Connection", "keep-alive")
     try {
-        entry.file?.let { videoFile ->
-            call.respondTextWriter(contentType = ContentType.Text.EventStream) {
-                val logger = object : org.slf4j.Logger by LoggerFactory.getLogger("ThumbnailDebug") {
-                    override fun info(msg: String) {
-                        write("data: [INFO] $msg\n\n")
-                        flush()
-                    }
-
-                    override fun error(msg: String) {
-                        write("data: [ERROR] $msg\n\n")
-                        flush()
-                    }
+        val videoFile = entry.file
+        call.respondTextWriter(contentType = ContentType.Text.EventStream) {
+            val logger = object : org.slf4j.Logger by LoggerFactory.getLogger("ThumbnailDebug") {
+                override fun info(msg: String) {
+                    write("data: [INFO] $msg\n\n")
+                    flush()
                 }
 
-                write("data: Starting thumbnail regeneration for entry: ${entry.name}\n\n")
-                write("data: Video file: ${videoFile.absolutePath}\n\n")
-                flush()
-
-                generateThumbnails(
-                    videoFile,
-                    logger,
-                    onStdoutLine = { line ->
-                        write("data: [FFMPEG-OUT] $line\n\n")
-                        flush()
-                    },
-                    onStderrLine = { line ->
-                        write("data: [FFMPEG-ERR] $line\n\n")
-                        flush()
-                    }
-                )
-
-                write("data: Thumbnail generation completed\n\n")
-                flush()
+                override fun error(msg: String) {
+                    write("data: [ERROR] $msg\n\n")
+                    flush()
+                }
             }
-        } ?: call.respond(HttpStatusCode.NotFound, "Video file not found")
+
+            write("data: Starting thumbnail regeneration for entry: ${entry.name}\n\n")
+            write("data: Video file: ${videoFile.absolutePath}\n\n")
+            flush()
+
+            generateThumbnails(
+                videoFile,
+                logger,
+                onStdoutLine = { line ->
+                    write("data: [FFMPEG-OUT] $line\n\n")
+                    flush()
+                },
+                onStderrLine = { line ->
+                    write("data: [FFMPEG-ERR] $line\n\n")
+                    flush()
+                }
+            )
+
+            write("data: Thumbnail generation completed\n\n")
+            flush()
+        }
     } catch (e: Exception) {
         call.respondTextWriter(contentType = ContentType.Text.EventStream) {
             write("data: [ERROR] Exception: ${e.message}\n\n")

@@ -56,7 +56,7 @@ suspend fun RoutingContext.saveHashHandler(metadataStorage: MetadataStorage) {
     val individual = metadataStorage.retrieveMetadata(id).just()
         ?: return call.respond("Not found")
     withContext(Dispatchers.IO) {
-        File(individual.file!!.parentFile, "dhashes.bin").writeBytes(ba)
+        File(individual.file.parentFile, "dhashes.bin").writeBytes(ba)
     }
     call.respond("OK")
 }

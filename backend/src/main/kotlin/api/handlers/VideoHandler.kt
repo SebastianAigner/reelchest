@@ -49,7 +49,7 @@ suspend fun RoutingContext.serveVideoByIdHandler(mediaLibrary: MediaLibrary) {
 
     call.respond(
         LocalFileContent(
-            entry.file!!,
+            entry.file,
             contentType = type
         )
     )

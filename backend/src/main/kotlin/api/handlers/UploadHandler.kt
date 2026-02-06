@@ -39,7 +39,7 @@ suspend fun RoutingContext.uploadHandler(mediaLibrary: MediaLibrary) {
                     stream.copyToNIO(targetPath)
                 }
                 val result = ProcessUploadedFilePartResult(
-                    targetFile!!,
+                    targetFile,
                     fileItem.originalFileName!!
                 )
                 logger.info("Disposing part.")

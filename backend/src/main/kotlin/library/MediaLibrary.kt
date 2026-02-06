@@ -46,10 +46,9 @@ class MediaLibrary(
         )
         entry.persist(metadataStorage)
         f.delete()
-        entry.file?.let {
-            mediaLibraryScope.launch(Dispatchers.IO) {
-                generateThumbnails(it)
-            }
+        val mediaFile = entry.file
+        mediaLibraryScope.launch(Dispatchers.IO) {
+            generateThumbnails(mediaFile)
         }
         return uid
     }
@@ -70,10 +69,8 @@ class MediaLibrary(
             logger.info("Persisting $entry")
             entry.persist(metadataStorage)
             c.targetFile.delete()
-            entry.file?.let {
-                logger.info("Starting thumbnail generation.")
-//            generateThumbnails(it)
-            }
+            logger.info("Starting thumbnail generation.")
+//            generateThumbnails(entry.file)
         }
     }
 }

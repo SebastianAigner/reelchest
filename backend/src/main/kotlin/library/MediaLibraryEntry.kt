@@ -27,7 +27,7 @@ data class MediaLibraryEntry(
 
 @OptIn(ExperimentalUnsignedTypes::class)
 fun MediaLibraryEntry.getDHashesFromDisk(): ULongArray? {
-    val hashFile = File(file!!.parent, "dhashes.bin")
+    val hashFile = File(file.parent, "dhashes.bin")
     if (!hashFile.exists()) return null
     return getHashesFromFile(hashFile)
 }
@@ -54,7 +54,7 @@ suspend fun MediaLibraryEntry.persist(metadataStorage: MetadataStorage) {
 
 fun MediaLibraryEntry.getThumbnails(): List<File>? {
     return this.file
-        ?.parentFile
+        .parentFile
         ?.listFiles()
         ?.filter { it.name.startsWith("thumb") }
 }

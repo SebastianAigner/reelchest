@@ -72,7 +72,8 @@ suspend fun RoutingContext.getMediaInformationHandler(metadataStorage: MetadataS
         val entry =
             metadataStorage.retrieveMetadata(id).just()
                 ?: return@withContext call.respond(HttpStatusCode.NotFound)
-        if (entry.file == null || !entry.file.exists()) {
+        val mediaFile = entry.file
+        if (!mediaFile.exists()) {
             return@withContext call.respond(HttpStatusCode.NotFound, buildJsonObject {
                 put("error", "File not found")
             })
@@ -80,7 +81,7 @@ suspend fun RoutingContext.getMediaInformationHandler(metadataStorage: MetadataS
 
         try {
             val mimeType = mimeTypeCache.getOrPut(entry.id) { entry.getMimeType() }
-            val mediaInfo = mediaTypeCache.getOrPut(entry.id) { getMediaType(entry.file) }
+            val mediaInfo = mediaTypeCache.getOrPut(entry.id) { getMediaType(mediaFile) }
             call.respond(buildJsonObject {
                 put("mimeType", mimeType)
                 put("width", mediaInfo.width)
