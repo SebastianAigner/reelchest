@@ -21,8 +21,13 @@ fun Application.installPlugins() {
         disableDefaultColors()
         level = Level.INFO
         filter { call ->
-            listOf("/api/queue", "/api/log", "/api/problematic").none {
-                call.request.path().startsWith(it)
+            listOf(
+                "/api/queue",
+                "/api/log",
+                "/api/problematic",
+                "/api/ffmpeg/mutex"
+            ).none { path ->
+                call.request.path().startsWith(path)
             }
         }
     }
