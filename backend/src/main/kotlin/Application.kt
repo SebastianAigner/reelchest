@@ -1,6 +1,7 @@
 package io.sebi
 
 import io.ktor.server.application.*
+import io.ktor.server.http.HttpRequestLifecycle
 import io.ktor.server.http.content.*
 import io.ktor.server.routing.*
 import io.sebi.api.api
@@ -181,6 +182,9 @@ fun Application.module() {
     installPlugins()
 
     routing {
+        install(HttpRequestLifecycle) {
+            cancelCallOnClose = true
+        }
         api(urlDecoder, mediaLibrary, downloadManager, tagger, metadataStorage)
         addDownload(intoMediaLibraryDownloader)
         addUpload()
