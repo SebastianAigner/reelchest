@@ -20,8 +20,35 @@ import * as _ from "underscore";
 import {MediaLibraryCard} from "../components/MediaLibraryCard";
 import DuplicatesDTO = IoSebi.DuplicatesDTO;
 
+function formatBitRate(bitRate?: number): string | null {
+    if (!bitRate || bitRate <= 0) return null;
+    const kbps = bitRate / 1000;
+    if (kbps >= 1000) return `${(kbps / 1000).toFixed(2)} Mbps`;
+    return `${Math.round(kbps)} kbps`;
+}
+
+function formatBytes(size?: number): string | null {
+    if (!size || size <= 0) return null;
+    const units = ["B", "KB", "MB", "GB", "TB"];
+    let value = size;
+    let unitIndex = 0;
+    while (value >= 1024 && unitIndex < units.length - 1) {
+        value /= 1024;
+        unitIndex += 1;
+    }
+    return `${value.toFixed(value >= 100 ? 0 : value >= 10 ? 1 : 2)} ${units[unitIndex]}`;
+}
+
+function formatFrameRate(frameRate?: number): string | null {
+    if (!frameRate || frameRate <= 0) return null;
+    return `${frameRate.toFixed(2)} fps`;
+}
+
 function MediaInfoSection({id}: { id: string }) {
-    const {mimeType, width, height, isLoading} = useMediaInfo(id);
+    const {mimeType, width, height, bitRate, frameRate, fileSize, isLoading} = useMediaInfo(id);
+    const formattedBitRate = formatBitRate(bitRate);
+    const formattedFrameRate = formatFrameRate(frameRate);
+    const formattedFileSize = formatBytes(fileSize);
 
     if (isLoading) return <p>Loading media information...</p>;
 
@@ -30,6 +57,15 @@ function MediaInfoSection({id}: { id: string }) {
             <li>MIME Type: {mimeType}</li>
             {width && height && (
                 <li>Dimensions: {width}×{height}</li>
+            )}
+            {formattedFrameRate && (
+                <li>Frame rate: {formattedFrameRate}</li>
+            )}
+            {formattedBitRate && (
+                <li>Bitrate: {formattedBitRate}</li>
+            )}
+            {formattedFileSize && (
+                <li>File size: {formattedFileSize}</li>
             )}
         </ul>
     );

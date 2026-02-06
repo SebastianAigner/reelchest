@@ -19,6 +19,14 @@
 - `GET /api/mediaLibrary/{id}/randomThumb` - Get a random thumbnail
 - `GET /api/mediaLibrary/{id}/hash.{format}` - Get hash in specific format
     - Formats: json, bin
+- `GET /api/mediaLibrary/{id}/media-information` - Get media metadata for playback diagnostics
+    - Returns:
+        - `mimeType`
+        - `width`
+        - `height`
+        - `bitRate` (bits per second)
+        - `frameRate` (frames per second)
+        - `fileSize` (bytes)
 
 ### Duplicates Management
 

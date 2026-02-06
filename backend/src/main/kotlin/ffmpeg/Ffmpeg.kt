@@ -191,7 +191,25 @@ data class MediaTypeInfo(
     val codecName: String,
     val width: Int? = null,
     val height: Int? = null,
+    val bitRate: Long? = null,
+    val frameRate: Double? = null,
+    val fileSize: Long? = null,
 )
+
+private fun parseFrameRate(raw: String?): Double? {
+    if (raw.isNullOrBlank()) return null
+    val trimmed = raw.trim()
+    if (trimmed == "0/0") return null
+    return if (trimmed.contains('/')) {
+        val parts = trimmed.split('/')
+        if (parts.size != 2) return null
+        val numerator = parts[0].toDoubleOrNull() ?: return null
+        val denominator = parts[1].toDoubleOrNull() ?: return null
+        if (denominator == 0.0) null else numerator / denominator
+    } else {
+        trimmed.toDoubleOrNull()
+    }
+}
 
 suspend fun getMediaType(inputFile: File): MediaTypeInfo {
     return globalFfmpegMutex.withLock("Media type probe") {
@@ -201,7 +219,8 @@ suspend fun getMediaType(inputFile: File): MediaTypeInfo {
             "ffprobe",
             "-v", "quiet",
             "-print_format", "json",
-            "-show_entries", "stream=codec_type,codec_name,width,height",
+            "-show_entries",
+            "stream=codec_type,codec_name,width,height,bit_rate,avg_frame_rate,r_frame_rate:format=bit_rate",
             inputFile.absolutePath,
             stdoutHandler = StdoutHandler.Lines { stdout.add(it) },
             onStderrLine = { stderr.add(it) },
@@ -216,17 +235,31 @@ suspend fun getMediaType(inputFile: File): MediaTypeInfo {
         val streams = json.jsonObject["streams"]?.jsonArray
             ?: error("ffprobe on $inputFile didn't return any streams")
 
-        val firstStream = streams.firstOrNull()?.jsonObject
+        val streamObject = streams
+            .mapNotNull { it.jsonObject }
+            .firstOrNull { it["codec_type"]?.jsonPrimitive?.content?.lowercase() == "video" }
+            ?: streams.firstOrNull()?.jsonObject
             ?: error("ffprobe on $inputFile didn't return any streams")
 
-        val codecType = firstStream["codec_type"]?.jsonPrimitive?.content
+        val codecType = streamObject["codec_type"]?.jsonPrimitive?.content
             ?: error("ffprobe on $inputFile didn't return a codec_type")
-        val codecName = firstStream["codec_name"]?.jsonPrimitive?.content
+        val codecName = streamObject["codec_name"]?.jsonPrimitive?.content
             ?: error("ffprobe on $inputFile didn't return a codec_name")
-        val width = firstStream["width"]?.jsonPrimitive?.content?.toIntOrNull()
-        val height = firstStream["height"]?.jsonPrimitive?.content?.toIntOrNull()
+        val width = streamObject["width"]?.jsonPrimitive?.content?.toIntOrNull()
+        val height = streamObject["height"]?.jsonPrimitive?.content?.toIntOrNull()
+        val streamBitRate = streamObject["bit_rate"]?.jsonPrimitive?.content?.toLongOrNull()
+        val formatBitRate = json.jsonObject["format"]
+            ?.jsonObject
+            ?.get("bit_rate")
+            ?.jsonPrimitive
+            ?.content
+            ?.toLongOrNull()
+        val bitRate = streamBitRate ?: formatBitRate
+        val frameRate = parseFrameRate(streamObject["avg_frame_rate"]?.jsonPrimitive?.content)
+            ?: parseFrameRate(streamObject["r_frame_rate"]?.jsonPrimitive?.content)
+        val fileSize = inputFile.length().takeIf { it > 0 }
 
-        MediaTypeInfo(codecType, codecName, width, height)
+        MediaTypeInfo(codecType, codecName, width, height, bitRate, frameRate, fileSize)
     }
 }
 

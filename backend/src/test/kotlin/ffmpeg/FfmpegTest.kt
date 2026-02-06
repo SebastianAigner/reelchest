@@ -5,6 +5,7 @@ import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class FfmpegTest {
     @Test
@@ -22,5 +23,13 @@ class FfmpegTest {
         // Verify specific dimensions
         assertEquals(1280, mediaTypeInfo.width, "Video width should be 1280")
         assertEquals(720, mediaTypeInfo.height, "Video height should be 720")
+
+        val frameRate = mediaTypeInfo.frameRate
+        assertNotNull(frameRate, "Frame rate should not be null")
+        assertTrue(frameRate > 0.0, "Frame rate should be positive")
+
+        val fileSize = mediaTypeInfo.fileSize
+        assertNotNull(fileSize, "File size should not be null")
+        assertTrue(fileSize > 0, "File size should be positive")
     }
 }

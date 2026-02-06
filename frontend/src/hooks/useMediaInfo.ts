@@ -14,6 +14,9 @@ interface MediaInfo {
     mimeType: string;
     width?: number;
     height?: number;
+    bitRate?: number;
+    frameRate?: number;
+    fileSize?: number;
 }
 
 export function useMediaInfo(id: string, enabled: boolean = true) {
@@ -27,6 +30,9 @@ export function useMediaInfo(id: string, enabled: boolean = true) {
         mimeType: data?.mimeType,
         width: data?.width,
         height: data?.height,
+        bitRate: data?.bitRate,
+        frameRate: data?.frameRate,
+        fileSize: data?.fileSize,
         isAudio: data?.mimeType?.startsWith('audio/'),
         isLoading: enabled && !error && !data,
         isError: error

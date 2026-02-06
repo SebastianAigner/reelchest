@@ -49,6 +49,7 @@ If a subproject needs different instructions, add a nested `AGENTS.md` in that f
   hashes (see README).
 - Frontend: run `yarn typecheck`; add tests if introducing new UI logic.
 - Builds and tests are extremely fast and cheap here; run both proactively without asking the user.
+- Do not wait for user approval to run relevant tests/builds; execute them on your own.
 - Validate work by running relevant tests and building the application; write tests for new code or behavior changes.
 - To confirm a task is fulfilled, always compile/build the application; do not assume it compiles without verification.
 
@@ -79,5 +80,7 @@ If a subproject needs different instructions, add a nested `AGENTS.md` in that f
 ## Working Style
 
 - Ask before running long or destructive commands.
+- Default to inspecting the project state before giving generic advice; user requests usually target concrete changes in
+  this repo.
 - When you change behavior, add or update tests.
 - Prefer `withTimeoutOrNull` over `withTimeout` in coroutine code.

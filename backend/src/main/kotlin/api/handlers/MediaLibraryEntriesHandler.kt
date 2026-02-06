@@ -86,6 +86,9 @@ suspend fun RoutingContext.getMediaInformationHandler(metadataStorage: MetadataS
                 put("mimeType", mimeType)
                 put("width", mediaInfo.width)
                 put("height", mediaInfo.height)
+                put("bitRate", mediaInfo.bitRate)
+                put("frameRate", mediaInfo.frameRate)
+                put("fileSize", mediaInfo.fileSize)
             })
         } catch (e: Exception) {
             call.respond(HttpStatusCode.InternalServerError, buildJsonObject {
