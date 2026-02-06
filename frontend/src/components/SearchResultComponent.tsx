@@ -31,7 +31,7 @@ export function SearchResultComponent(result: SearchResult) {
     return <div key={result.url} className={commonStyles.boxBorder}>
         <a href={`/decrypt?url=${result.url}`} target={"_blank"}>
             <LazyLoadImage
-                className={`${commonStyles.cardImage} ${existsAlready == SearchResultState.IN_LIBRARY || existsAlready == SearchResultState.JUST_ADDED ? commonStyles.fadeOut : ""}`}
+                className={`${commonStyles.searchResultImage} ${existsAlready == SearchResultState.IN_LIBRARY || existsAlready == SearchResultState.JUST_ADDED ? commonStyles.fadeOut : ""}`}
                 src={result.thumbUrl}/>
         </a>
         <a href={`/decrypt?url=${result.url}`} target={"_blank"}>{result.title}</a>

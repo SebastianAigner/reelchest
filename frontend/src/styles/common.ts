@@ -20,6 +20,7 @@ export const commonStyles = {
     cardContainer: "border-2 dark:border-gray-700 rounded-xl p-3 shadow dark:shadow-gray-800 bg-white dark:bg-gray-800 transition-colors",
     cardTitle: "py-3 font-semibold dark:text-gray-100",
     cardText: "py-3 text-right dark:text-gray-300",
+    searchResultImage: "block h-48 max-w-full mx-auto rounded-md object-cover object-center aspect-video",
 
     // Typography
     monospace: "font-mono dark:text-gray-200",
