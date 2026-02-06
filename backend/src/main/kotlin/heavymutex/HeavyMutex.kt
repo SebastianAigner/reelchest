@@ -12,6 +12,8 @@ class HeavyMutex(
 ) {
     private val mutex = Mutex()
     var lockedAt = Clock.System.now()
+    val isLocked: Boolean
+        get() = mutex.isLocked
     suspend fun lock() {
         mutex.lock()
         lockedAt = Clock.System.now()
