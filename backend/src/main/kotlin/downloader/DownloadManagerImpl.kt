@@ -13,7 +13,6 @@ import io.sebi.urldecoder.makeDownloadTask
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -23,6 +22,7 @@ class DownloadManagerImpl(
     private val urlDecoder: UrlDecoder,
     private val networkManager: NetworkManager,
     private val defaultOnComplete: suspend (CompletedDownloadTask) -> Unit,
+    private val downloadStartGate: DownloadStartGate = AllowAllDownloadStartGate,
     private val serverEvents: Events,
 ) : DownloadManager {
     val scope = CoroutineScope(context = Dispatchers.Default)
@@ -150,6 +150,7 @@ class DownloadManagerImpl(
     private fun CoroutineScope.startWorkers(n: Int = 1) {
         repeat(n) {
             val newWorker = DownloadWorker(networkManager = networkManager, provideDownload = {
+                downloadStartGate.awaitPermit()
                 queuedDownloads.remove()
             }, id = it, onComplete = {
                 finishedDownloads.add(it)

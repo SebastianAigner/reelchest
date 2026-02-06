@@ -6,6 +6,8 @@ import io.ktor.server.routing.*
 import io.sebi.api.api
 import io.sebi.api.handlers.triggerOrphanScan
 import io.sebi.autoscrape.setupAutoscraper
+import io.sebi.disk.MediaLibraryDiskSpaceProvider
+import io.sebi.downloader.DiskSpaceDownloadStartGate
 import io.sebi.downloader.DownloadManager
 import io.sebi.downloader.DownloadManagerImpl
 import io.sebi.downloader.IntoMediaLibraryDownloader
@@ -117,6 +119,7 @@ fun Application.module() {
             urlDecoder,
             networkManager,
             mediaLibrary::addCompletedDownload,
+            DiskSpaceDownloadStartGate(MediaLibraryDiskSpaceProvider()),
             monitor
         )
     val tagger = CachingTagger()
