@@ -7,6 +7,7 @@ import axios from "axios";
 import {AutoTaggedMediaLibraryEntry} from "../models/AutoTaggedMediaLibraryEntry";
 import {MainHeading} from "../components/Typography";
 import {commonStyles} from "../styles/common";
+import {MarkForDeletionButton} from "../components/MarkForDeletionButton";
 import DuplicateResponse = IoSebi.DuplicateResponse;
 import DuplicatesDTO = IoSebi.DuplicatesDTO;
 
@@ -106,7 +107,7 @@ function useMediaLibraryEntryUpdate(entry: MediaLibraryEntry) {
     const updateEntry = (newEntry: Partial<MediaLibraryEntry>) => {
         const joinedEntry = {...entry, ...newEntry} as MediaLibraryEntry;
 
-        axios.post(`/api/mediaLibrary/${id}`, joinedEntry).then(() => {
+        return axios.post(`/api/mediaLibrary/${id}`, joinedEntry).then(() => {
             // Only mutate the necessary endpoints
             mutate(endpoint);
             mutate('/api/mediaLibrary?auto=true');
@@ -151,12 +152,15 @@ function DuplicatePair({duplicate}: { duplicate: DuplicateResponse }) {
 
                 {/* Mark to Delete Button */}
                 <div className="flex flex-col items-center">
-                    <button
+                    <MarkForDeletionButton
                         className={`${commonStyles.greenButton} ${isMarkedForDeletion ? 'bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700' : ''}`}
-                        onClick={() => updateEntry({markedForDeletion: !isMarkedForDeletion})}
-                    >
-                        {isMarkedForDeletion ? "Unmark" : "Mark to Delete"}
-                    </button>
+                        isMarkedForDeletion={isMarkedForDeletion}
+                        onToggle={(nextMarked) => updateEntry({markedForDeletion: nextMarked})}
+                        markLabel="Mark to Delete"
+                        unmarkLabel="Unmark"
+                        markInProgressLabel="Marking to delete..."
+                        unmarkInProgressLabel="Unmarking..."
+                    />
                 </div>
             </div>
         </div>

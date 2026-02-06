@@ -9,6 +9,7 @@ import {useMediaInfo} from "../hooks/useMediaInfo";
 import axios from "axios";
 import {commonStyles} from "../styles/common";
 import {StyledButton} from "../components/StyledButton";
+import {MarkForDeletionButton} from "../components/MarkForDeletionButton";
 import useSWR, {mutate} from "swr";
 import {fetcher} from "../utils";
 import EdiText from "react-editext";
@@ -63,7 +64,7 @@ function useMediaLibraryEntry(id: string) {
             const joinedEntry = {...data.mediaLibraryEntry, ...newEntry} as MediaLibraryEntry
             console.log(data.mediaLibraryEntry)
             console.log(joinedEntry)
-            axios.post(`/api/mediaLibrary/${id}`, joinedEntry).then(() => {
+            return axios.post(`/api/mediaLibrary/${id}`, joinedEntry).then(() => {
                 console.log("post succeeded, mutating!")
                 mutate(endpoint)
             })
@@ -252,10 +253,11 @@ export function Movie() {
         <SubHeading>Operations</SubHeading>
         <ul>
             <li>
-                <button onClick={() =>
-                    mutateEntry({markedForDeletion: !entry?.mediaLibraryEntry.markedForDeletion})
-                }>{entry?.mediaLibraryEntry.markedForDeletion ? "Unmark " : "Mark "} for deletion
-                </button>
+                <MarkForDeletionButton
+                    isMarkedForDeletion={entry?.mediaLibraryEntry.markedForDeletion || false}
+                    onToggle={(nextMarked) => mutateEntry({markedForDeletion: nextMarked})}
+                    disabled={!entry?.mediaLibraryEntry}
+                />
             </li>
             <li><a href={`vlc://${window.location.host}/api/video/${id}`}>Open in VLC</a></li>
             <li><a href={`/api/video/${id}.mp4`}>Direct link</a></li>
