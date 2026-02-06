@@ -114,13 +114,19 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 val dockerLibDir = layout.buildDirectory.dir("docker/lib")
 val dockerAppDir = layout.buildDirectory.dir("docker/app")
 
+tasks.register<Delete>("dockerClean") {
+    delete(dockerLibDir, dockerAppDir)
+}
+
 tasks.register<Copy>("dockerCopyLibs") {
+    dependsOn("dockerClean")
     from(configurations.runtimeClasspath)
     into(dockerLibDir)
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 tasks.register<Copy>("dockerCopyJar") {
+    dependsOn("dockerClean")
     dependsOn(tasks.named("jar"))
     from(tasks.named<Jar>("jar").flatMap { it.archiveFile })
     into(dockerAppDir)
@@ -128,7 +134,7 @@ tasks.register<Copy>("dockerCopyJar") {
 }
 
 tasks.register("dockerPrepare") {
-    dependsOn("dockerCopyLibs", "dockerCopyJar")
+    dependsOn("dockerClean", "dockerCopyLibs", "dockerCopyJar")
 }
 
 
