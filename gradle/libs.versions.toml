@@ -15,7 +15,7 @@ com-google-devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" 
 [versions]
 
 jvm-toolchain = "21"
-kotlinx-rpc = "0.10.1"
+kotlinx-rpc = "0.10.2"
 
 ksp = "2.3.0"
 

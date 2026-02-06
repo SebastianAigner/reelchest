@@ -37,7 +37,7 @@ export function Downloads() {
         <MainHeading>Downloads</MainHeading>
         <ul>
             {
-                queue?.map(item =>
+                queue?.slice().reverse().map(item =>
                     <li key={item.queueEntry.originUrl}>
                         {item.queueEntry.progress != 0 && <progress value={item.queueEntry.progress}/>}
                         <p>
