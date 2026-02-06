@@ -242,6 +242,26 @@ class JdbcSqliteMetadataStorage(
         }
     }
 
+    override suspend fun listTombstones(): List<String> {
+        return withContext(Dispatchers.IO) {
+            readerWriterLock.withReaderLock {
+                connection.prepareStatement(
+                    """
+                    SELECT unique_id FROM media_library_tombstones
+                """
+                ).use { stmt ->
+                    stmt.executeQuery().use { rs ->
+                        val results = mutableListOf<String>()
+                        while (rs.next()) {
+                            results.add(rs.getString("unique_id"))
+                        }
+                        results
+                    }
+                }
+            }
+        }
+    }
+
     override suspend fun addDuplicate(id: String, dup: String, dist: Int) {
         withContext(Dispatchers.IO) {
             readerWriterLock.withWriterLock {

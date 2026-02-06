@@ -23,6 +23,7 @@ interface MetadataStorage {
     suspend fun retrieveMetadata(id: String): MetadataResult
     suspend fun deleteMetadata(id: String)
     suspend fun listAllMetadata(): List<MediaLibraryEntry>
+    suspend fun listTombstones(): List<String>
     suspend fun addDuplicate(id: String, dup: String, dist: Int)
     suspend fun getDuplicate(id: String): Duplicates?
     suspend fun getTopDuplicates(limit: Int = 100): List<Duplicates>

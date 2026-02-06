@@ -68,6 +68,7 @@ fun Route.api(
             route("debug") {
                 get("missing-thumbnails") { getMissingThumbnailsHandler(mediaLibrary) }
                 get("regenerate-thumbnail/{id}") { regenerateThumbnailHandler(mediaLibrary) }
+                post("scan-orphans") { scanOrphanedMediaHandler(metadataStorage) }
             }
         }
 

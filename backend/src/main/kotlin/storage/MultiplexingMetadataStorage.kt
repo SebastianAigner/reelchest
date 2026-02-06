@@ -38,6 +38,21 @@ class MultiplexingMetadataStorage(val metadataStorages: List<MetadataStorage>, v
         return allMetadatas.first()
     }
 
+    @OptIn(ExperimentalTime::class)
+    override suspend fun listTombstones(): List<String> {
+        val allTombstones = metadataStorages.zip(storageNames).map { (individualStorage, individualStorageName) ->
+            val (entries, time) = measureTimedValue {
+                individualStorage.listTombstones()
+            }
+            logger.info("$individualStorageName took $time to list tombstones.")
+            entries.sorted()
+        }
+        require(allEqual(allTombstones)) {
+            "All metadata storages should be in sync for tombstones (${allTombstones.zip(storageNames)})."
+        }
+        return allTombstones.first()
+    }
+
     override suspend fun addDuplicate(id: String, dup: String, dist: Int) {
         TODO("Not yet implemented")
     }

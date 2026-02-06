@@ -400,6 +400,25 @@ paths:
                   value: "Video file not found"
                 Example#2:
                   value: "Entry not found"
+  /api/mediaLibrary/debug/scan-orphans:
+    post:
+      description: ""
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "object"
+                properties:
+                  orphansFound:
+                    type: "integer"
+                  orphansDeleted:
+                    type: "integer"
+                  failedDeletions:
+                    type: "integer"
+                  bytesFreed:
+                    type: "integer"
   /api/mediaLibrary/duplicates:
     get:
       description: ""

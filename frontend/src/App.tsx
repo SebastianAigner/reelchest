@@ -12,6 +12,7 @@ import {ConfigurationManager} from "./views/ConfigurationManager";
 import {DuplicatesManager} from "./views/DuplicatesManager";
 import {SubtitleKitchen} from "./views/SubtitleKitchen";
 import {Upload} from "./views/Upload";
+import {Admin} from "./views/Admin";
 import {NavGrid, VStack} from "./components/Layout";
 import {ThemeProvider, useTheme} from "./context/ThemeContext";
 import {commonStyles} from "./styles/common";
@@ -58,6 +59,9 @@ const NavigationBar: React.FC = () => {
                 </div>
                 <div>
                     <Link to={"/debug/thumbnails"} className={commonStyles.navLink}>Debug Thumbnails</Link>
+                </div>
+                <div>
+                    <Link to={"/admin"} className={commonStyles.navLink}>Admin</Link>
                 </div>
                 <div>
                     <button
@@ -125,6 +129,9 @@ const App: React.FC = () => {
                             </Route>
                             <Route path="/debug/thumbnails">
                                 <ThumbnailDebug/>
+                            </Route>
+                            <Route path="/admin">
+                                <Admin/>
                             </Route>
                         </Switch>
                     </VStack>

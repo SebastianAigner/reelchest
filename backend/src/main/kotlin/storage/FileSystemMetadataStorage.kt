@@ -39,6 +39,16 @@ class FileSystemMetadataStorage : MetadataStorage {
         }
     }
 
+    override suspend fun listTombstones(): List<String> {
+        val mediaLibraryDirectory = File(AppConfig.mediaLibraryPath)
+        return mediaLibraryDirectory.list().mapNotNull { id ->
+            when (retrieveMetadata(id)) {
+                MetadataResult.Tombstone -> id
+                else -> null
+            }
+        }
+    }
+
     override suspend fun addDuplicate(id: String, dup: String, dist: Int) {
         TODO("Not yet implemented")
     }
