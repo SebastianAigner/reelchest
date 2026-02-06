@@ -2,7 +2,7 @@ package io.sebi.network
 
 import io.ktor.client.*
 import io.ktor.client.call.*
-import io.ktor.client.engine.apache.*
+import io.ktor.client.engine.apache5.*
 import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -15,7 +15,7 @@ class NetworkManager(val requestTokenProvider: RequestTokenProvider = GlobalRequ
 
     val cachemap = ConcurrentHashMap<String, String>()
 
-    private val client = HttpClient(Apache) {
+    private val client = HttpClient(Apache5) {
         install(UserAgent) {
             agent =
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"

@@ -2,7 +2,7 @@ package io.sebi.search
 
 import io.ktor.client.*
 import io.ktor.client.call.*
-import io.ktor.client.engine.apache.*
+import io.ktor.client.engine.apache5.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
@@ -24,7 +24,7 @@ abstract class Searcher {
     abstract val endpointName: String
 }
 
-private val internalClient = HttpClient(Apache) {
+private val internalClient = HttpClient(Apache5) {
     install(ContentNegotiation) {
         json()
     }

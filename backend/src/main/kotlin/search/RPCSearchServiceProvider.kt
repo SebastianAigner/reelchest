@@ -4,7 +4,6 @@ import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.request.*
 import io.sebi.rpc.RPCSearchService
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.rpc.krpc.ktor.client.installKrpc
@@ -27,7 +26,7 @@ class RPCSearchServiceProvider() {
     var currentService: RPCSearchService? = null
     val serviceCreationMutex = Mutex()
     suspend fun getSearchService(): RPCSearchService {
-        if (currentService != null && currentService?.isActive == true) {
+        if (currentService != null) {
             logger.info("Reusing existing search service")
             return currentService!!
         }
@@ -35,7 +34,7 @@ class RPCSearchServiceProvider() {
         return serviceCreationMutex.withLock {
             logger.info("Creating new search service")
             // we check a second time to avoid creating multiple new services
-            if (currentService != null && currentService?.isActive == true) {
+            if (currentService != null) {
                 return currentService!!
             }
             val service = client.rpc {

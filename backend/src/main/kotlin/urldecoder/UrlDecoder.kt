@@ -2,7 +2,7 @@ package io.sebi.urldecoder
 
 import io.ktor.client.*
 import io.ktor.client.call.*
-import io.ktor.client.engine.apache.*
+import io.ktor.client.engine.apache5.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
@@ -41,7 +41,7 @@ enum class DecryptedMediaType {
     SINGLE_FILE, M3U8, DASH, NONE
 }
 
-private val internalClient = HttpClient(Apache) {
+private val internalClient = HttpClient(Apache5) {
     install(HttpTimeout) {
         socketTimeoutMillis = 120_000
         requestTimeoutMillis = 120_000

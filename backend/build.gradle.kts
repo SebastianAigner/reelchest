@@ -47,7 +47,7 @@ dependencies {
     implementation(libs.ktor.server.html.builder)
     implementation(libs.ktor.server.websockets)
     implementation(libs.ktor.server.content.negotiation)
-    implementation(libs.ktor.client.apache)
+    implementation(libs.ktor.client.apache5)
 
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.serialization.json)
@@ -107,7 +107,7 @@ tasks.named<Copy>("processResources") {
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     compilerOptions {
-        freeCompilerArgs.set(listOf("-Xcontext-receivers"))
+        freeCompilerArgs.set(listOf("-Xcontext-parameters"))
     }
 }
 
