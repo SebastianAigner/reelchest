@@ -1,5 +1,5 @@
 FROM eclipse-temurin:21-jre-alpine
 RUN apk update && apk upgrade && apk add --no-cache ffmpeg
-ARG JAR_FILE=target/*.jar
-COPY ${JAR_FILE} app.jar
-ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -jar /app.jar"]
+COPY backend/build/docker/lib/ /app/lib/
+COPY backend/build/docker/app/app.jar /app/app.jar
+ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -cp /app/app.jar:/app/lib/* io.sebi.ApplicationKt"]

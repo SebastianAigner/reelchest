@@ -111,6 +111,26 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     }
 }
 
+val dockerLibDir = layout.buildDirectory.dir("docker/lib")
+val dockerAppDir = layout.buildDirectory.dir("docker/app")
+
+tasks.register<Copy>("dockerCopyLibs") {
+    from(configurations.runtimeClasspath)
+    into(dockerLibDir)
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.register<Copy>("dockerCopyJar") {
+    dependsOn(tasks.named("jar"))
+    from(tasks.named<Jar>("jar").flatMap { it.archiveFile })
+    into(dockerAppDir)
+    rename { "app.jar" }
+}
+
+tasks.register("dockerPrepare") {
+    dependsOn("dockerCopyLibs", "dockerCopyJar")
+}
+
 
 tasks.withType(JavaExec::class.java) {
     systemProperty("java.io.tmpdir", System.getProperty("java.io.tmpdir"))
