@@ -419,6 +419,25 @@ paths:
                     type: "integer"
                   bytesFreed:
                     type: "integer"
+  /api/mediaLibrary/disk-usage:
+    get:
+      description: ""
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "object"
+                properties:
+                  path:
+                    type: "string"
+                  totalBytes:
+                    type: "integer"
+                  freeBytes:
+                    type: "integer"
+                  usableBytes:
+                    type: "integer"
   /api/mediaLibrary/duplicates:
     get:
       description: ""

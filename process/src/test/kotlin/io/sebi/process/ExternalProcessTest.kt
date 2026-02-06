@@ -2,6 +2,7 @@ package io.sebi.process
 
 import kotlinx.coroutines.runBlocking
 import java.io.File
+import kotlin.io.path.createTempDirectory
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -12,7 +13,7 @@ class ExternalProcessTest {
         val output = mutableListOf<String>()
         runExternalProcess(
             "echo", "Hello, World!",
-            onStdoutLine = { output.add(it) },
+            stdoutHandler = StdoutHandler.Lines { output.add(it) },
             directory = null
         )
         assertEquals(listOf("Hello, World!"), output)
@@ -32,7 +33,7 @@ class ExternalProcessTest {
 
     @Test
     fun `test working directory is respected`(): Unit = runBlocking {
-        val tempDir = createTempDir()
+        val tempDir = createTempDirectory().toFile()
         try {
             val output = mutableListOf<String>()
             // Create a test file in the temp directory
@@ -41,7 +42,7 @@ class ExternalProcessTest {
             // List directory contents
             runExternalProcess(
                 "ls",
-                onStdoutLine = { output.add(it) },
+                stdoutHandler = StdoutHandler.Lines { output.add(it) },
                 directory = tempDir
             )
 

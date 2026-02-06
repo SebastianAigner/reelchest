@@ -19,6 +19,21 @@ function useMediaLibraryEntries() {
     };
 }
 
+function useDiskUsage() {
+    const {data, error} = useSWR<{
+        path: string;
+        totalBytes: number;
+        freeBytes: number;
+        usableBytes: number;
+    }>("/api/mediaLibrary/disk-usage", fetcher);
+
+    return {
+        usage: data,
+        isLoading: !data && !error,
+        isError: error
+    };
+}
+
 type OrphanScanResult = {
     orphansFound: number;
     orphansDeleted: number;
@@ -41,6 +56,7 @@ function formatBytes(bytes: number): string {
 
 export function Admin() {
     const {entries, isLoading, isError} = useMediaLibraryEntries();
+    const {usage, isLoading: isDiskLoading, isError: isDiskError} = useDiskUsage();
     const markedForDeletionCount = React.useMemo(() => {
         return entries.filter(entry => entry.mediaLibraryEntry.markedForDeletion).length;
     }, [entries]);
@@ -81,6 +97,24 @@ export function Admin() {
             {isError && (
                 <p className={`${commonStyles.errorText} mt-3`}>
                     Failed to load deletion status.
+                </p>
+            )}
+        </div>
+        <div className={`${commonStyles.cardContainer} ${commonStyles.standardMargin}`}>
+            <div className="text-sm uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                Disk space (media library)
+            </div>
+            <div className="text-3xl font-semibold mt-2">
+                {isDiskLoading ? "Loading..." : formatBytes(usage?.freeBytes ?? 0)} free
+            </div>
+            {!isDiskLoading && usage && (
+                <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                    {formatBytes(usage?.usableBytes ?? 0)} usable · {formatBytes(usage?.totalBytes ?? 0)} total
+                </div>
+            )}
+            {isDiskError && (
+                <p className={`${commonStyles.errorText} mt-3`}>
+                    Failed to load disk usage.
                 </p>
             )}
         </div>

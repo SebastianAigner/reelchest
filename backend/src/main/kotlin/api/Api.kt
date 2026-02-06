@@ -70,6 +70,7 @@ fun Route.api(
                 get("regenerate-thumbnail/{id}") { regenerateThumbnailHandler(mediaLibrary) }
                 post("scan-orphans") { scanOrphanedMediaHandler(metadataStorage) }
             }
+            get("disk-usage") { mediaLibraryDiskUsageHandler() }
         }
 
         route("download") {

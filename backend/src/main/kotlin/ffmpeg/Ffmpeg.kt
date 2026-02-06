@@ -4,9 +4,8 @@ import io.sebi.heavymutex.HeavyMutex
 import io.sebi.phash.DHash
 import io.sebi.phash.JpegSplitter
 import io.sebi.phash.writeULongs
+import io.sebi.process.StdoutHandler
 import io.sebi.process.runExternalProcess
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runInterruptible
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -14,7 +13,6 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.jetbrains.annotations.Blocking
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.util.concurrent.TimeUnit
 import javax.imageio.ImageIO
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -41,9 +39,9 @@ class FfmpegTask(val parameters: List<String>) {
             val stdout = mutableListOf<String>()
             val stderr = mutableListOf<String>()
             try {
-                val res = runExternalProcess(
+                runExternalProcess(
                     "ffmpeg", *parameters.toTypedArray(),
-                    onStdoutLine = {
+                    stdoutHandler = StdoutHandler.Lines {
                         stdout.add(it)
                         logger.info("[FFMPEG-OUT] $it")
                         customStdoutHandler?.invoke(it)
@@ -148,7 +146,8 @@ suspend fun generateThumbnails(
 @Blocking
 suspend fun generateDHashes(videoFile: File) {
     globalFfmpegMutex.withLock {
-        val proc = ProcessBuilder(
+        val hashColl = mutableListOf<DHash>()
+        runExternalProcess(
             "nice",
             "-n",
             "19",
@@ -162,40 +161,26 @@ suspend fun generateDHashes(videoFile: File) {
             "fps=1",
             "-f",
             "image2pipe",
-            "-"
-        ).directory(videoFile.parentFile)
-            .redirectError(ProcessBuilder.Redirect.INHERIT)
-            .start()
+            "-",
+            stdoutHandler = StdoutHandler.Bytes { input ->
+                val output = input.buffered()
+                JpegSplitter.split(
+                    output,
+                    onConcludeFile = {
+                        val hash = DHash.fromImage(ImageIO.read(it.inputStream()))
+                        hashColl += hash
+                    })
+            },
+            onStderrLine = { line ->
+                logger.error("[FFMPEG-ERR] $line")
+            },
+            directory = videoFile.parentFile
+        )
 
-        try {
-            val output = proc.inputStream.buffered()
-            val hashColl = mutableListOf<DHash>()
-            JpegSplitter.split(
-                output,
-                onConcludeFile = {
-                    val hash = DHash.fromImage(ImageIO.read(it.inputStream()))
-                    hashColl += hash
-                })
-
-            runInterruptible(Dispatchers.IO) {
-                proc.waitFor()
-            }
-
-            println("Saving ${hashColl.count()} hashes for later.")
-            File(
-                videoFile.parent, "dhashes.bin"
-            ).writeULongs(hashColl.map { it.raw })
-        } finally {
-            if (proc.isAlive) {
-                proc.destroy()
-                if (!proc.waitFor(250, TimeUnit.MILLISECONDS)) {
-                    proc.destroyForcibly()
-                }
-            }
-            runCatching { proc.inputStream.close() }
-            runCatching { proc.errorStream.close() }
-            runCatching { proc.outputStream.close() }
-        }
+        println("Saving ${hashColl.count()} hashes for later.")
+        File(
+            videoFile.parent, "dhashes.bin"
+        ).writeULongs(hashColl.map { it.raw })
     }
 }
 
@@ -208,29 +193,22 @@ data class MediaTypeInfo(
 
 suspend fun getMediaType(inputFile: File): MediaTypeInfo {
     return globalFfmpegMutex.withLock {
-        val process = ProcessBuilder(
+        val stdout = mutableListOf<String>()
+        val stderr = mutableListOf<String>()
+        val exitCode = runExternalProcess(
             "ffprobe",
             "-v", "quiet",
             "-print_format", "json",
             "-show_entries", "stream=codec_type,codec_name,width,height",
-            inputFile.absolutePath
-        ).start()
-
-        val output = try {
-            runInterruptible(Dispatchers.IO) {
-                process.inputStream.bufferedReader().readText()
-            }
-        } finally {
-            if (process.isAlive) {
-                process.destroy()
-                if (!process.waitFor(250, TimeUnit.MILLISECONDS)) {
-                    process.destroyForcibly()
-                }
-            }
-            runCatching { process.inputStream.close() }
-            runCatching { process.errorStream.close() }
-            runCatching { process.outputStream.close() }
+            inputFile.absolutePath,
+            stdoutHandler = StdoutHandler.Lines { stdout.add(it) },
+            onStderrLine = { stderr.add(it) },
+            directory = null
+        )
+        if (exitCode != 0) {
+            error("ffprobe on $inputFile failed with exit code $exitCode: ${stderr.joinToString("\n")}")
         }
+        val output = stdout.joinToString("\n")
 
         val json = Json.parseToJsonElement(output)
         val streams = json.jsonObject["streams"]?.jsonArray
@@ -253,7 +231,9 @@ suspend fun getMediaType(inputFile: File): MediaTypeInfo {
 val durationRegex = """(\d+\.?\d*)""".toRegex()
 suspend fun getVideoDuration(inputFile: File): Duration {
     return globalFfmpegMutex.withLock {
-        val lines = ProcessBuilder(
+        val stdout = mutableListOf<String>()
+        val stderr = mutableListOf<String>()
+        val exitCode = runExternalProcess(
             "ffprobe",
             "-v",
             "quiet",
@@ -261,9 +241,16 @@ suspend fun getVideoDuration(inputFile: File): Duration {
             "json=c=1", // todo: unclear why this prints three lines rather than just one, i thought it was supposed to be compact.
             "-show_entries",
             "format=duration",
-            inputFile.absolutePath
-        ).start().inputStream.bufferedReader().readText()
-        val (durationStr) = durationRegex.find(lines)?.destructured
+            inputFile.absolutePath,
+            stdoutHandler = StdoutHandler.Lines { stdout.add(it) },
+            onStderrLine = { stderr.add(it) },
+            directory = null
+        )
+        if (exitCode != 0) {
+            error("ffprobe on $inputFile failed with exit code $exitCode: ${stderr.joinToString("\n")}")
+        }
+        val output = stdout.joinToString("\n")
+        val (durationStr) = durationRegex.find(output)?.destructured
             ?: error("ffprobe on $inputFile didn't return a duration")
         durationStr.toDouble().seconds
     }
