@@ -84,3 +84,4 @@ If a subproject needs different instructions, add a nested `AGENTS.md` in that f
   this repo.
 - When you change behavior, add or update tests.
 - Prefer `withTimeoutOrNull` over `withTimeout` in coroutine code.
+- Verify new UI/visual changes in both light and dark mode.

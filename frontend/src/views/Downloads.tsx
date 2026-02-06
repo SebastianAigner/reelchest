@@ -4,6 +4,7 @@ import {fetcher} from "../utils";
 import axios from "axios";
 import {MainHeading, SectionHeading} from "../components/Typography";
 import {commonStyles} from "../styles/common";
+import {useTheme} from "../context/ThemeContext";
 import MetadatedDownloadQueueEntry = IoSebi.MetadatedDownloadQueueEntry;
 import ProblematicTaskDTO = IoSebi.ProblematicTaskDTO;
 
@@ -32,21 +33,238 @@ export function Downloads() {
     const {queue, isLoading, isError} = useQueue()
     const {queue: probQ, isLoading: probLoading, isError: probErr} = useProblematic()
     const [visibleErrors, setVisibleErrors] = React.useState<Set<string>>(new Set())
+    const {theme} = useTheme()
+    const isDark = theme === "dark"
     if (isLoading) return <SectionHeading>Loading Downloads...</SectionHeading>
+    const queueItems = queue?.slice().reverse() ?? []
+    const queueStats = {
+        total: queueItems.length,
+        queued: queueItems.filter(item => item.queueEntry.progress === 0).length,
+        active: queueItems.filter(item => item.queueEntry.progress > 0 && item.queueEntry.progress < 1).length,
+        complete: queueItems.filter(item => item.queueEntry.progress >= 1).length
+    }
+    const queueSurfaceStyle: React.CSSProperties = {
+        backgroundImage: isDark
+            ? "radial-gradient(circle at 10% 15%, rgba(56, 189, 248, 0.18), transparent 50%), radial-gradient(circle at 90% 10%, rgba(34, 197, 94, 0.16), transparent 45%), linear-gradient(140deg, rgba(15, 23, 42, 0.98), rgba(17, 24, 39, 0.96))"
+            : "radial-gradient(circle at 8% 15%, rgba(255, 214, 170, 0.35), transparent 50%), radial-gradient(circle at 88% 10%, rgba(160, 210, 255, 0.35), transparent 45%), linear-gradient(140deg, rgba(255, 255, 255, 0.98), rgba(244, 248, 255, 0.96))",
+        border: isDark ? "1px solid rgba(148, 163, 184, 0.18)" : "1px solid rgba(15, 23, 42, 0.08)",
+        borderRadius: "26px",
+        padding: "24px",
+        boxShadow: isDark ? "0 20px 50px rgba(0, 0, 0, 0.45)" : "0 20px 50px rgba(15, 23, 42, 0.12)",
+        position: "relative",
+        overflow: "hidden",
+        fontFamily: '"Space Grotesk", "Sora", "IBM Plex Sans", "Noto Sans", sans-serif',
+        fontKerning: "normal",
+        fontFeatureSettings: '"kern", "liga"',
+        letterSpacing: "0.01em"
+    }
+    const queueHeaderStyle: React.CSSProperties = {
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
+        gap: "16px",
+        flexWrap: "wrap",
+        marginBottom: "18px"
+    }
+    const queueStatPillStyle: React.CSSProperties = {
+        display: "flex",
+        alignItems: "center",
+        gap: "6px",
+        padding: "6px 10px",
+        borderRadius: "999px",
+        background: isDark ? "rgba(148, 163, 184, 0.16)" : "rgba(15, 23, 42, 0.06)",
+        color: isDark ? "rgba(226, 232, 240, 0.9)" : "rgba(15, 23, 42, 0.85)",
+        fontSize: "0.85em",
+        fontWeight: 600
+    }
+    const queueListStyle: React.CSSProperties = {
+        listStyle: "none",
+        margin: 0,
+        padding: 0,
+        display: "grid",
+        gap: "16px"
+    }
+    const queueCardStyle: React.CSSProperties = {
+        background: isDark ? "rgba(15, 23, 42, 0.72)" : "rgba(255, 255, 255, 0.88)",
+        border: isDark ? "1px solid rgba(148, 163, 184, 0.14)" : "1px solid rgba(15, 23, 42, 0.08)",
+        borderRadius: "20px",
+        padding: "18px 20px",
+        boxShadow: isDark ? "0 12px 30px rgba(0, 0, 0, 0.35)" : "0 12px 30px rgba(15, 23, 42, 0.08)",
+        display: "grid",
+        gap: "12px"
+    }
+    const progressTrackStyle: React.CSSProperties = {
+        height: "10px",
+        borderRadius: "999px",
+        background: isDark ? "rgba(148, 163, 184, 0.18)" : "rgba(15, 23, 42, 0.08)",
+        overflow: "hidden",
+        flex: 1,
+        minWidth: "120px"
+    }
     return <>
         <MainHeading>Downloads</MainHeading>
-        <ul>
-            {
-                queue?.slice().reverse().map(item =>
-                    <li key={item.queueEntry.originUrl}>
-                        {item.queueEntry.progress != 0 && <progress value={item.queueEntry.progress}/>}
-                        <p>
-                            {item.title}: {Number(item.queueEntry.progress * 100).toFixed(2)}%
-                        </p>
-                    </li>
-                )
-            }
-        </ul>
+        <section style={queueSurfaceStyle}>
+            <div style={queueHeaderStyle}>
+                <div>
+                    <div style={{
+                        fontSize: "1.4em",
+                        fontWeight: 700,
+                        color: isDark ? "rgba(226, 232, 240, 0.95)" : "rgba(15, 23, 42, 0.9)",
+                        marginBottom: "6px"
+                    }}>
+                        Downloads Queue
+                    </div>
+                </div>
+                <div style={{display: "flex", gap: "8px", flexWrap: "wrap"}}>
+                    <div style={queueStatPillStyle}>Total {queueStats.total}</div>
+                    <div style={{
+                        ...queueStatPillStyle,
+                        background: isDark ? "rgba(251, 191, 36, 0.18)" : "rgba(255, 199, 147, 0.35)",
+                        color: isDark ? "rgba(252, 211, 77, 0.9)" : queueStatPillStyle.color
+                    }}>
+                        Waiting {queueStats.queued}
+                    </div>
+                    <div style={{
+                        ...queueStatPillStyle,
+                        background: isDark ? "rgba(56, 189, 248, 0.18)" : "rgba(125, 211, 252, 0.35)",
+                        color: isDark ? "rgba(125, 211, 252, 0.95)" : queueStatPillStyle.color
+                    }}>
+                        Active {queueStats.active}
+                    </div>
+                    <div style={{
+                        ...queueStatPillStyle,
+                        background: isDark ? "rgba(52, 211, 153, 0.18)" : "rgba(110, 231, 183, 0.35)",
+                        color: isDark ? "rgba(110, 231, 183, 0.95)" : queueStatPillStyle.color
+                    }}>
+                        Complete {queueStats.complete}
+                    </div>
+                </div>
+            </div>
+            {isError && (
+                <div style={{
+                    padding: "10px 12px",
+                    borderRadius: "12px",
+                    border: isDark ? "1px solid rgba(248, 113, 113, 0.35)" : "1px solid rgba(239, 68, 68, 0.2)",
+                    background: isDark ? "rgba(127, 29, 29, 0.45)" : "rgba(254, 226, 226, 0.6)",
+                    color: isDark ? "rgba(254, 226, 226, 0.95)" : "rgba(185, 28, 28, 0.9)",
+                    marginBottom: "12px"
+                }}>
+                    Could not load the downloads queue right now.
+                </div>
+            )}
+            {queueItems.length === 0 ? (
+                <div style={{
+                    padding: "18px",
+                    borderRadius: "18px",
+                    border: isDark ? "1px dashed rgba(148, 163, 184, 0.25)" : "1px dashed rgba(15, 23, 42, 0.12)",
+                    background: isDark ? "rgba(15, 23, 42, 0.55)" : "rgba(255, 255, 255, 0.6)",
+                    color: isDark ? "rgba(226, 232, 240, 0.7)" : "rgba(15, 23, 42, 0.6)",
+                    fontSize: "0.95em",
+                    textAlign: "center"
+                }}>
+                    Nothing is queued yet. Add a new download and it will show up here.
+                </div>
+            ) : (
+                <ul style={queueListStyle}>
+                    {queueItems.map((item, index) => {
+                        const progress = Math.min(1, Math.max(0, item.queueEntry.progress))
+                        const progressPercent = Math.round(progress * 100)
+                        const statusLabel = progressPercent === 0 ? "Queued" : progressPercent >= 100 ? "Finishing" : "Downloading"
+                        const statusStyle: React.CSSProperties = progressPercent >= 100
+                            ? {
+                                background: isDark ? "rgba(52, 211, 153, 0.18)" : "rgba(110, 231, 183, 0.35)",
+                                color: isDark ? "rgba(110, 231, 183, 0.95)" : "rgba(4, 120, 87, 0.9)"
+                            }
+                            : progressPercent === 0
+                                ? {
+                                    background: isDark ? "rgba(251, 191, 36, 0.18)" : "rgba(255, 199, 147, 0.35)",
+                                    color: isDark ? "rgba(252, 211, 77, 0.95)" : "rgba(180, 83, 9, 0.9)"
+                                }
+                                : {
+                                    background: isDark ? "rgba(56, 189, 248, 0.18)" : "rgba(125, 211, 252, 0.35)",
+                                    color: isDark ? "rgba(125, 211, 252, 0.95)" : "rgba(3, 105, 161, 0.9)"
+                                }
+                        const progressFillStyle: React.CSSProperties = {
+                            height: "100%",
+                            width: `${progressPercent}%`,
+                            borderRadius: "999px",
+                            backgroundImage: progressPercent >= 100
+                                ? "linear-gradient(90deg, #6ee7b7, #34d399)"
+                                : progressPercent === 0
+                                    ? "linear-gradient(90deg, #fcd34d, #fdba74)"
+                                    : "linear-gradient(90deg, #7dd3fc, #38bdf8, #0ea5e9)",
+                            transition: "width 0.3s ease"
+                        }
+
+                        return (
+                            <li key={item.queueEntry.originUrl} style={queueCardStyle}>
+                                <div style={{display: "flex", alignItems: "flex-start", gap: "12px"}}>
+                                    <div style={{
+                                        width: "40px",
+                                        height: "40px",
+                                        borderRadius: "14px",
+                                        background: isDark ? "rgba(148, 163, 184, 0.18)" : "rgba(15, 23, 42, 0.06)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        fontWeight: 700,
+                                        color: isDark ? "rgba(226, 232, 240, 0.8)" : "rgba(15, 23, 42, 0.65)"
+                                    }}>
+                                        {index + 1}
+                                    </div>
+                                    <div style={{flex: 1, minWidth: 0}}>
+                                        <div style={{
+                                            fontWeight: 700,
+                                            fontSize: "1.05em",
+                                            color: isDark ? "rgba(226, 232, 240, 0.95)" : "rgba(15, 23, 42, 0.9)",
+                                            marginBottom: "6px"
+                                        }}>
+                                            {item.title || "Untitled"}
+                                        </div>
+                                        <div style={{
+                                            color: isDark ? "rgba(226, 232, 240, 0.6)" : "rgba(15, 23, 42, 0.55)",
+                                            fontSize: "0.85em",
+                                            wordBreak: "break-all"
+                                        }}>
+                                            {item.queueEntry.originUrl}
+                                        </div>
+                                    </div>
+                                    <div style={{
+                                        padding: "6px 12px",
+                                        borderRadius: "999px",
+                                        fontSize: "0.8em",
+                                        fontWeight: 600,
+                                        whiteSpace: "nowrap",
+                                        ...statusStyle
+                                    }}>
+                                        {statusLabel}
+                                    </div>
+                                </div>
+                                <div style={{display: "flex", alignItems: "center", gap: "12px"}}>
+                                    <div
+                                        role="progressbar"
+                                        aria-valuemin={0}
+                                        aria-valuemax={100}
+                                        aria-valuenow={progressPercent}
+                                        style={progressTrackStyle}
+                                    >
+                                        <div style={progressFillStyle}/>
+                                    </div>
+                                    <div style={{
+                                        minWidth: "52px",
+                                        textAlign: "right",
+                                        fontWeight: 700,
+                                        color: isDark ? "rgba(226, 232, 240, 0.85)" : "rgba(15, 23, 42, 0.8)"
+                                    }}>
+                                        {progressPercent}%
+                                    </div>
+                                </div>
+                            </li>
+                        )
+                    })}
+                </ul>
+            )}
+        </section>
         <SectionHeading>Problematic Entries (<a href={"/api/problematic"}>endpoint</a>)</SectionHeading>
         <ul>
             {
