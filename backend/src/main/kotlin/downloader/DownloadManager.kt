@@ -4,7 +4,7 @@ package io.sebi.downloader
 interface DownloadManager {
     fun getDownloads(vararg d: DownloadType): List<DownloadTask>
     fun downloadProgressForId(id: String): Double?
-    suspend fun enqueueTask(d: DownloadTask, skipDuplicatesCheck: Boolean = false)
+    suspend fun enqueueTask(d: DownloadTask, skipDuplicatesCheck: Boolean = false): DownloadEnqueueResult
     fun persistQueue()
     suspend fun restoreQueue()
     fun workerStatus(): List<String>
@@ -18,4 +18,3 @@ interface DownloadManager {
 enum class DownloadType {
     QUEUED, CURRENT,
 }
-

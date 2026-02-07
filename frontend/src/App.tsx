@@ -39,7 +39,6 @@ const NavigationBar: React.FC = () => {
                     <Link to="/mediaLibrary" className={commonStyles.navLink}>
                         <span className="inline-flex items-center gap-2">
                             Media Library
-                            <FfmpegMutexIndicator/>
                         </span>
                     </Link>
                 </div>
@@ -173,6 +172,9 @@ const App: React.FC = () => {
                 <PlaylistProvider>
                     <div
                         className={"relative min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200"}>
+                        <div className="absolute top-2 left-2 z-50 leading-none">
+                            <FfmpegMutexIndicator/>
+                        </div>
                         <VStack className={"min-h-screen p-8 bg-inherit"}>
                         <NavigationBar/>
 

@@ -77,6 +77,11 @@ function formatBytes(bytes: number): string {
     return `${value.toFixed(value >= 10 ? 1 : 2)} ${units[unitIndex]}`;
 }
 
+function formatTimestamp(timestamp?: number): string {
+    if (!timestamp) return "unknown";
+    return new Date(timestamp).toLocaleString();
+}
+
 export function Admin() {
     const {entries, isLoading, isError} = useMediaLibraryEntries();
     const {usage, isLoading: isDiskLoading, isError: isDiskError} = useDiskUsage();
@@ -250,7 +255,11 @@ export function Admin() {
                         />
                     </div>
                     <div className="mt-3 grid gap-y-1 text-sm">
-                        <div>Status: {scanProgress.status}</div>
+                        <div>
+                            Status: {scanProgress.status === "completed"
+                            ? `completed at ${formatTimestamp(scanProgress.finishedAt)}`
+                            : scanProgress.status}
+                        </div>
                         <div>
                             Processed: {scanProgress.processed} / {scanProgress.totalTombstones}
                         </div>

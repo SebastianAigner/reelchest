@@ -13,6 +13,8 @@ import io.sebi.downloader.CompletedDownloadTask
 import io.sebi.downloader.DownloadTask
 import io.sebi.ffmpeg.globalFfmpegMutex
 import io.sebi.network.NetworkManager
+import io.sebi.process.StdoutHandler
+import io.sebi.process.runExternalProcess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
@@ -21,6 +23,7 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.decodeFromJsonElement
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.*
@@ -165,25 +168,87 @@ object DashPostProcessor : PostProcessor() {
     }
 }
 
-suspend fun postProcessAudioAndVideo(vid: DASHVideo, aud: DASHAudio): MP4File {
-    return globalFfmpegMutex.withLock("DASH remux") {
-        val fileName = UUID.randomUUID().toString()
-        ProcessBuilder(
+private fun looksLikeM3u8(file: File): Boolean {
+    if (!file.exists()) return false
+    return runCatching {
+        file.inputStream().buffered().use { stream ->
+            val bytes = stream.readNBytes(256)
+            val header = bytes.toString(Charsets.UTF_8)
+            header.trimStart().startsWith("#EXTM3U")
+        }
+    }.getOrDefault(false)
+}
+
+private fun selectManifestUrl(files: List<File>, urls: List<String>): String? {
+    val index = files.indexOfFirst { looksLikeM3u8(it) }
+    if (index >= 0 && index < urls.size) return urls[index]
+    return selectManifestUrlFromUrls(urls)
+}
+
+private fun selectManifestUrlFromUrls(urls: List<String>): String? {
+    return urls.firstOrNull { it.contains(".m3u8", ignoreCase = true) }
+        ?: urls.firstOrNull { it.contains(".mpd", ignoreCase = true) }
+        ?: urls.firstOrNull { it.contains("m3u8", ignoreCase = true) }
+        ?: urls.firstOrNull { it.contains("mpd", ignoreCase = true) }
+        ?: urls.firstOrNull { it.contains("manifest", ignoreCase = true) }
+        ?: urls.firstOrNull { it.contains("playlist", ignoreCase = true) }
+        ?: urls.firstOrNull { it.contains("master", ignoreCase = true) }
+}
+
+private data class FfmpegRunResult(val exitCode: Int, val stderr: List<String>)
+
+private suspend fun runFfmpegCommand(
+    mutexLabel: String,
+    directory: File?,
+    args: List<String>,
+): FfmpegRunResult {
+    val stderr = mutableListOf<String>()
+    val exitCode = globalFfmpegMutex.withLock(mutexLabel) {
+        runExternalProcess(
             "nice",
             "-n",
             "19",
             "ffmpeg",
-            "-y",
-            "-i",
-            vid.f.name,
-            "-i",
-            aud.f.name,
-            "-c",
-            "copy",
-            "$fileName.mp4"
-        ).directory(vid.f.parentFile).inheritIO().start().waitFor()
-        MP4File(File(vid.f.parent, "$fileName.mp4"))
+            *args.toTypedArray(),
+            stdoutHandler = StdoutHandler.Lines { logger.info("[FFMPEG-OUT] $it") },
+            onStderrLine = {
+                stderr.add(it)
+                logger.error("[FFMPEG-ERR] $it")
+            },
+            directory = directory
+        )
     }
+    return FfmpegRunResult(exitCode, stderr)
+}
+
+private fun ensureFfmpegOutput(
+    output: File,
+    exitCode: Int,
+    stderr: List<String>,
+    description: String,
+): File {
+    if (exitCode != 0 || !output.exists() || output.length() == 0L) {
+        val detail = stderr.lastOrNull()?.let { " Last ffmpeg stderr: $it" } ?: ""
+        throw IOException("$description failed (exit=$exitCode). Output missing: ${output.absolutePath}.$detail")
+    }
+    return output
+}
+
+suspend fun postProcessAudioAndVideo(vid: DASHVideo, aud: DASHAudio): MP4File {
+    val fileName = UUID.randomUUID().toString()
+    val result = runFfmpegCommand(
+        mutexLabel = "DASH remux",
+        directory = vid.f.parentFile,
+        args = listOf("-y", "-i", vid.f.name, "-i", aud.f.name, "-c", "copy", "$fileName.mp4")
+    )
+    return MP4File(
+        ensureFfmpegOutput(
+            File(vid.f.parent, "$fileName.mp4"),
+            result.exitCode,
+            result.stderr,
+            "DASH remux"
+        )
+    )
 }
 
 // Concatenates TS files in preparation for remuxing
@@ -203,20 +268,43 @@ fun postProcessTransportStream(l: List<TSFile>): TSFile {
 
 fun postProcessTsToMp4(ts: TSFile): MP4File {
     val fileName = UUID.randomUUID().toString()
-    ProcessBuilder(
-        "nice",
-        "-n",
-        "19",
-        "ffmpeg",
-        "-y",
-        "-i",
-        ts.f.name,
-        "-c:v",
-        "copy",
-        "$fileName.mp4"
-    ).directory(ts.f.parentFile)
-        .inheritIO().start().waitFor()
-    return MP4File(File(ts.f.parent, "$fileName.mp4"))
+    val result = runBlocking(Dispatchers.IO) {
+        runFfmpegCommand(
+            mutexLabel = "TS remux",
+            directory = ts.f.parentFile,
+            args = listOf("-y", "-i", ts.f.name, "-c:v", "copy", "$fileName.mp4")
+        )
+    }
+    return MP4File(ensureFfmpegOutput(File(ts.f.parent, "$fileName.mp4"), result.exitCode, result.stderr, "TS remux"))
+}
+
+suspend fun postProcessM3u8ToMp4(playlistUrl: String): MP4File {
+    val outputDir = File("downloads").apply { mkdirs() }
+    val fileName = UUID.randomUUID().toString()
+    val result = runFfmpegCommand(
+        mutexLabel = "HLS remux",
+        directory = outputDir,
+        args = listOf("-y", "-i", playlistUrl, "-c", "copy", "$fileName.mp4")
+    )
+    return MP4File(ensureFfmpegOutput(File(outputDir, "$fileName.mp4"), result.exitCode, result.stderr, "HLS remux"))
+}
+
+suspend fun postProcessDashManifestToMp4(manifestUrl: String): MP4File {
+    val outputDir = File("downloads").apply { mkdirs() }
+    val fileName = UUID.randomUUID().toString()
+    val result = runFfmpegCommand(
+        mutexLabel = "DASH manifest remux",
+        directory = outputDir,
+        args = listOf("-y", "-i", manifestUrl, "-c", "copy", "$fileName.mp4")
+    )
+    return MP4File(
+        ensureFfmpegOutput(
+            File(outputDir, "$fileName.mp4"),
+            result.exitCode,
+            result.stderr,
+            "DASH manifest remux"
+        )
+    )
 }
 
 private val logger = LoggerFactory.getLogger("URL Decoder")
@@ -225,22 +313,46 @@ fun UrlDecoder.makeDownloadTask(originUrl: String, onComplete: suspend (Complete
     return DownloadTask(originUrl, {
         l.decode(this)
     }, { files ->
-        val postProcessor = when (l.mediaType) {
-            DecryptedMediaType.SINGLE_FILE -> SingleFileOrErrorProcessor::postProcess
-            DecryptedMediaType.M3U8 -> TransportStreamPostProcessor::postProcess
-            DecryptedMediaType.DASH -> DashPostProcessor::postProcess
+        when (l.mediaType) {
+            DecryptedMediaType.SINGLE_FILE -> SingleFileOrErrorProcessor.postProcess(files)
+            DecryptedMediaType.M3U8 -> {
+                val playlistUrl = selectManifestUrl(files, l.lastDecodedUrls)
+                if (playlistUrl != null) {
+                    postProcessM3u8ToMp4(playlistUrl).f
+                } else {
+                    TransportStreamPostProcessor.postProcess(files)
+                }
+            }
+
+            DecryptedMediaType.DASH -> DashPostProcessor.postProcess(files)
             else -> error("No postprocessor for ${l.mediaType}")
         }
-        postProcessor(files)
-    }, onComplete)
+    }, onComplete,
+        directStreamUrlProvider = {
+            when (l.mediaType) {
+                DecryptedMediaType.M3U8, DecryptedMediaType.DASH -> selectManifestUrlFromUrls(l.lastDecodedUrls)
+                else -> null
+            }
+        },
+        onStreamProcess = { playlistUrl ->
+            when (l.mediaType) {
+                DecryptedMediaType.M3U8 -> postProcessM3u8ToMp4(playlistUrl).f
+                DecryptedMediaType.DASH -> postProcessDashManifestToMp4(playlistUrl).f
+                else -> error("No stream processor for ${l.mediaType}")
+            }
+        },
+        streamProcessingEligible = { l.mediaType == DecryptedMediaType.M3U8 || l.mediaType == DecryptedMediaType.DASH }
+    )
 }
 
 class LazyDecoder(val originUrl: String) {
     var mediaType: DecryptedMediaType? = null
+    var lastDecodedUrls: List<String> = emptyList()
     suspend fun decode(u: UrlDecoder): List<String> {
         val decoded = u.decodeUrl(originUrl)
             ?: throw DecryptServiceException("local", "NO_MATCH", "No decoder could decrypt $originUrl")
         mediaType = decoded.type
-        return decoded.urls
+        lastDecodedUrls = decoded.urls
+        return lastDecodedUrls
     }
 }

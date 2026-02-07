@@ -95,28 +95,30 @@ class DownloadManagerImpl(
         return null
     }
 
-    override suspend fun enqueueTask(d: DownloadTask, skipDuplicatesCheck: Boolean) {
-        queueMutex.withLock {
-            if (skipDuplicatesCheck) {
-                logger.info("Adding job with skipped duplicates check.")
-                downloadScheduler.enqueue(d)
-                return
-            }
-
-            val abortConditions = listOf(
-                downloadScheduler.pendingSnapshot().any { it.originUrl == d.originUrl } to "duplicate download job",
-                workers.mapNotNull { it.currentTask }.any { it.originUrl == d.originUrl } to "download job in progress",
-                (runBlocking { metadataStorage.retrieveMetadata(d.originUrl.shaHashed()) } != MetadataResult.None) to "URL already in metadata storage"
-            )
-
-            abortConditions.firstOrNull { it.first }?.let {
-                logger.info("Attempting to add ${it.second}, not adding to queue.")
-                return
-            }
-
-            logger.info("Adding download job.")
+    override suspend fun enqueueTask(
+        d: DownloadTask,
+        skipDuplicatesCheck: Boolean,
+    ): DownloadEnqueueResult = queueMutex.withLock {
+        if (skipDuplicatesCheck) {
+            logger.info("Adding job with skipped duplicates check.")
             downloadScheduler.enqueue(d)
+            return@withLock DownloadEnqueueResult.Enqueued
         }
+
+        val abortConditions = listOf(
+            downloadScheduler.pendingSnapshot().any { it.originUrl == d.originUrl } to "duplicate download job",
+            workers.mapNotNull { it.currentTask }.any { it.originUrl == d.originUrl } to "download job in progress",
+            (runBlocking { metadataStorage.retrieveMetadata(d.originUrl.shaHashed()) } != MetadataResult.None) to "URL already in metadata storage"
+        )
+
+        abortConditions.firstOrNull { it.first }?.let {
+            logger.info("Attempting to add ${it.second}, not adding to queue.")
+            return@withLock DownloadEnqueueResult.Skipped(it.second)
+        }
+
+        logger.info("Adding download job.")
+        downloadScheduler.enqueue(d)
+        return@withLock DownloadEnqueueResult.Enqueued
     }
 
     override fun persistQueue() {

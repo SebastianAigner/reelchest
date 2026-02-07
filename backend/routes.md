@@ -51,6 +51,8 @@
 ## Download Manager Routes
 
 - `POST /api/download` - Enqueue a new download task
+    - Returns `409` with `{ "error": string }` when the URL is already queued, in progress, or present in metadata
+      storage
 - `GET /api/queue` - Get current and queued downloads
 - `GET /api/problematic` - Get problematic downloads
 - `POST /api/problematic/remove` - Remove a problematic download

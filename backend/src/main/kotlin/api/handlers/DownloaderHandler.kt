@@ -9,7 +9,6 @@ import io.sebi.api.dtos.UrlRequest
 import io.sebi.downloader.*
 import io.sebi.urldecoder.UrlDecoder
 import io.sebi.urldecoder.makeDownloadTask
-import kotlinx.coroutines.launch
 
 /**
  * Handler for downloading a URL.
@@ -21,12 +20,16 @@ suspend fun RoutingContext.downloadUrlHandler(
 ) {
     val text = call.receive<UrlRequest>()
     println(text)
-    call.application.launch {
-        downloadManager.enqueueTask(
-            urlDecoder.makeDownloadTask(originUrl = text.url, onCompleteDownload)
+    val result = downloadManager.enqueueTask(
+        urlDecoder.makeDownloadTask(originUrl = text.url, onCompleteDownload)
+    )
+    when (result) {
+        is DownloadEnqueueResult.Enqueued -> call.respondText("OK", status = HttpStatusCode.OK)
+        is DownloadEnqueueResult.Skipped -> call.respond(
+            HttpStatusCode.Conflict,
+            mapOf("error" to result.reason)
         )
     }
-    call.respondText("OK", status = HttpStatusCode.OK)
 }
 
 /**
@@ -73,6 +76,12 @@ suspend fun RoutingContext.retryProblematicDownloadHandler(
 ) {
     val text = call.receive<UrlRequest>().url
     downloadManager.problematicDownloads.removeAll { it.originUrl == text }
-    downloadManager.enqueueTask(urlDecoder.makeDownloadTask(text, onCompleteDownload))
-    call.respond(HttpStatusCode.OK)
+    val result = downloadManager.enqueueTask(urlDecoder.makeDownloadTask(text, onCompleteDownload))
+    when (result) {
+        is DownloadEnqueueResult.Enqueued -> call.respond(HttpStatusCode.OK)
+        is DownloadEnqueueResult.Skipped -> call.respond(
+            HttpStatusCode.Conflict,
+            mapOf("error" to result.reason)
+        )
+    }
 }

@@ -22,7 +22,10 @@ data class DownloadTask(
     val getDirectDownloadUrls: suspend () -> List<String>,
     val onPostProcess: suspend (List<File>) -> File,
     val onComplete: suspend (CompletedDownloadTask) -> Unit,
-    var progress: Double = 0.0
+    var progress: Double = 0.0,
+    val directStreamUrlProvider: (() -> String?)? = null,
+    val onStreamProcess: (suspend (String) -> File)? = null,
+    val streamProcessingEligible: (() -> Boolean)? = null,
 ) : WithOriginUrl {
     override fun toString(): String {
         return "Task[$originUrl]"

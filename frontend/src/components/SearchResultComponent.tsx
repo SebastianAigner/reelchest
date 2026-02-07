@@ -16,6 +16,7 @@ enum SearchResultState {
 
 export function SearchResultComponent(result: SearchResult) {
     const [existsAlready, setExistsAlready] = useState(SearchResultState.UNKNOWN)
+    const [addError, setAddError] = useState<string | null>(null)
     useEffect(() => {
         const fetchData = async () => {
             const reqRes = await axios.post<boolean>("/api/mediaLibrary/isUrlInLibraryOrProgress", {
@@ -37,15 +38,23 @@ export function SearchResultComponent(result: SearchResult) {
         <a href={`/decrypt?url=${result.url}`} target={"_blank"}>{result.title}</a>
         <StyledButton className={commonStyles.fullWidth}
                       onClick={() => {
+                          setAddError(null)
                           let prom = addToDownloadList(result.url)
                           prom.then((a) => {
                               if (a.status == 200) {
                                   setExistsAlready(SearchResultState.JUST_ADDED)
                               }
+                          }).catch((error) => {
+                              setAddError(error.message ?? "Failed to add download")
                           })
                       }}
         >
             {existsAlready == SearchResultState.JUST_ADDED ? "Added to queue" : (existsAlready == SearchResultState.IN_LIBRARY ? "Already added" : "Add to queue")}
         </StyledButton>
+        {addError && (
+            <div className={`${commonStyles.errorText} mt-2`}>
+                {addError}
+            </div>
+        )}
     </div>;
 }
