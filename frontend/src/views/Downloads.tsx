@@ -8,6 +8,32 @@ import {useTheme} from "../context/ThemeContext";
 import MetadatedDownloadQueueEntry = IoSebi.MetadatedDownloadQueueEntry;
 import ProblematicTaskDTO = IoSebi.ProblematicTaskDTO;
 
+type ConversionMode = "IMMEDIATE" | "SCHEDULED";
+type ConversionStatus = "QUEUED" | "RUNNING";
+
+type ConversionQueueEntry = {
+    id: string;
+    sourceId: string;
+    sourceTitle: string;
+    mode: ConversionMode;
+    status: ConversionStatus;
+    createdAt: number;
+};
+
+type ProblematicConversionTask = {
+    id: string;
+    sourceId: string;
+    sourceTitle: string;
+    mode: ConversionMode;
+    error: string;
+};
+
+type ConversionQueueSnapshot = {
+    queued: ConversionQueueEntry[];
+    running?: ConversionQueueEntry | null;
+    problematic: ProblematicConversionTask[];
+};
+
 function useQueue() {
     const {data, error} = useAbortableSWR<Array<MetadatedDownloadQueueEntry>>("/api/queue", fetcher, {refreshInterval: 1000})
     return {
@@ -29,10 +55,21 @@ function useProblematic() {
     }
 }
 
+function useConversions() {
+    const {data, error} = useAbortableSWR<ConversionQueueSnapshot>("/api/conversions", fetcher, {refreshInterval: 2000})
+    return {
+        queue: data,
+        isLoading: !error && !data,
+        isError: error
+    }
+}
+
 export function Downloads() {
+    const {queue: conversions, isError: conversionsError} = useConversions()
     const {queue, isLoading, isError} = useQueue()
     const {queue: probQ, isLoading: probLoading, isError: probErr} = useProblematic()
     const [visibleErrors, setVisibleErrors] = React.useState<Set<string>>(new Set())
+    const [visibleConversionErrors, setVisibleConversionErrors] = React.useState<Set<string>>(new Set())
     const {theme} = useTheme()
     const isDark = theme === "dark"
     if (isLoading) return <SectionHeading>Loading Downloads...</SectionHeading>
@@ -101,8 +138,239 @@ export function Downloads() {
         flex: 1,
         minWidth: "120px"
     }
+    const conversionQueued = conversions?.queued ?? []
+    const conversionRunning = conversions?.running ? [conversions.running] : []
+    const conversionItems = [...conversionRunning, ...conversionQueued]
+    const conversionProblems = conversions?.problematic ?? []
+    const hasConversionActivity = conversionItems.length > 0 || conversionProblems.length > 0 || !!conversionsError
     return <>
         <MainHeading>Downloads</MainHeading>
+        {hasConversionActivity && (
+            <section style={{
+                ...queueSurfaceStyle,
+                marginBottom: "32px",
+                backgroundImage: isDark
+                    ? "radial-gradient(circle at 15% 20%, rgba(248, 113, 113, 0.18), transparent 50%), radial-gradient(circle at 85% 15%, rgba(59, 130, 246, 0.2), transparent 45%), linear-gradient(140deg, rgba(15, 23, 42, 0.98), rgba(17, 24, 39, 0.96))"
+                    : "radial-gradient(circle at 10% 20%, rgba(255, 207, 207, 0.55), transparent 50%), radial-gradient(circle at 90% 15%, rgba(191, 219, 254, 0.5), transparent 45%), linear-gradient(140deg, rgba(255, 255, 255, 0.98), rgba(247, 250, 255, 0.96))"
+            }}>
+                <div style={queueHeaderStyle}>
+                    <div>
+                        <div style={{
+                            fontSize: "1.4em",
+                            fontWeight: 700,
+                            color: isDark ? "rgba(226, 232, 240, 0.95)" : "rgba(15, 23, 42, 0.9)",
+                            marginBottom: "6px"
+                        }}>
+                            Conversions Queue
+                        </div>
+                        <div style={{
+                            color: isDark ? "rgba(226, 232, 240, 0.6)" : "rgba(15, 23, 42, 0.55)",
+                            fontSize: "0.85em"
+                        }}>
+                            Scheduled conversions run daily at 3:00am.
+                        </div>
+                    </div>
+                    <div style={{display: "flex", gap: "8px", flexWrap: "wrap"}}>
+                        <div style={queueStatPillStyle}>Total {conversionItems.length}</div>
+                        <div style={{
+                            ...queueStatPillStyle,
+                            background: isDark ? "rgba(251, 191, 36, 0.18)" : "rgba(255, 199, 147, 0.35)",
+                            color: isDark ? "rgba(252, 211, 77, 0.9)" : queueStatPillStyle.color
+                        }}>
+                            Queued {conversionQueued.length}
+                        </div>
+                        <div style={{
+                            ...queueStatPillStyle,
+                            background: isDark ? "rgba(56, 189, 248, 0.18)" : "rgba(125, 211, 252, 0.35)",
+                            color: isDark ? "rgba(125, 211, 252, 0.95)" : queueStatPillStyle.color
+                        }}>
+                            Running {conversionRunning.length}
+                        </div>
+                        <div style={{
+                            ...queueStatPillStyle,
+                            background: isDark ? "rgba(248, 113, 113, 0.18)" : "rgba(254, 202, 202, 0.6)",
+                            color: isDark ? "rgba(254, 226, 226, 0.95)" : queueStatPillStyle.color
+                        }}>
+                            Failed {conversionProblems.length}
+                        </div>
+                    </div>
+                </div>
+                {conversionsError && (
+                    <div style={{
+                        padding: "10px 12px",
+                        borderRadius: "12px",
+                        border: isDark ? "1px solid rgba(248, 113, 113, 0.35)" : "1px solid rgba(239, 68, 68, 0.2)",
+                        background: isDark ? "rgba(127, 29, 29, 0.45)" : "rgba(254, 226, 226, 0.6)",
+                        color: isDark ? "rgba(254, 226, 226, 0.95)" : "rgba(185, 28, 28, 0.9)",
+                        marginBottom: "12px"
+                    }}>
+                        Could not load the conversions queue right now.
+                    </div>
+                )}
+                {conversionItems.length > 0 ? (
+                    <ul style={queueListStyle}>
+                        {conversionItems.map((item, index) => {
+                            const statusLabel = item.status === "RUNNING"
+                                ? "Running"
+                                : item.mode === "SCHEDULED"
+                                    ? "Scheduled"
+                                    : "Queued";
+                            const statusStyle: React.CSSProperties = item.status === "RUNNING"
+                                ? {
+                                    background: isDark ? "rgba(56, 189, 248, 0.18)" : "rgba(125, 211, 252, 0.35)",
+                                    color: isDark ? "rgba(125, 211, 252, 0.95)" : "rgba(3, 105, 161, 0.9)"
+                                }
+                                : item.mode === "SCHEDULED"
+                                    ? {
+                                        background: isDark ? "rgba(52, 211, 153, 0.18)" : "rgba(110, 231, 183, 0.35)",
+                                        color: isDark ? "rgba(110, 231, 183, 0.95)" : "rgba(4, 120, 87, 0.9)"
+                                    }
+                                    : {
+                                        background: isDark ? "rgba(251, 191, 36, 0.18)" : "rgba(255, 199, 147, 0.35)",
+                                        color: isDark ? "rgba(252, 211, 77, 0.95)" : "rgba(180, 83, 9, 0.9)"
+                                    };
+                            return (
+                                <li key={item.id} style={queueCardStyle}>
+                                    <div style={{display: "flex", alignItems: "flex-start", gap: "12px"}}>
+                                        <div style={{
+                                            width: "40px",
+                                            height: "40px",
+                                            borderRadius: "14px",
+                                            background: isDark ? "rgba(148, 163, 184, 0.18)" : "rgba(15, 23, 42, 0.06)",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            fontWeight: 700,
+                                            color: isDark ? "rgba(226, 232, 240, 0.8)" : "rgba(15, 23, 42, 0.65)"
+                                        }}>
+                                            {index + 1}
+                                        </div>
+                                        <div style={{flex: 1, minWidth: 0}}>
+                                            <div style={{
+                                                fontWeight: 700,
+                                                fontSize: "1.05em",
+                                                color: isDark ? "rgba(226, 232, 240, 0.95)" : "rgba(15, 23, 42, 0.9)",
+                                                marginBottom: "6px"
+                                            }}>
+                                                {item.sourceTitle || "Untitled"}
+                                            </div>
+                                            <div style={{
+                                                color: isDark ? "rgba(226, 232, 240, 0.6)" : "rgba(15, 23, 42, 0.55)",
+                                                fontSize: "0.85em",
+                                                wordBreak: "break-all"
+                                            }}>
+                                                Source ID: {item.sourceId}
+                                            </div>
+                                        </div>
+                                        <div style={{
+                                            padding: "6px 12px",
+                                            borderRadius: "999px",
+                                            fontSize: "0.8em",
+                                            fontWeight: 600,
+                                            whiteSpace: "nowrap",
+                                            ...statusStyle
+                                        }}>
+                                            {statusLabel}
+                                        </div>
+                                    </div>
+                                </li>
+                            )
+                        })}
+                    </ul>
+                ) : (
+                    <div style={{
+                        padding: "18px",
+                        borderRadius: "18px",
+                        border: isDark ? "1px dashed rgba(148, 163, 184, 0.25)" : "1px dashed rgba(15, 23, 42, 0.12)",
+                        background: isDark ? "rgba(15, 23, 42, 0.55)" : "rgba(255, 255, 255, 0.6)",
+                        color: isDark ? "rgba(226, 232, 240, 0.7)" : "rgba(15, 23, 42, 0.6)",
+                        fontSize: "0.95em",
+                        textAlign: "center"
+                    }}>
+                        No conversions are queued right now.
+                    </div>
+                )}
+                {conversionProblems.length > 0 && (
+                    <div style={{marginTop: "18px"}}>
+                        <SectionHeading>Conversion Errors</SectionHeading>
+                        <ul>
+                            {conversionProblems.map(item => (
+                                <li key={item.id} style={{
+                                    border: '1px solid var(--border-color, #ddd)',
+                                    borderRadius: '8px',
+                                    padding: '16px',
+                                    margin: '12px 0',
+                                    backgroundColor: 'var(--background-color, rgba(0, 0, 0, 0.02))'
+                                }}>
+                                    <div style={{marginBottom: '12px', fontWeight: 600}}>
+                                        {item.sourceTitle || item.sourceId}
+                                    </div>
+                                    <div
+                                        onClick={() => {
+                                            const newVisibleErrors = new Set(visibleConversionErrors);
+                                            if (visibleConversionErrors.has(item.id)) {
+                                                newVisibleErrors.delete(item.id);
+                                            } else {
+                                                newVisibleErrors.add(item.id);
+                                            }
+                                            setVisibleConversionErrors(newVisibleErrors);
+                                        }}
+                                        style={{
+                                            fontFamily: '"JetBrains Mono", "Fira Code", "Consolas", monospace',
+                                            fontSize: '0.9em',
+                                            padding: '8px 10px',
+                                            backgroundColor: 'var(--error-background, rgba(220, 0, 0, 0.05))',
+                                            border: '1px solid var(--error-border, rgba(220, 0, 0, 0.1))',
+                                            borderRadius: '4px',
+                                            color: 'var(--error-text, #d32f2f)',
+                                            lineHeight: '1.4',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            position: 'relative',
+                                            paddingRight: '30px',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap'
+                                        }}
+                                    >
+                                        {item.error.split('\n')[0]}
+                                        <span style={{
+                                            position: 'absolute',
+                                            right: '10px',
+                                            top: '50%',
+                                            transform: `translateY(-50%) rotate(${visibleConversionErrors.has(item.id) ? '0deg' : '-90deg'})`,
+                                            transition: 'transform 0.2s ease',
+                                            opacity: 0.6,
+                                            fontSize: '0.85em'
+                                        }}>▼</span>
+                                    </div>
+                                    {visibleConversionErrors.has(item.id) && (
+                                        <pre style={{
+                                            fontFamily: '"JetBrains Mono", "Fira Code", "Consolas", monospace',
+                                            whiteSpace: 'pre',
+                                            backgroundColor: 'var(--code-background, rgba(0, 0, 0, 0.05))',
+                                            color: 'var(--code-color, inherit)',
+                                            padding: '12px',
+                                            borderRadius: '6px',
+                                            margin: '12px 0 0 0',
+                                            fontSize: '0.9em',
+                                            lineHeight: '1.5',
+                                            boxShadow: 'inset 0 1px 3px var(--shadow-color, rgba(0, 0, 0, 0.1))',
+                                            maxHeight: '400px',
+                                            overflowY: 'auto',
+                                            overflowX: 'auto',
+                                            border: '1px solid var(--border-color, rgba(0, 0, 0, 0.1))'
+                                        }}>
+                                            {item.error.split('\n').slice(1).join('\n')}
+                                        </pre>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+            </section>
+        )}
         <section style={queueSurfaceStyle}>
             <div style={queueHeaderStyle}>
                 <div>

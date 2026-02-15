@@ -14,6 +14,8 @@
     - Query params:
         - `auto` - (optional) Include auto-generated tags
 - `POST /api/mediaLibrary/{id}` - Update media entry
+- `GET /api/mediaLibrary/{id}/conversions` - Get conversion summary for an entry
+- `POST /api/mediaLibrary/{id}/conversions` - Enqueue a conversion for an entry
 - `GET /api/mediaLibrary/{id}/hit` - Record a hit for specific entry
 - `GET /api/mediaLibrary/{id}/thumbnails` - Get list of thumbnails
 - `GET /api/mediaLibrary/{id}/randomThumb` - Get a random thumbnail
@@ -27,6 +29,7 @@
         - `bitRate` (bits per second)
         - `frameRate` (frames per second)
         - `fileSize` (bytes)
+      - `durationSeconds`
 
 ### Duplicates Management
 
@@ -62,6 +65,10 @@
 - `GET /api/problematic` - Get problematic downloads
 - `POST /api/problematic/remove` - Remove a problematic download
 - `POST /api/problematic/retry` - Retry a problematic download
+
+## Conversion Routes
+
+- `GET /api/conversions` - Get conversion queue snapshot
 
 ## Search Routes
 

@@ -3,6 +3,7 @@ package io.sebi.api
 import io.ktor.server.routing.*
 import io.sebi.analytics.AnalyticsDatabase
 import io.sebi.api.handlers.*
+import io.sebi.conversion.ConversionManager
 import io.sebi.downloader.DownloadManager
 import io.sebi.library.MediaLibrary
 import io.sebi.search.RPCSearchServiceProvider
@@ -25,6 +26,7 @@ fun Route.api(
     tagger: Tagger,
     metadataStorage: MetadataStorage,
     videoStorage: VideoStorage,
+    conversionManager: ConversionManager,
 ) {
 
     route("api") {
@@ -36,6 +38,9 @@ fun Route.api(
         get("status") { statusHandler(downloadManager) }
         route("ffmpeg") {
             get("mutex") { ffmpegMutexHandler() }
+        }
+        route("conversions") {
+            get { getConversionQueueHandler(conversionManager) }
         }
         route("mediaLibrary") {
             get { getMediaLibraryEntriesHandler(mediaLibrary, tagger) }
@@ -56,6 +61,10 @@ fun Route.api(
             route("{id}") {
                 get { getMediaLibraryEntryByIdHandler(metadataStorage, tagger) }
                 post { updateMediaLibraryEntryHandler(metadataStorage) }
+                route("conversions") {
+                    get { getConversionSummaryHandler(conversionManager) }
+                    post { enqueueConversionHandler(conversionManager, metadataStorage) }
+                }
 
                 route("storedDuplicate") {
                     get { retrieveStoredDuplicateHandler(metadataStorage) }

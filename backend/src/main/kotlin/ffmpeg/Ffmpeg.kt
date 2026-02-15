@@ -246,6 +246,11 @@ data class MediaTypeInfo(
     val fileSize: Long? = null,
 )
 
+data class MediaProbeInfo(
+    val mediaTypeInfo: MediaTypeInfo,
+    val durationSeconds: Double?,
+)
+
 private fun parseFrameRate(raw: String?): Double? {
     if (raw.isNullOrBlank()) return null
     val trimmed = raw.trim()
@@ -261,8 +266,8 @@ private fun parseFrameRate(raw: String?): Double? {
     }
 }
 
-suspend fun getMediaType(inputFile: File): MediaTypeInfo {
-    return globalFfmpegMutex.withLock("Media type probe") {
+suspend fun getMediaProbeInfo(inputFile: File): MediaProbeInfo {
+    return globalFfmpegMutex.withLock("Media info probe") {
         val stdout = mutableListOf<String>()
         val stderr = mutableListOf<String>()
         val exitCode = runExternalProcess(
@@ -270,7 +275,7 @@ suspend fun getMediaType(inputFile: File): MediaTypeInfo {
             "-v", "quiet",
             "-print_format", "json",
             "-show_entries",
-            "stream=codec_type,codec_name,width,height,bit_rate,avg_frame_rate,r_frame_rate:format=bit_rate",
+            "stream=codec_type,codec_name,width,height,bit_rate,avg_frame_rate,r_frame_rate:format=bit_rate,duration",
             inputFile.absolutePath,
             stdoutHandler = StdoutHandler.Lines { stdout.add(it) },
             onStderrLine = { stderr.add(it) },
@@ -298,8 +303,8 @@ suspend fun getMediaType(inputFile: File): MediaTypeInfo {
         val width = streamObject["width"]?.jsonPrimitive?.content?.toIntOrNull()
         val height = streamObject["height"]?.jsonPrimitive?.content?.toIntOrNull()
         val streamBitRate = streamObject["bit_rate"]?.jsonPrimitive?.content?.toLongOrNull()
-        val formatBitRate = json.jsonObject["format"]
-            ?.jsonObject
+        val format = json.jsonObject["format"]?.jsonObject
+        val formatBitRate = format
             ?.get("bit_rate")
             ?.jsonPrimitive
             ?.content
@@ -308,35 +313,23 @@ suspend fun getMediaType(inputFile: File): MediaTypeInfo {
         val frameRate = parseFrameRate(streamObject["avg_frame_rate"]?.jsonPrimitive?.content)
             ?: parseFrameRate(streamObject["r_frame_rate"]?.jsonPrimitive?.content)
         val fileSize = inputFile.length().takeIf { it > 0 }
+        val durationSeconds = format
+            ?.get("duration")
+            ?.jsonPrimitive
+            ?.content
+            ?.toDoubleOrNull()
 
-        MediaTypeInfo(codecType, codecName, width, height, bitRate, frameRate, fileSize)
+        val mediaTypeInfo = MediaTypeInfo(codecType, codecName, width, height, bitRate, frameRate, fileSize)
+        MediaProbeInfo(mediaTypeInfo, durationSeconds)
     }
 }
 
-val durationRegex = """(\d+\.?\d*)""".toRegex()
+suspend fun getMediaType(inputFile: File): MediaTypeInfo {
+    return getMediaProbeInfo(inputFile).mediaTypeInfo
+}
+
 suspend fun getVideoDuration(inputFile: File): Duration {
-    return globalFfmpegMutex.withLock("Video duration probe") {
-        val stdout = mutableListOf<String>()
-        val stderr = mutableListOf<String>()
-        val exitCode = runExternalProcess(
-            "ffprobe",
-            "-v",
-            "quiet",
-            "-print_format",
-            "json=c=1", // todo: unclear why this prints three lines rather than just one, i thought it was supposed to be compact.
-            "-show_entries",
-            "format=duration",
-            inputFile.absolutePath,
-            stdoutHandler = StdoutHandler.Lines { stdout.add(it) },
-            onStderrLine = { stderr.add(it) },
-            directory = null
-        )
-        if (exitCode != 0) {
-            error("ffprobe on $inputFile failed with exit code $exitCode: ${stderr.joinToString("\n")}")
-        }
-        val output = stdout.joinToString("\n")
-        val (durationStr) = durationRegex.find(output)?.destructured
-            ?: error("ffprobe on $inputFile didn't return a duration")
-        durationStr.toDouble().seconds
-    }
+    val durationSeconds = getMediaProbeInfo(inputFile).durationSeconds
+        ?: error("ffprobe on $inputFile didn't return a duration")
+    return durationSeconds.seconds
 }

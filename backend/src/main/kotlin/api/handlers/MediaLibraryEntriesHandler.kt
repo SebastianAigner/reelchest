@@ -7,9 +7,10 @@ import io.ktor.server.routing.*
 import io.sebi.api.dtos.UrlRequest
 import io.sebi.datastructures.shaHashed
 import io.sebi.downloader.DownloadManager
-import io.sebi.ffmpeg.MediaTypeInfo
-import io.sebi.ffmpeg.getMediaType
+import io.sebi.ffmpeg.getMediaProbeInfo
 import io.sebi.library.*
+import io.sebi.storage.MediaInformation
+import io.sebi.storage.MediaProbeStatus
 import io.sebi.storage.MetadataStorage
 import io.sebi.tagging.Tagger
 import kotlinx.coroutines.Dispatchers
@@ -17,11 +18,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import java.util.concurrent.ConcurrentHashMap
-
-// Cache variables from original file
-private val mimeTypeCache = ConcurrentHashMap<String, String>()
-private val mediaTypeCache = ConcurrentHashMap<String, MediaTypeInfo>()
 
 /**
  * Handler for getting all media library entries.
@@ -79,20 +75,78 @@ suspend fun RoutingContext.getMediaInformationHandler(metadataStorage: MetadataS
             })
         }
 
+        val cached = metadataStorage.getMediaInformation(entry.id)
+        if (cached != null) {
+            if (cached.probeStatus == MediaProbeStatus.FAILED) {
+                return@withContext call.respond(HttpStatusCode.InternalServerError, buildJsonObject {
+                    put("error", cached.probeError ?: "Unknown error occurred while determining media information")
+                })
+            }
+            return@withContext call.respond(buildJsonObject {
+                put("mimeType", cached.mimeType)
+                put("width", cached.width)
+                put("height", cached.height)
+                put("bitRate", cached.bitRate)
+                put("frameRate", cached.frameRate)
+                put("fileSize", cached.fileSize)
+                put("durationSeconds", cached.durationSeconds)
+            })
+        }
+
         try {
-            val mimeType = mimeTypeCache.getOrPut(entry.id) { entry.getMimeType() }
-            val mediaInfo = mediaTypeCache.getOrPut(entry.id) { getMediaType(mediaFile) }
+            val probeInfo = getMediaProbeInfo(mediaFile)
+            val mediaType = probeInfo.mediaTypeInfo
+            val mimeType = when (mediaType.codecType.lowercase()) {
+                "video" -> "video/${mediaType.codecName.lowercase()}"
+                "audio" -> "audio/${mediaType.codecName.lowercase()}"
+                else -> "application/octet-stream"
+            }
+            val persisted = MediaInformation(
+                libraryEntryId = entry.id,
+                mimeType = mimeType,
+                codecType = mediaType.codecType,
+                codecName = mediaType.codecName,
+                width = mediaType.width,
+                height = mediaType.height,
+                bitRate = mediaType.bitRate,
+                frameRate = mediaType.frameRate,
+                fileSize = mediaType.fileSize,
+                durationSeconds = probeInfo.durationSeconds,
+                probeStatus = MediaProbeStatus.SUCCESS,
+                probeError = null,
+                lastProbeAt = System.currentTimeMillis(),
+            )
+            metadataStorage.upsertMediaInformation(persisted)
             call.respond(buildJsonObject {
-                put("mimeType", mimeType)
-                put("width", mediaInfo.width)
-                put("height", mediaInfo.height)
-                put("bitRate", mediaInfo.bitRate)
-                put("frameRate", mediaInfo.frameRate)
-                put("fileSize", mediaInfo.fileSize)
+                put("mimeType", persisted.mimeType)
+                put("width", persisted.width)
+                put("height", persisted.height)
+                put("bitRate", persisted.bitRate)
+                put("frameRate", persisted.frameRate)
+                put("fileSize", persisted.fileSize)
+                put("durationSeconds", persisted.durationSeconds)
             })
         } catch (e: Exception) {
+            val errorMessage = e.message ?: "Unknown error occurred while determining media information"
+            metadataStorage.upsertMediaInformation(
+                MediaInformation(
+                    libraryEntryId = entry.id,
+                    mimeType = null,
+                    codecType = null,
+                    codecName = null,
+                    width = null,
+                    height = null,
+                    bitRate = null,
+                    frameRate = null,
+                    fileSize = null,
+                    durationSeconds = null,
+                    probeStatus = MediaProbeStatus.FAILED,
+                    probeError = errorMessage,
+                    lastProbeAt = System.currentTimeMillis(),
+                )
+            )
             call.respond(HttpStatusCode.InternalServerError, buildJsonObject {
-                put("error", e.message ?: "Unknown error occurred while determining media information")
+                put("error", errorMessage)
             })
         }
     }

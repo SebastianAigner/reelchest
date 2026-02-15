@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory
 import org.sqlite.SQLiteConfig
 import java.sql.Connection
 import java.sql.DriverManager
+import java.sql.ResultSet
 
 class JdbcSqliteMetadataStorage(
     private val readerWriterLock: ReaderWriterLock,
@@ -80,11 +81,6 @@ class JdbcSqliteMetadataStorage(
             """
             )
 
-            // Update schema version if needed
-            if (version < 2) {
-                stmt.execute("PRAGMA user_version = 2")
-            }
-
             stmt.execute(
                 """
                 CREATE TABLE IF NOT EXISTS duplicates (
@@ -94,7 +90,44 @@ class JdbcSqliteMetadataStorage(
                 )
             """
             )
+
+            stmt.execute(
+                """
+                CREATE TABLE IF NOT EXISTS media_information (
+                    library_entry_uuid TEXT PRIMARY KEY REFERENCES media_library_entries ON DELETE CASCADE,
+                    mime_type TEXT,
+                    codec_type TEXT,
+                    codec_name TEXT,
+                    width INTEGER,
+                    height INTEGER,
+                    bit_rate INTEGER,
+                    frame_rate REAL,
+                    file_size INTEGER,
+                    duration_seconds REAL,
+                    probe_status TEXT NOT NULL,
+                    probe_error TEXT,
+                    last_probe_at INTEGER NOT NULL
+                )
+            """
+            )
+
+            // Update schema version if needed
+            if (version < 3) {
+                stmt.execute("PRAGMA user_version = 3")
+            }
         }
+    }
+
+    private fun ResultSet.longOrNull(column: String): Long? {
+        return (getObject(column) as? Number)?.toLong()
+    }
+
+    private fun ResultSet.intOrNull(column: String): Int? {
+        return (getObject(column) as? Number)?.toInt()
+    }
+
+    private fun ResultSet.doubleOrNull(column: String): Double? {
+        return (getObject(column) as? Number)?.toDouble()
     }
 
 
@@ -257,6 +290,80 @@ class JdbcSqliteMetadataStorage(
                         }
                         results
                     }
+                }
+            }
+        }
+    }
+
+    override suspend fun getMediaInformation(id: String): MediaInformation? {
+        return withContext(Dispatchers.IO) {
+            readerWriterLock.withReaderLock {
+                connection.prepareStatement(
+                    """
+                    SELECT * FROM media_information
+                    WHERE library_entry_uuid = ?
+                """
+                ).use { stmt ->
+                    stmt.setString(1, id)
+                    stmt.executeQuery().use { rs ->
+                        if (!rs.next()) return@withReaderLock null
+                        MediaInformation(
+                            libraryEntryId = rs.getString("library_entry_uuid"),
+                            mimeType = rs.getString("mime_type"),
+                            codecType = rs.getString("codec_type"),
+                            codecName = rs.getString("codec_name"),
+                            width = rs.intOrNull("width"),
+                            height = rs.intOrNull("height"),
+                            bitRate = rs.longOrNull("bit_rate"),
+                            frameRate = rs.doubleOrNull("frame_rate"),
+                            fileSize = rs.longOrNull("file_size"),
+                            durationSeconds = rs.doubleOrNull("duration_seconds"),
+                            probeStatus = MediaProbeStatus.valueOf(rs.getString("probe_status")),
+                            probeError = rs.getString("probe_error"),
+                            lastProbeAt = rs.getLong("last_probe_at")
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    override suspend fun upsertMediaInformation(info: MediaInformation) {
+        withContext(Dispatchers.IO) {
+            readerWriterLock.withWriterLock {
+                connection.prepareStatement(
+                    """
+                    INSERT OR REPLACE INTO media_information (
+                        library_entry_uuid,
+                        mime_type,
+                        codec_type,
+                        codec_name,
+                        width,
+                        height,
+                        bit_rate,
+                        frame_rate,
+                        file_size,
+                        duration_seconds,
+                        probe_status,
+                        probe_error,
+                        last_probe_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """
+                ).use { stmt ->
+                    stmt.setString(1, info.libraryEntryId)
+                    stmt.setString(2, info.mimeType)
+                    stmt.setString(3, info.codecType)
+                    stmt.setString(4, info.codecName)
+                    stmt.setObject(5, info.width)
+                    stmt.setObject(6, info.height)
+                    stmt.setObject(7, info.bitRate)
+                    stmt.setObject(8, info.frameRate)
+                    stmt.setObject(9, info.fileSize)
+                    stmt.setObject(10, info.durationSeconds)
+                    stmt.setString(11, info.probeStatus.name)
+                    stmt.setString(12, info.probeError)
+                    stmt.setLong(13, info.lastProbeAt)
+                    stmt.executeUpdate()
                 }
             }
         }

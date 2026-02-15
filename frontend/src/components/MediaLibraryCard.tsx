@@ -9,7 +9,7 @@ import {commonStyles} from "../styles/common";
 import placeholderImage from '../assets/placeholder.svg';
 import audioPlaceholder from '../assets/audio-placeholder.svg';
 import {useMediaInfo} from "../hooks/useMediaInfo";
-import {TrashIcon} from '@heroicons/react/24/solid';
+import {ArrowsRightLeftIcon, TrashIcon} from '@heroicons/react/24/solid';
 import {useInView} from "react-intersection-observer";
 
 export function MediaLibraryCard({item}: { item: MediaLibraryEntry }) {
@@ -18,6 +18,7 @@ export function MediaLibraryCard({item}: { item: MediaLibraryEntry }) {
     const {isAudio} = useMediaInfo(item.id, inView)
     const hitAbortRef = useRef<AbortController | null>(null);
     const mediaElementRef = useRef<HTMLMediaElement | null>(null);
+    const isConverted = item.tags?.includes("converted");
 
     useEffect(() => {
         if (inView) return;
@@ -81,13 +82,18 @@ export function MediaLibraryCard({item}: { item: MediaLibraryEntry }) {
     return <div
         ref={ref}
         key={"player-or-picture-card" + item.id}
-                className={`${commonStyles.cardContainer} ${
+        className={`${commonStyles.cardContainer} relative ${
                     item.markedForDeletion
-                        ? "border-2 border-red-400 bg-red-50 dark:bg-red-900/10 relative opacity-75"
+                        ? "border-2 border-red-400 bg-red-50 dark:bg-red-900/10 opacity-75"
                         : ""
                 }`}
                 style={{"height": "fit-content"}}
     >
+        {isConverted && (
+            <div className="absolute top-2 left-2 rounded-full bg-slate-900/80 p-1.5 text-white shadow-sm">
+                <ArrowsRightLeftIcon className="h-4 w-4"/>
+            </div>
+        )}
         {item.markedForDeletion && (
             <div className="absolute top-2 right-2 bg-red-500/90 text-white p-1.5 rounded-full shadow-sm">
                 <TrashIcon className="w-4 h-4"/>

@@ -44,6 +44,17 @@ function formatFrameRate(frameRate?: number): string | null {
     return `${frameRate.toFixed(2)} fps`;
 }
 
+const ORIGIN_TAG_PREFIX = "orig:";
+
+async function originStatusFetcher(url: string, init?: RequestInit): Promise<{ exists: boolean }> {
+    const response = await fetch(url, init);
+    if (response.status === 404) return {exists: false};
+    if (!response.ok) {
+        throw new Error(`Failed to load original entry (${response.status}).`);
+    }
+    return {exists: true};
+}
+
 function MediaInfoSection({id, originUrl}: { id: string; originUrl?: string }) {
     const {mimeType, width, height, bitRate, frameRate, fileSize, isLoading} = useMediaInfo(id);
     const formattedBitRate = formatBitRate(bitRate);
@@ -228,6 +239,18 @@ export function Movie() {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [markIn, setMarkIn] = useState<number | null>(null);
     const [markOut, setMarkOut] = useState<number | null>(null);
+    const originTag = entry?.mediaLibraryEntry.tags.find(tag => tag.startsWith(ORIGIN_TAG_PREFIX));
+    const originId = originTag ? originTag.slice(ORIGIN_TAG_PREFIX.length) : null;
+    const {
+        data: originStatus,
+        error: originStatusError
+    } = useAbortableSWR<{ exists: boolean }>(
+        originId ? `/api/mediaLibrary/${originId}` : null,
+        originStatusFetcher
+    );
+    const originExists = originStatus?.exists === true;
+    const originDeleted = originStatus?.exists === false;
+    const originLoading = Boolean(originId && !originStatus && !originStatusError);
     if (!entry) return <>
         <p>loading...</p>
     </>
@@ -297,6 +320,40 @@ export function Movie() {
 
         <SubHeading>Operations</SubHeading>
         <ul>
+            {originId && (
+                <li>
+                    <StyledButton
+                        disabled={!originExists}
+                        onClick={() => {
+                            if (originExists) {
+                                history.push(`/movie/${originId}`);
+                            }
+                        }}
+                    >
+                        {originLoading ? "Checking Original..." : "GoTo Original"}
+                    </StyledButton>
+                    {!originExists && originDeleted && (
+                        <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
+                            Original video was deleted.
+                        </span>
+                    )}
+                    {!originExists && originLoading && (
+                        <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
+                            Checking original video...
+                        </span>
+                    )}
+                    {!originExists && !originDeleted && originStatusError && (
+                        <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
+                            Unable to load original right now.
+                        </span>
+                    )}
+                </li>
+            )}
+            <li>
+                <StyledButton onClick={() => history.push(`/movie/${id}/convert`)}>
+                    Convert
+                </StyledButton>
+            </li>
             <li>
                 <MarkForDeletionButton
                     isMarkedForDeletion={entry?.mediaLibraryEntry.markedForDeletion || false}

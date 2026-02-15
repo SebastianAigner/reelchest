@@ -25,7 +25,8 @@ fun Application.installPlugins() {
                 "/api/queue",
                 "/api/log",
                 "/api/problematic",
-                "/api/ffmpeg/mutex"
+                "/api/ffmpeg/mutex",
+                "/api/conversions"
             ).none { path ->
                 call.request.path().startsWith(path)
             }

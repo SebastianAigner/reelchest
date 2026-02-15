@@ -53,6 +53,20 @@ class MultiplexingMetadataStorage(val metadataStorages: List<MetadataStorage>, v
         return allTombstones.first()
     }
 
+    override suspend fun getMediaInformation(id: String): MediaInformation? {
+        val infos = metadataStorages.map { it.getMediaInformation(id) }
+        val distinct = infos.distinct()
+        return if (distinct.size == 1) {
+            distinct.first()
+        } else {
+            error("Mismatching media information between multiplexed storages: ${infos.zip(storageNames)}")
+        }
+    }
+
+    override suspend fun upsertMediaInformation(info: MediaInformation) {
+        metadataStorages.forEach { it.upsertMediaInformation(info) }
+    }
+
     override suspend fun addDuplicate(id: String, dup: String, dist: Int) {
         TODO("Not yet implemented")
     }

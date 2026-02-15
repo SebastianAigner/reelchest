@@ -8,6 +8,10 @@ import java.io.File
 import java.io.FileNotFoundException
 
 class FileSystemMetadataStorage : MetadataStorage {
+    private fun mediaInfoFile(id: String): File {
+        return File(AppConfig.mediaLibraryPath, "$id/$id.media-info.json")
+    }
+
     override suspend fun storeMetadata(id: String, metadata: MediaLibraryEntry) {
         val persisted = json.encodeToString(metadata)
         val targetFile = File(AppConfig.mediaLibraryPath, "$id/$id.json")
@@ -47,6 +51,18 @@ class FileSystemMetadataStorage : MetadataStorage {
                 else -> null
             }
         }
+    }
+
+    override suspend fun getMediaInformation(id: String): MediaInformation? {
+        val infoFile = mediaInfoFile(id)
+        if (!infoFile.exists()) return null
+        return json.decodeFromString(infoFile.readText())
+    }
+
+    override suspend fun upsertMediaInformation(info: MediaInformation) {
+        val infoFile = mediaInfoFile(info.libraryEntryId)
+        infoFile.parentFile?.mkdirs()
+        infoFile.writeText(json.encodeToString(info))
     }
 
     override suspend fun addDuplicate(id: String, dup: String, dist: Int) {

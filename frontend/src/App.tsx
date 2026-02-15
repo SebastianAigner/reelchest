@@ -14,6 +14,7 @@ import {DuplicatesManager} from "./views/DuplicatesManager";
 import {SubtitleKitchen} from "./views/SubtitleKitchen";
 import {Upload} from "./views/Upload";
 import {Admin} from "./views/Admin";
+import {Convert} from "./views/Convert";
 import {NavGrid, VStack} from "./components/Layout";
 import {ThemeProvider, useTheme} from "./context/ThemeContext";
 import {commonStyles} from "./styles/common";
@@ -192,6 +193,9 @@ const App: React.FC = () => {
                             </Route>
                             <Route path="/mediaLibrary">
                                 <MediaLibrary/>
+                            </Route>
+                            <Route path="/movie/:id/convert">
+                                <Convert/>
                             </Route>
                             <Route path="/movie/:id">
                                 <Movie/>

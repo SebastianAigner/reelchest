@@ -7,6 +7,7 @@ import io.ktor.server.routing.*
 import io.sebi.api.api
 import io.sebi.api.handlers.triggerOrphanScan
 import io.sebi.autoscrape.setupAutoscraper
+import io.sebi.conversion.ConversionManager
 import io.sebi.disk.MediaLibraryDiskSpaceProvider
 import io.sebi.downloader.DiskSpaceDownloadStartGate
 import io.sebi.downloader.DownloadManager
@@ -57,6 +58,7 @@ fun setup(
     networkManager: NetworkManager,
     tagger: Tagger,
     urlDecoder: UrlDecoder,
+    conversionManager: ConversionManager,
 ) {
     val logger = LoggerFactory.getLogger("Setup")
     System.getenv("DLMGR_TMP_DIR")?.let {
@@ -70,6 +72,7 @@ fun setup(
 
     runBlocking {
         downloadManager.restoreQueue()
+        conversionManager.restoreQueue()
     }
     setFileDates(metadataStorage)
 }
@@ -130,6 +133,7 @@ fun Application.module() {
             DiskSpaceDownloadStartGate(MediaLibraryDiskSpaceProvider()),
             monitor
         )
+    val conversionManager = ConversionManager(metadataStorage, videoStorage, monitor)
     val tagger = CachingTagger()
     val intoMediaLibraryDownloader = IntoMediaLibraryDownloader(downloadManager, urlDecoder, mediaLibrary)
 
@@ -139,7 +143,7 @@ fun Application.module() {
     }
 
     runBlocking {
-        setup(metadataStorage, mediaLibrary, downloadManager, networkManager, tagger, urlDecoder)
+        setup(metadataStorage, mediaLibrary, downloadManager, networkManager, tagger, urlDecoder, conversionManager)
     }
 
 //    launch(Dispatchers.Default) {
@@ -178,6 +182,15 @@ fun Application.module() {
         }
     )
     scheduleDailyAt(
+        time = LocalTime.of(3, 0),
+        dispatcher = Dispatchers.IO,
+        onError = { schedulerLogger.warn("Scheduled conversions failed.", it) },
+        task = {
+            schedulerLogger.info("Starting scheduled conversions.")
+            conversionManager.runScheduledConversions()
+        }
+    )
+    scheduleDailyAt(
         time = LocalTime.of(4, 0),
         dispatcher = Dispatchers.IO,
         onError = { schedulerLogger.warn("Scheduled deletion of marked media failed.", it) },
@@ -197,7 +210,7 @@ fun Application.module() {
         install(HttpRequestLifecycle) {
             cancelCallOnClose = true
         }
-        api(urlDecoder, mediaLibrary, downloadManager, tagger, metadataStorage, videoStorage)
+        api(urlDecoder, mediaLibrary, downloadManager, tagger, metadataStorage, videoStorage, conversionManager)
         addDownload(intoMediaLibraryDownloader)
         addUpload()
         progressList(downloadManager)

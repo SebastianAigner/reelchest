@@ -3,10 +3,7 @@ package io.sebi
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -29,9 +26,12 @@ class SingleMediaInfoRequestTest : MediaLibraryTestBase() {
             // Make a single request for media information
             val response = client.get("http://localhost:$port/api/mediaLibrary/$firstId/media-information")
             println("[DEBUG_LOG] Response status: ${response.status}")
-            println("[DEBUG_LOG] Response body: ${response.bodyAsText()}")
+            val responseBody = response.bodyAsText()
+            println("[DEBUG_LOG] Response body: $responseBody")
 
             assertEquals(HttpStatusCode.OK, response.status)
+            val bodyJson = Json.parseToJsonElement(responseBody).jsonObject
+            assert(bodyJson.containsKey("durationSeconds")) { "Expected durationSeconds in media-info payload" }
         }
     }
 }
