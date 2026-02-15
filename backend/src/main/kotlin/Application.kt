@@ -37,13 +37,10 @@ import io.sebi.urldecoder.UrlDecoderImpl
 import io.sebi.utils.ReaderWriterLock
 import io.sebi.utils.creationTime
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.time.LocalTime
-import kotlin.time.Duration.Companion.hours
 
 fun main(args: Array<String>) {
     // Switch to CIO last blocked by https://youtrack.jetbrains.com/issue/KTOR-6851.
@@ -148,24 +145,18 @@ fun Application.module() {
     // Create a mutex for thumbnail generation to prevent overlapping processes
     val thumbnailGenerationMutex = HeavyMutex("ThumbnailGenerationMutex")
 
-    // Launch a coroutine that generates thumbnails once per hour
-    launch(Dispatchers.IO) {
-        // Initial delay before first thumbnail generation
-        delay(1.hours)
-
-        // Continuously generate thumbnails once per hour
-        while (true) {
-            // Use the mutex to prevent overlapping thumbnail generation processes
+    val schedulerLogger = LoggerFactory.getLogger("Scheduler")
+    scheduleDailyAt(
+        time = LocalTime.of(2, 0),
+        dispatcher = Dispatchers.IO,
+        onError = { schedulerLogger.warn("Scheduled thumbnail generation failed.", it) },
+        task = {
+            schedulerLogger.info("Starting scheduled thumbnail generation.")
             thumbnailGenerationMutex.withLock("Scheduled thumbnail generation") {
                 generateThumbnails(mediaLibrary)
             }
-
-            // Wait for 1 hour before next thumbnail generation
-            delay(1.hours)
         }
-    }
-
-    val schedulerLogger = LoggerFactory.getLogger("Scheduler")
+    )
     scheduleDailyAt(
         time = LocalTime.of(3, 0),
         dispatcher = Dispatchers.IO,

@@ -3,7 +3,9 @@ package io.sebi.library
 import io.sebi.config.AppConfig
 import io.sebi.datastructures.shaHashed
 import io.sebi.downloader.CompletedDownloadTask
+import io.sebi.ffmpeg.MediaProbeInfo
 import io.sebi.ffmpeg.generateThumbnails
+import io.sebi.ffmpeg.getMediaProbeInfo
 import io.sebi.storage.MetadataStorage
 import io.sebi.storage.VideoStorage
 import io.sebi.urldecoder.UrlDecoder
@@ -56,7 +58,14 @@ class MediaLibrary(
     suspend fun addCompletedDownload(c: CompletedDownloadTask) {
         if (!c.targetFile.exists()) throw FileNotFoundException("Target File does not exist.")
         logger.info("Adding to media library: $c")
-        val metadata = urlDecoder.getMetadata(c.originUrl)
+        validateDownloadedMedia(c)
+        val metadata = try {
+            urlDecoder.getMetadata(c.originUrl)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            rejectDownload(c, "Metadata lookup failed for ${c.originUrl}: ${error.message}", error)
+        }
         val uid = c.originUrl.shaHashed()
         val entry = MediaLibraryEntry(
             name = metadata?.title ?: c.originUrl,
@@ -64,13 +73,87 @@ class MediaLibrary(
             creationDate = System.currentTimeMillis() / 1000,
             tags = metadata?.tags?.toSet() ?: emptySet(),
         )
-        withContext(Dispatchers.IO) {
-            videoStorage.storeVideo(uid, c.targetFile.toPath())
-            logger.info("Persisting $entry")
-            entry.persist(metadataStorage)
-            c.targetFile.delete()
-            logger.info("Starting thumbnail generation.")
+        try {
+            withContext(Dispatchers.IO) {
+                videoStorage.storeVideo(uid, c.targetFile.toPath())
+                logger.info("Persisting $entry")
+                entry.persist(metadataStorage)
+                c.targetFile.delete()
+                logger.info("Starting thumbnail generation.")
 //            generateThumbnails(entry.file)
+            }
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            logger.warn("Failed to persist download for ${c.originUrl}", error)
+            cleanupRejectedDownload(c)
+            cleanupPartialLibraryEntry(uid)
+            throw IllegalStateException(
+                "Failed to persist downloaded media for ${c.originUrl}: ${error.message}",
+                error
+            )
+        }
+    }
+
+    private suspend fun validateDownloadedMedia(c: CompletedDownloadTask): MediaProbeInfo {
+        val probeInfo = try {
+            withContext(Dispatchers.IO) {
+                getMediaProbeInfo(c.targetFile)
+            }
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            rejectDownload(
+                c,
+                "Downloaded file for ${c.originUrl} failed ffprobe validation: ${error.message}",
+                error
+            )
+        }
+        val codecType = probeInfo.mediaTypeInfo.codecType
+        if (!isSupportedMediaCodecType(codecType)) {
+            rejectDownload(
+                c,
+                "Downloaded file for ${c.originUrl} is not audio or video (ffprobe codec_type=$codecType)."
+            )
+        }
+        return probeInfo
+    }
+
+    private fun isSupportedMediaCodecType(codecType: String): Boolean {
+        return codecType.equals("video", ignoreCase = true) || codecType.equals("audio", ignoreCase = true)
+    }
+
+    private fun rejectDownload(c: CompletedDownloadTask, message: String, error: Exception? = null): Nothing {
+        if (error != null) {
+            logger.warn("Rejected download for ${c.originUrl}. $message", error)
+        } else {
+            logger.warn("Rejected download for ${c.originUrl}. $message")
+        }
+        cleanupRejectedDownload(c)
+        throw IllegalStateException(message, error)
+    }
+
+    private fun cleanupRejectedDownload(c: CompletedDownloadTask) {
+        if (!c.targetFile.exists()) return
+        try {
+            if (!c.targetFile.delete()) {
+                logger.warn("Failed to delete rejected download ${c.targetFile.absolutePath}")
+            }
+        } catch (error: Exception) {
+            logger.warn("Failed to delete rejected download ${c.targetFile.absolutePath}", error)
+        }
+    }
+
+    private suspend fun cleanupPartialLibraryEntry(uid: String) {
+        try {
+            metadataStorage.deleteMetadata(uid)
+        } catch (error: Exception) {
+            logger.warn("Failed to delete metadata for rejected download $uid", error)
+        }
+        try {
+            videoStorage.deleteVideo(uid)
+        } catch (error: Exception) {
+            logger.warn("Failed to delete media file for rejected download $uid", error)
         }
     }
 }
