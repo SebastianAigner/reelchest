@@ -44,7 +44,7 @@ function formatFrameRate(frameRate?: number): string | null {
     return `${frameRate.toFixed(2)} fps`;
 }
 
-function MediaInfoSection({id}: { id: string }) {
+function MediaInfoSection({id, originUrl}: { id: string; originUrl?: string }) {
     const {mimeType, width, height, bitRate, frameRate, fileSize, isLoading} = useMediaInfo(id);
     const formattedBitRate = formatBitRate(bitRate);
     const formattedFrameRate = formatFrameRate(frameRate);
@@ -54,6 +54,14 @@ function MediaInfoSection({id}: { id: string }) {
 
     return (
         <ul>
+            {originUrl && (
+                <li>
+                    Original URL:{" "}
+                    <a className="break-all" href={originUrl} target="_blank" rel="noreferrer">
+                        {originUrl}
+                    </a>
+                </li>
+            )}
             <li>MIME Type: {mimeType}</li>
             {width && height && (
                 <li>Dimensions: {width}×{height}</li>
@@ -285,7 +293,7 @@ export function Movie() {
             </div>
         )}
         <SubHeading>Media Information</SubHeading>
-        <MediaInfoSection id={id}/>
+        <MediaInfoSection id={id} originUrl={entry?.mediaLibraryEntry.originUrl}/>
 
         <SubHeading>Operations</SubHeading>
         <ul>

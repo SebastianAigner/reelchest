@@ -4,7 +4,9 @@ import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.sebi.config.AppConfig
+import io.sebi.setup.removeFilesScheduledForDeletion
 import io.sebi.storage.MetadataStorage
+import io.sebi.storage.VideoStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -167,6 +169,18 @@ suspend fun RoutingContext.scanOrphanedMediaHandler(metadataStorage: MetadataSto
 
 suspend fun RoutingContext.orphanScanStatusHandler() {
     call.respond(buildOrphanScanJson(orphanScanStateFlow.value))
+}
+
+suspend fun RoutingContext.deleteMarkedMediaHandler(
+    metadataStorage: MetadataStorage,
+    videoStorage: VideoStorage,
+) {
+    val summary = removeFilesScheduledForDeletion(metadataStorage, videoStorage)
+    call.respond(buildJsonObject {
+        put("totalMarked", summary.totalMarked)
+        put("deleted", summary.deleted)
+        put("failed", summary.failed)
+    })
 }
 
 suspend fun triggerOrphanScan(metadataStorage: MetadataStorage, application: Application) {

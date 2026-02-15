@@ -7,6 +7,7 @@ import io.sebi.downloader.DownloadManager
 import io.sebi.library.MediaLibrary
 import io.sebi.search.RPCSearchServiceProvider
 import io.sebi.storage.MetadataStorage
+import io.sebi.storage.VideoStorage
 import io.sebi.tagging.Tagger
 import io.sebi.urldecoder.UrlDecoder
 import org.slf4j.LoggerFactory
@@ -23,6 +24,7 @@ fun Route.api(
     downloadManager: DownloadManager,
     tagger: Tagger,
     metadataStorage: MetadataStorage,
+    videoStorage: VideoStorage,
 ) {
 
     route("api") {
@@ -73,6 +75,7 @@ fun Route.api(
                 get("regenerate-thumbnail/{id}") { regenerateThumbnailHandler(mediaLibrary) }
                 get("scan-orphans") { orphanScanStatusHandler() }
                 post("scan-orphans") { scanOrphanedMediaHandler(metadataStorage) }
+                post("delete-marked") { deleteMarkedMediaHandler(metadataStorage, videoStorage) }
             }
             get("disk-usage") { mediaLibraryDiskUsageHandler() }
         }

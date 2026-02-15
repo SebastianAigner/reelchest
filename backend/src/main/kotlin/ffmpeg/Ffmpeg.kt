@@ -68,6 +68,17 @@ class FfmpegTask(val parameters: List<String>) {
 
 val logger = LoggerFactory.getLogger("ffmpeg")
 
+private const val THUMBNAIL_INTERVAL_SECONDS = 10L
+private const val THUMBNAIL_BATCH_SIZE = 5
+private const val THUMBNAIL_THREAD_COUNT = 1
+private const val THUMBNAIL_FILTER_THREAD_COUNT = 1
+private const val THUMBNAIL_QUALITY = 5
+private const val THUMBNAIL_MAX_WIDTH = 1920
+private const val THUMBNAIL_MAX_HEIGHT = 1080
+private val THUMBNAIL_SCALE_FILTER =
+    "scale=w='min($THUMBNAIL_MAX_WIDTH,iw)':h='min($THUMBNAIL_MAX_HEIGHT,ih)'" +
+            ":force_original_aspect_ratio=decrease:force_divisible_by=2"
+
 // https://sebi.io/posts/2024-12-21-faster-thumbnail-generation-with-ffmpeg-seeking/
 suspend fun generateThumbnails(
     videoFile: File,
@@ -97,46 +108,48 @@ suspend fun generateThumbnails(
         throw e
     }
 
-    val thumbnailCount = (dur.inWholeSeconds / 10) + 1
+    val timestamps = (0L..dur.inWholeSeconds step THUMBNAIL_INTERVAL_SECONDS).toList()
+    val thumbnailCount = timestamps.size
     logger.info("Planning to generate $thumbnailCount thumbnails")
 
-    val ffmpegParameters = buildList<String> {
-        var streamId = 0
-        add("-y")
-        for (timestamp in 0..dur.inWholeSeconds step 10) {
-            add("-ss")
-            add(timestamp.toString())
-            add("-i")
-            add(videoFile.absolutePath)
-            add("-q:v")
-            add("5")
-            add("-frames:v")
-            add("1")
-            add("-map")
-            add("$streamId:v:0")
-            val thumbName = "thumb${streamId.toString().padStart(4, '0')}.jpg"
-            add(thumbName)
-            logger.info("Adding thumbnail $thumbName at timestamp ${timestamp}s")
-            streamId++
-        }
-    }
+    val batches = timestamps.chunked(THUMBNAIL_BATCH_SIZE)
+    var nextThumbIndex = 0
 
     logger.info("Starting ffmpeg process in directory: ${videoFile.parentFile.absolutePath}")
+    batches.forEachIndexed { batchIndex, batch ->
+        batch.forEachIndexed { localIndex, timestamp ->
+            val thumbName = thumbnailName(nextThumbIndex + localIndex)
+            logger.info("Adding thumbnail $thumbName at timestamp ${timestamp}s")
+        }
 
-    val (out, err) = try {
-        FfmpegTask(ffmpegParameters).execute(
-            directory = videoFile.parentFile,
-            mutexLabel = "Thumbnail generation",
-            customStdoutHandler = { onStdoutLine(it) },
-            customStderrHandler = { onStderrLine(it) }
+        logger.info("Starting ffmpeg batch ${batchIndex + 1}/${batches.size} (${batch.size} thumbnails)")
+
+        val ffmpegParameters = buildThumbnailFfmpegParameters(
+            videoFile = videoFile,
+            timestamps = batch,
+            startIndex = nextThumbIndex,
+            scaleFilter = THUMBNAIL_SCALE_FILTER,
+            threadCount = THUMBNAIL_THREAD_COUNT,
+            filterThreadCount = THUMBNAIL_FILTER_THREAD_COUNT
         )
-    } catch (e: Exception) {
-        logger.error("Failed to execute ffmpeg: ${e.message}")
-        throw e
-    }
 
-    if (out.isNotEmpty()) logger.info("FFmpeg output:\n${out.joinToString("\n")}")
-    if (err.isNotEmpty()) logger.error("FFmpeg errors:\n${err.joinToString("\n")}")
+        val (out, err) = try {
+            FfmpegTask(ffmpegParameters).execute(
+                directory = videoFile.parentFile,
+                mutexLabel = "Thumbnail generation",
+                customStdoutHandler = { onStdoutLine(it) },
+                customStderrHandler = { onStderrLine(it) }
+            )
+        } catch (e: Exception) {
+            logger.error("Failed to execute ffmpeg: ${e.message}")
+            throw e
+        }
+
+        if (out.isNotEmpty()) logger.info("FFmpeg output:\n${out.joinToString("\n")}")
+        if (err.isNotEmpty()) logger.error("FFmpeg errors:\n${err.joinToString("\n")}")
+
+        nextThumbIndex += batch.size
+    }
 
     // Verify generated thumbnails
     val generatedThumbnails =
@@ -144,6 +157,43 @@ suspend fun generateThumbnails(
     logger.info("Generated ${generatedThumbnails?.size ?: 0} thumbnails out of $thumbnailCount planned")
 }
 
+internal fun buildThumbnailFfmpegParameters(
+    videoFile: File,
+    timestamps: List<Long>,
+    startIndex: Int,
+    scaleFilter: String,
+    threadCount: Int,
+    filterThreadCount: Int,
+): List<String> {
+    return buildList {
+        add("-y")
+        add("-threads")
+        add(threadCount.toString())
+        add("-filter_threads")
+        add(filterThreadCount.toString())
+        timestamps.forEachIndexed { index, timestamp ->
+            add("-ss")
+            add(timestamp.toString())
+            add("-i")
+            add(videoFile.absolutePath)
+            add("-vf")
+            add(scaleFilter)
+            add("-q:v")
+            add(THUMBNAIL_QUALITY.toString())
+            add("-map")
+            add("$index:v:0")
+            add("-frames:v")
+            add("1")
+            add("-update")
+            add("1")
+            add(thumbnailName(startIndex + index))
+        }
+    }
+}
+
+private fun thumbnailName(index: Int): String {
+    return "thumb${index.toString().padStart(4, '0')}.jpg"
+}
 
 @Blocking
 suspend fun generateDHashes(videoFile: File) {

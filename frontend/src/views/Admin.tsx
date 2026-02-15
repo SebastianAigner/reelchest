@@ -7,7 +7,7 @@ import {AutoTaggedMediaLibraryEntry} from "../models/AutoTaggedMediaLibraryEntry
 import {StyledButton} from "../components/StyledButton";
 
 function useMediaLibraryEntries() {
-    const {data, error} = useAbortableSWR<Array<AutoTaggedMediaLibraryEntry>>(
+    const {data, error, mutate} = useAbortableSWR<Array<AutoTaggedMediaLibraryEntry>>(
         "/api/mediaLibrary?auto=true",
         fetcher
     );
@@ -15,7 +15,8 @@ function useMediaLibraryEntries() {
     return {
         entries: data || [],
         isLoading: !data && !error,
-        isError: error
+        isError: error,
+        refresh: mutate
     };
 }
 
@@ -83,7 +84,7 @@ function formatTimestamp(timestamp?: number): string {
 }
 
 export function Admin() {
-    const {entries, isLoading, isError} = useMediaLibraryEntries();
+    const {entries, isLoading, isError, refresh} = useMediaLibraryEntries();
     const {usage, isLoading: isDiskLoading, isError: isDiskError} = useDiskUsage();
     const {config, isLoading: isConfigLoading, isError: isConfigError} = useApplicationConfig();
     const markedForDeletionCount = React.useMemo(() => {
@@ -92,6 +93,9 @@ export function Admin() {
     const [scanProgress, setScanProgress] = React.useState<OrphanScanProgress | null>(null);
     const [scanError, setScanError] = React.useState<string | null>(null);
     const [isScanning, setIsScanning] = React.useState(false);
+    const [deleteError, setDeleteError] = React.useState<string | null>(null);
+    const [deleteStatus, setDeleteStatus] = React.useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = React.useState(false);
     const [shutdownError, setShutdownError] = React.useState<string | null>(null);
     const [shutdownStatus, setShutdownStatus] = React.useState<string | null>(null);
     const [isShuttingDown, setIsShuttingDown] = React.useState(false);
@@ -165,6 +169,38 @@ export function Admin() {
         return () => window.clearInterval(intervalId);
     }, [fetchOrphanScanStatus, isScanning]);
 
+    const requestMarkedDeletion = async () => {
+        if (markedForDeletionCount === 0) {
+            setDeleteStatus("No videos are marked for deletion.");
+            return;
+        }
+        const confirmed = window.confirm(
+            `Delete ${markedForDeletionCount} videos marked for deletion? This cannot be undone.`
+        );
+        if (!confirmed) return;
+
+        setDeleteError(null);
+        setDeleteStatus(null);
+        setIsDeleting(true);
+        try {
+            const response = await fetch("/api/mediaLibrary/debug/delete-marked", {method: "POST"});
+            if (!response.ok) {
+                throw new Error(`Request failed with ${response.status}`);
+            }
+            const data = await response.json();
+            const deleted = Number(data?.deleted ?? 0);
+            const totalMarked = Number(data?.totalMarked ?? 0);
+            const failed = Number(data?.failed ?? 0);
+            const failedSuffix = failed > 0 ? ` (${failed} failed)` : "";
+            setDeleteStatus(`Deleted ${deleted} of ${totalMarked} marked videos${failedSuffix}.`);
+            await refresh();
+        } catch (err) {
+            setDeleteError(err instanceof Error ? err.message : "Failed to delete marked videos.");
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     const requestShutdown = async () => {
         if (!config?.shutdownUrl) {
             setShutdownError("Shutdown URL not available.");
@@ -202,6 +238,28 @@ export function Admin() {
             <div className="text-4xl font-semibold mt-2">
                 {isLoading ? "Loading..." : markedForDeletionCount}
             </div>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                Permanently delete videos and metadata that are flagged for removal.
+            </p>
+            <div className="mt-3">
+                <StyledButton
+                    onClick={requestMarkedDeletion}
+                    disabled={isDeleting || isLoading || markedForDeletionCount === 0}
+                    className="bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
+                >
+                    {isDeleting ? "Deleting..." : "Delete Marked Videos"}
+                </StyledButton>
+            </div>
+            {deleteStatus && (
+                <p className="mt-3 text-sm text-gray-700 dark:text-gray-200">
+                    {deleteStatus}
+                </p>
+            )}
+            {deleteError && (
+                <p className={`${commonStyles.errorText} mt-3`}>
+                    {deleteError}
+                </p>
+            )}
             {isError && (
                 <p className={`${commonStyles.errorText} mt-3`}>
                     Failed to load deletion status.

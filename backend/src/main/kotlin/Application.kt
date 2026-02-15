@@ -1,7 +1,7 @@
 package io.sebi
 
 import io.ktor.server.application.*
-import io.ktor.server.http.HttpRequestLifecycle
+import io.ktor.server.http.*
 import io.ktor.server.http.content.*
 import io.ktor.server.routing.*
 import io.sebi.api.api
@@ -111,7 +111,15 @@ fun Application.module() {
     // Create a shared ReaderWriterLock for SQLite database access
     val sqliteReaderWriterLock = ReaderWriterLock()
     val metadataStorage: MetadataStorage = JdbcSqliteMetadataStorage(sqliteReaderWriterLock)
-    runBlocking { removeFilesScheduledForDeletion(metadataStorage, videoStorage) }
+    runBlocking {
+        val summary = removeFilesScheduledForDeletion(metadataStorage, videoStorage)
+        if (summary.totalMarked > 0) {
+            LoggerFactory.getLogger("Scheduler").info(
+                "Startup deletion removed ${summary.deleted} of ${summary.totalMarked} marked entries " +
+                        "(${summary.failed} failed)."
+            )
+        }
+    }
     val mediaLibrary = MediaLibrary(urlDecoder, videoStorage, metadataStorage)
     val downloadManager: DownloadManager =
         DownloadManagerImpl(
@@ -175,7 +183,11 @@ fun Application.module() {
         onError = { schedulerLogger.warn("Scheduled deletion of marked media failed.", it) },
         task = {
             schedulerLogger.info("Starting scheduled deletion of files marked for deletion.")
-            removeFilesScheduledForDeletion(metadataStorage, videoStorage)
+            val summary = removeFilesScheduledForDeletion(metadataStorage, videoStorage)
+            schedulerLogger.info(
+                "Scheduled deletion removed ${summary.deleted} of ${summary.totalMarked} marked entries " +
+                        "(${summary.failed} failed)."
+            )
         }
     )
 
@@ -185,7 +197,7 @@ fun Application.module() {
         install(HttpRequestLifecycle) {
             cancelCallOnClose = true
         }
-        api(urlDecoder, mediaLibrary, downloadManager, tagger, metadataStorage)
+        api(urlDecoder, mediaLibrary, downloadManager, tagger, metadataStorage, videoStorage)
         addDownload(intoMediaLibraryDownloader)
         addUpload()
         progressList(downloadManager)

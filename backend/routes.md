@@ -47,6 +47,11 @@
 - `POST /api/mediaLibrary/debug/regenerate-thumbnail/{id}` - Regenerate thumbnails
 - `POST /api/mediaLibrary/debug/scan-orphans` - Start orphan scan (returns progress snapshot)
 - `GET /api/mediaLibrary/debug/scan-orphans` - Get orphan scan progress
+- `POST /api/mediaLibrary/debug/delete-marked` - Delete videos marked for deletion
+    - Returns:
+        - `totalMarked`
+        - `deleted`
+        - `failed`
 
 ## Download Manager Routes
 

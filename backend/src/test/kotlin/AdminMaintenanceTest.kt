@@ -4,7 +4,9 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.sebi.config.AppConfig
+import io.sebi.library.MediaLibraryEntry
 import io.sebi.storage.JdbcSqliteMetadataStorage
+import io.sebi.storage.MetadataResult
 import io.sebi.utils.ReaderWriterLock
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeoutOrNull
@@ -80,6 +82,46 @@ class AdminMaintenanceTest : MediaLibraryTestBase() {
             assertFalse(mediaFile.exists())
             assertFalse(thumbFile.exists())
             assertTrue(hashFile.exists())
+        }
+    }
+
+    @Test
+    fun testDeleteMarkedMediaRemovesEntries() {
+        withTestServer { _, client, port ->
+            val metadataStorage = JdbcSqliteMetadataStorage(ReaderWriterLock())
+            val id = "delete-marked-${UUID.randomUUID()}"
+            val entry = MediaLibraryEntry(
+                name = "Delete me",
+                originUrl = "https://example.com/$id",
+                tags = emptySet(),
+                creationDate = System.currentTimeMillis() / 1000,
+                uid = id,
+                markedForDeletion = true
+            )
+            metadataStorage.storeMetadata(id, entry)
+
+            val entryDir = File(AppConfig.mediaLibraryPath, id).apply { mkdirs() }
+            val mediaFile = File(entryDir, "$id.mp4").apply { writeBytes(ByteArray(12) { 7 }) }
+            val thumbFile = File(entryDir, "thumb0001.jpg").apply { writeBytes(ByteArray(6) { 4 }) }
+
+            val response = client.post("http://localhost:$port/api/mediaLibrary/debug/delete-marked")
+            assertEquals(HttpStatusCode.OK, response.status)
+            val json = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+
+            val totalMarked = json["totalMarked"]?.jsonPrimitive?.content?.toIntOrNull()
+            val deleted = json["deleted"]?.jsonPrimitive?.content?.toIntOrNull()
+            val failed = json["failed"]?.jsonPrimitive?.content?.toIntOrNull()
+
+            assertNotNull(totalMarked)
+            assertNotNull(deleted)
+            assertNotNull(failed)
+            assertTrue(totalMarked >= deleted)
+            assertTrue(deleted >= 1)
+
+            assertFalse(mediaFile.exists())
+            assertFalse(thumbFile.exists())
+            val result = metadataStorage.retrieveMetadata(id)
+            assertTrue(result is MetadataResult.Tombstone || result is MetadataResult.None)
         }
     }
 }
