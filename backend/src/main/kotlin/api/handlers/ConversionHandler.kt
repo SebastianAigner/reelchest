@@ -34,6 +34,11 @@ suspend fun RoutingContext.enqueueConversionHandler(
         return call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid conversion options.")
     }
 
-    val task = conversionManager.enqueueConversion(entry, request.mode, request.options)
+    val task = conversionManager.enqueueConversion(
+        sourceEntry = entry,
+        mode = request.mode,
+        options = request.options,
+        convertAndDeleteOriginal = request.convertAndDeleteOriginal
+    )
     call.respond(HttpStatusCode.Created, task)
 }

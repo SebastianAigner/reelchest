@@ -8,16 +8,41 @@ import io.sebi.api.dtos.UrlRequest
 import io.sebi.datastructures.shaHashed
 import io.sebi.downloader.DownloadManager
 import io.sebi.ffmpeg.getMediaProbeInfo
+import io.sebi.ffmpeg.toMimeType
 import io.sebi.library.*
-import io.sebi.storage.MediaInformation
-import io.sebi.storage.MediaProbeStatus
-import io.sebi.storage.MetadataStorage
+import io.sebi.storage.*
 import io.sebi.tagging.Tagger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+
+private fun parseSort(sortParam: String?): MediaInfoSort {
+    return when (sortParam?.lowercase()) {
+        "resolution", "res" -> MediaInfoSort.RESOLUTION
+        "framerate", "frame-rate", "fps", "frame" -> MediaInfoSort.FRAME_RATE
+        "filesize", "file-size", "size" -> MediaInfoSort.FILE_SIZE
+        "bitrate", "bit-rate", "br" -> MediaInfoSort.BIT_RATE
+        "duration", "durationseconds", "length" -> MediaInfoSort.DURATION
+        "width", "w" -> MediaInfoSort.WIDTH
+        "height", "h" -> MediaInfoSort.HEIGHT
+        else -> MediaInfoSort.RESOLUTION
+    }
+}
+
+private fun parseOrder(orderParam: String?): SortOrder {
+    return when (orderParam?.lowercase()) {
+        "asc", "ascending" -> SortOrder.ASC
+        "desc", "descending" -> SortOrder.DESC
+        else -> SortOrder.DESC
+    }
+}
+
+private fun parseLimit(limitParam: String?): Int {
+    val parsed = limitParam?.toIntOrNull()
+    return parsed?.coerceIn(1, 100) ?: 10
+}
 
 /**
  * Handler for getting all media library entries.
@@ -34,6 +59,17 @@ suspend fun RoutingContext.getMediaLibraryEntriesHandler(mediaLibrary: MediaLibr
         return call.respond(mediaLib.map { it.withAutoTags(tagger) })
     }
     call.respond(mediaLib)
+}
+
+/**
+ * Handler for querying media information across the library.
+ */
+suspend fun RoutingContext.searchMediaInformationHandler(metadataStorage: MetadataStorage) {
+    val sort = parseSort(call.request.queryParameters["sort"])
+    val order = parseOrder(call.request.queryParameters["order"])
+    val limit = parseLimit(call.request.queryParameters["limit"])
+    val results = metadataStorage.searchMediaInformation(sort, order, limit)
+    call.respond(results)
 }
 
 /**
@@ -78,8 +114,14 @@ suspend fun RoutingContext.getMediaInformationHandler(metadataStorage: MetadataS
         val cached = metadataStorage.getMediaInformation(entry.id)
         if (cached != null) {
             if (cached.probeStatus == MediaProbeStatus.FAILED) {
+                val errorMessage = cached.probeError ?: "Unknown error occurred while determining media information"
+                if (errorMessage == "File not found") {
+                    return@withContext call.respond(HttpStatusCode.NotFound, buildJsonObject {
+                        put("error", "File not found")
+                    })
+                }
                 return@withContext call.respond(HttpStatusCode.InternalServerError, buildJsonObject {
-                    put("error", cached.probeError ?: "Unknown error occurred while determining media information")
+                    put("error", errorMessage)
                 })
             }
             return@withContext call.respond(buildJsonObject {
@@ -96,11 +138,7 @@ suspend fun RoutingContext.getMediaInformationHandler(metadataStorage: MetadataS
         try {
             val probeInfo = getMediaProbeInfo(mediaFile)
             val mediaType = probeInfo.mediaTypeInfo
-            val mimeType = when (mediaType.codecType.lowercase()) {
-                "video" -> "video/${mediaType.codecName.lowercase()}"
-                "audio" -> "audio/${mediaType.codecName.lowercase()}"
-                else -> "application/octet-stream"
-            }
+            val mimeType = mediaType.toMimeType()
             val persisted = MediaInformation(
                 libraryEntryId = entry.id,
                 mimeType = mimeType,

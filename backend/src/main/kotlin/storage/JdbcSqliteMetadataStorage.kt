@@ -369,6 +369,70 @@ class JdbcSqliteMetadataStorage(
         }
     }
 
+    override suspend fun searchMediaInformation(
+        sort: MediaInfoSort,
+        order: SortOrder,
+        limit: Int,
+    ): List<MediaInformationSummary> {
+        val orderBy = when (sort) {
+            MediaInfoSort.RESOLUTION -> "(COALESCE(mi.width, 0) * COALESCE(mi.height, 0))"
+            MediaInfoSort.FRAME_RATE -> "COALESCE(mi.frame_rate, 0)"
+            MediaInfoSort.FILE_SIZE -> "COALESCE(mi.file_size, 0)"
+            MediaInfoSort.DURATION -> "COALESCE(mi.duration_seconds, 0)"
+            MediaInfoSort.WIDTH -> "COALESCE(mi.width, 0)"
+            MediaInfoSort.HEIGHT -> "COALESCE(mi.height, 0)"
+            MediaInfoSort.BIT_RATE -> "COALESCE(mi.bit_rate, 0)"
+        }
+        val orderDir = if (order == SortOrder.DESC) "DESC" else "ASC"
+        val clampedLimit = limit.coerceIn(1, 100)
+        return withContext(Dispatchers.IO) {
+            readerWriterLock.withReaderLock {
+                connection.prepareStatement(
+                    """
+                    SELECT
+                        e.unique_id,
+                        e.title,
+                        e.origin_url,
+                        mi.mime_type,
+                        mi.width,
+                        mi.height,
+                        mi.frame_rate,
+                        mi.file_size,
+                        mi.bit_rate,
+                        mi.duration_seconds
+                    FROM media_information mi
+                    INNER JOIN media_library_entries e ON e.unique_id = mi.library_entry_uuid
+                    WHERE mi.probe_status = 'SUCCESS'
+                    ORDER BY $orderBy $orderDir, e.unique_id ASC
+                    LIMIT ?
+                """
+                ).use { stmt ->
+                    stmt.setInt(1, clampedLimit)
+                    stmt.executeQuery().use { rs ->
+                        val results = mutableListOf<MediaInformationSummary>()
+                        while (rs.next()) {
+                            results.add(
+                                MediaInformationSummary(
+                                    id = rs.getString("unique_id"),
+                                    title = rs.getString("title"),
+                                    originUrl = rs.getString("origin_url"),
+                                    mimeType = rs.getString("mime_type"),
+                                    width = rs.intOrNull("width"),
+                                    height = rs.intOrNull("height"),
+                                    frameRate = rs.doubleOrNull("frame_rate"),
+                                    fileSize = rs.longOrNull("file_size"),
+                                    bitRate = rs.longOrNull("bit_rate"),
+                                    durationSeconds = rs.doubleOrNull("duration_seconds")
+                                )
+                            )
+                        }
+                        results
+                    }
+                }
+            }
+        }
+    }
+
     override suspend fun addDuplicate(id: String, dup: String, dist: Int) {
         withContext(Dispatchers.IO) {
             readerWriterLock.withWriterLock {

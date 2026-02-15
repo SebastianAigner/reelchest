@@ -6,6 +6,7 @@ import io.sebi.config.AppConfig
 import io.sebi.datastructures.SuspendingQueue
 import io.sebi.datastructures.shaHashed
 import io.sebi.ffmpeg.FfmpegTask
+import io.sebi.ffmpeg.getMediaType
 import io.sebi.library.MediaLibraryEntry
 import io.sebi.library.file
 import io.sebi.library.id
@@ -67,6 +68,7 @@ class ConversionManager(
         sourceEntry: MediaLibraryEntry,
         mode: ConversionMode,
         options: ConversionOptions,
+        convertAndDeleteOriginal: Boolean = false,
     ): ConversionTask {
         val task = ConversionTask(
             id = UUID.randomUUID().toString(),
@@ -74,6 +76,7 @@ class ConversionManager(
             sourceTitle = sourceEntry.name,
             mode = mode,
             options = options,
+            convertAndDeleteOriginal = convertAndDeleteOriginal,
             createdAt = System.currentTimeMillis()
         )
         queueMutex.withLock {
@@ -236,6 +239,14 @@ class ConversionManager(
                 directory = sourceFile.parentFile,
                 mutexLabel = "Conversion ${task.sourceId}"
             )
+            if (!outputFile.exists() || outputFile.length() <= 0) {
+                error("Conversion failed to produce a valid output file.")
+            }
+            try {
+                getMediaType(outputFile)
+            } catch (e: Exception) {
+                error("Converted file is not a valid video: ${e.message}")
+            }
             val newId = UUID.randomUUID().toString().shaHashed()
             val newTags = (entry.tags + listOf(CONVERTED_TAG, "$ORIGIN_TAG_PREFIX${task.sourceId}")).toSet()
             val newEntry = MediaLibraryEntry(
@@ -249,6 +260,16 @@ class ConversionManager(
             )
             videoStorage.storeVideo(newId, outputFile.toPath())
             newEntry.persist(metadataStorage)
+            val persisted = metadataStorage.retrieveMetadata(newId).just()
+                ?: error("Converted entry failed to persist.")
+            if (!persisted.file.exists()) {
+                error("Converted video file missing after persistence.")
+            }
+            if (task.convertAndDeleteOriginal) {
+                entry.markedForDeletion = true
+                entry.persist(metadataStorage)
+                logger.info("Marked original ${entry.id} for deletion after conversion.")
+            }
             logger.info("Conversion completed for ${task.sourceId}, created ${newEntry.id}")
         } finally {
             outputFile.delete()
@@ -319,6 +340,7 @@ class ConversionManager(
             sourceTitle = sourceTitle,
             mode = mode,
             options = options,
+            convertAndDeleteOriginal = convertAndDeleteOriginal,
             status = status,
             createdAt = createdAt,
         )
@@ -331,6 +353,7 @@ class ConversionManager(
             sourceTitle = sourceTitle,
             mode = mode,
             options = options,
+            convertAndDeleteOriginal = convertAndDeleteOriginal,
             createdAt = createdAt,
             error = error.stackTraceToString()
         )

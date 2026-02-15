@@ -67,6 +67,18 @@ class MultiplexingMetadataStorage(val metadataStorages: List<MetadataStorage>, v
         metadataStorages.forEach { it.upsertMediaInformation(info) }
     }
 
+    override suspend fun searchMediaInformation(
+        sort: MediaInfoSort,
+        order: SortOrder,
+        limit: Int,
+    ): List<MediaInformationSummary> {
+        val allResults = metadataStorages.map { it.searchMediaInformation(sort, order, limit) }
+        require(allEqual(allResults)) {
+            "All metadata storages should be in sync for media information queries (${allResults.zip(storageNames)})."
+        }
+        return allResults.firstOrNull().orEmpty()
+    }
+
     override suspend fun addDuplicate(id: String, dup: String, dist: Int) {
         TODO("Not yet implemented")
     }

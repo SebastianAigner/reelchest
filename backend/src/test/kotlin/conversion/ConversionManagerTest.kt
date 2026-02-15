@@ -94,6 +94,11 @@ private class NoopMetadataStorage : MetadataStorage {
     override suspend fun listTombstones(): List<String> = emptyList()
     override suspend fun getMediaInformation(id: String): MediaInformation? = null
     override suspend fun upsertMediaInformation(info: MediaInformation) = Unit
+    override suspend fun searchMediaInformation(
+        sort: MediaInfoSort,
+        order: SortOrder,
+        limit: Int,
+    ): List<MediaInformationSummary> = emptyList()
     override suspend fun addDuplicate(id: String, dup: String, dist: Int) = Unit
     override suspend fun getDuplicate(id: String): Duplicates? = null
     override suspend fun getTopDuplicates(limit: Int): List<Duplicates> = emptyList()

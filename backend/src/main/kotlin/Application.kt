@@ -44,7 +44,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.time.LocalTime
 import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.minutes
 
 fun main(args: Array<String>) {
     // Switch to CIO last blocked by https://youtrack.jetbrains.com/issue/KTOR-6851.
@@ -137,11 +136,6 @@ fun Application.module() {
     val tagger = CachingTagger()
     val intoMediaLibraryDownloader = IntoMediaLibraryDownloader(downloadManager, urlDecoder, mediaLibrary)
 
-    launch(Dispatchers.IO) {
-        delay(45.minutes)
-        ensureDHashes(mediaLibrary)
-    }
-
     runBlocking {
         setup(metadataStorage, mediaLibrary, downloadManager, networkManager, tagger, urlDecoder, conversionManager)
     }
@@ -172,6 +166,15 @@ fun Application.module() {
     }
 
     val schedulerLogger = LoggerFactory.getLogger("Scheduler")
+    scheduleDailyAt(
+        time = LocalTime.of(3, 0),
+        dispatcher = Dispatchers.IO,
+        onError = { schedulerLogger.warn("Scheduled dhash generation failed.", it) },
+        task = {
+            schedulerLogger.info("Starting scheduled dhash generation.")
+            ensureDHashes(mediaLibrary)
+        }
+    )
     scheduleDailyAt(
         time = LocalTime.of(3, 0),
         dispatcher = Dispatchers.IO,

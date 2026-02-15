@@ -76,6 +76,7 @@ export function Convert() {
     const [crf, setCrf] = useState(21);
     const [audioBitrateKbps, setAudioBitrateKbps] = useState(160);
     const [mode, setMode] = useState<ConversionMode>("IMMEDIATE");
+    const [convertAndDeleteOriginal, setConvertAndDeleteOriginal] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
@@ -108,7 +109,8 @@ export function Convert() {
         try {
             await axios.post(`/api/mediaLibrary/${id}/conversions`, {
                 mode,
-                options
+                options,
+                convertAndDeleteOriginal
             });
             setSubmitSuccess(mode === "SCHEDULED"
                 ? "Conversion queued for the 3:00am batch."
@@ -226,6 +228,19 @@ export function Convert() {
                         </label>
                     </div>
                 </div>
+                <label
+                    className="flex items-start gap-3 rounded-xl border border-rose-200/70 bg-rose-50/70 p-3 text-sm text-rose-900 dark:border-rose-400/40 dark:bg-rose-900/30 dark:text-rose-100">
+                    <input
+                        type="checkbox"
+                        checked={convertAndDeleteOriginal}
+                        onChange={(event) => setConvertAndDeleteOriginal(event.target.checked)}
+                        className="mt-1"
+                    />
+                    <span>
+                        <span className="block font-semibold">Convert and delete original</span>
+                        The original entry will be marked for deletion after a successful conversion.
+                    </span>
+                </label>
                 {summary?.running && (
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                         Current status: {formatQueueEntry(summary.running)}.

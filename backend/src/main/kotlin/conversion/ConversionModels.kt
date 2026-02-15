@@ -24,6 +24,7 @@ data class ConversionOptions(
 data class ConversionRequest(
     val mode: ConversionMode,
     val options: ConversionOptions,
+    val convertAndDeleteOriginal: Boolean = false,
 )
 
 @Serializable
@@ -33,6 +34,7 @@ data class ConversionTask(
     val sourceTitle: String,
     val mode: ConversionMode,
     val options: ConversionOptions,
+    val convertAndDeleteOriginal: Boolean = false,
     val createdAt: Long,
 )
 
@@ -43,6 +45,7 @@ data class ProblematicConversionTask(
     val sourceTitle: String,
     val mode: ConversionMode,
     val options: ConversionOptions,
+    val convertAndDeleteOriginal: Boolean = false,
     val createdAt: Long,
     val error: String,
 )
@@ -60,6 +63,7 @@ data class ConversionQueueEntry(
     val sourceTitle: String,
     val mode: ConversionMode,
     val options: ConversionOptions,
+    val convertAndDeleteOriginal: Boolean = false,
     val status: ConversionStatus,
     val createdAt: Long,
 )

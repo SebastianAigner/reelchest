@@ -45,6 +45,7 @@ fun Route.api(
         route("mediaLibrary") {
             get { getMediaLibraryEntriesHandler(mediaLibrary, tagger) }
             post("isUrlInLibraryOrProgress") { isUrlInLibraryOrProgressHandler(downloadManager, mediaLibrary) }
+            get("media-information/search") { searchMediaInformationHandler(metadataStorage) }
 
             route("duplicates") {
                 get("{id}") { getDuplicateByIdHandler(metadataStorage) }
@@ -84,6 +85,8 @@ fun Route.api(
                 get("regenerate-thumbnail/{id}") { regenerateThumbnailHandler(mediaLibrary) }
                 get("scan-orphans") { orphanScanStatusHandler() }
                 post("scan-orphans") { scanOrphanedMediaHandler(metadataStorage) }
+                get("populate-media-info") { mediaInformationPopulationStatusHandler() }
+                post("populate-media-info") { populateMediaInformationHandler(metadataStorage) }
                 post("delete-marked") { deleteMarkedMediaHandler(metadataStorage, videoStorage) }
             }
             get("disk-usage") { mediaLibraryDiskUsageHandler() }

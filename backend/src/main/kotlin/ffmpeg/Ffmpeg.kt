@@ -246,6 +246,14 @@ data class MediaTypeInfo(
     val fileSize: Long? = null,
 )
 
+fun MediaTypeInfo.toMimeType(): String {
+    return when (codecType.lowercase()) {
+        "video" -> "video/${codecName.lowercase()}"
+        "audio" -> "audio/${codecName.lowercase()}"
+        else -> "application/octet-stream"
+    }
+}
+
 data class MediaProbeInfo(
     val mediaTypeInfo: MediaTypeInfo,
     val durationSeconds: Double?,

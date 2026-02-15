@@ -65,6 +65,31 @@ class FileSystemMetadataStorage : MetadataStorage {
         infoFile.writeText(json.encodeToString(info))
     }
 
+    override suspend fun searchMediaInformation(
+        sort: MediaInfoSort,
+        order: SortOrder,
+        limit: Int,
+    ): List<MediaInformationSummary> {
+        val results = listAllMetadata().mapNotNull { entry ->
+            val info = getMediaInformation(entry.id) ?: return@mapNotNull null
+            if (info.probeStatus != MediaProbeStatus.SUCCESS) return@mapNotNull null
+            MediaInformationSummary(
+                id = entry.id,
+                title = entry.name,
+                originUrl = entry.originUrl,
+                mimeType = info.mimeType,
+                width = info.width,
+                height = info.height,
+                frameRate = info.frameRate,
+                fileSize = info.fileSize,
+                bitRate = info.bitRate,
+                durationSeconds = info.durationSeconds
+            )
+        }
+        val limited = results.sortedWith(mediaInfoComparator(sort, order)).take(limit)
+        return limited
+    }
+
     override suspend fun addDuplicate(id: String, dup: String, dist: Int) {
         TODO("Not yet implemented")
     }
@@ -75,5 +100,34 @@ class FileSystemMetadataStorage : MetadataStorage {
 
     override suspend fun getTopDuplicates(limit: Int): List<Duplicates> {
         TODO("Not yet implemented")
+    }
+}
+
+private fun mediaInfoComparator(sort: MediaInfoSort, order: SortOrder): Comparator<MediaInformationSummary> {
+    fun sortValue(summary: MediaInformationSummary): Double {
+        return when (sort) {
+            MediaInfoSort.RESOLUTION -> (summary.width?.toDouble() ?: 0.0) * (summary.height?.toDouble() ?: 0.0)
+            MediaInfoSort.FRAME_RATE -> summary.frameRate ?: 0.0
+            MediaInfoSort.FILE_SIZE -> summary.fileSize?.toDouble() ?: 0.0
+            MediaInfoSort.DURATION -> summary.durationSeconds ?: 0.0
+            MediaInfoSort.WIDTH -> summary.width?.toDouble() ?: 0.0
+            MediaInfoSort.HEIGHT -> summary.height?.toDouble() ?: 0.0
+            MediaInfoSort.BIT_RATE -> summary.bitRate?.toDouble() ?: 0.0
+        }
+    }
+
+    return Comparator { left, right ->
+        val leftValue = sortValue(left)
+        val rightValue = sortValue(right)
+        val primary = if (order == SortOrder.DESC) {
+            rightValue.compareTo(leftValue)
+        } else {
+            leftValue.compareTo(rightValue)
+        }
+        if (primary != 0) {
+            primary
+        } else {
+            left.id.compareTo(right.id)
+        }
     }
 }

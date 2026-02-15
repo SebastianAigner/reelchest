@@ -26,6 +26,7 @@ interface MetadataStorage {
     suspend fun listTombstones(): List<String>
     suspend fun getMediaInformation(id: String): MediaInformation?
     suspend fun upsertMediaInformation(info: MediaInformation)
+    suspend fun searchMediaInformation(sort: MediaInfoSort, order: SortOrder, limit: Int): List<MediaInformationSummary>
     suspend fun addDuplicate(id: String, dup: String, dist: Int)
     suspend fun getDuplicate(id: String): Duplicates?
     suspend fun getTopDuplicates(limit: Int = 100): List<Duplicates>

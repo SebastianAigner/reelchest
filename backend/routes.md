@@ -16,6 +16,10 @@
 - `POST /api/mediaLibrary/{id}` - Update media entry
 - `GET /api/mediaLibrary/{id}/conversions` - Get conversion summary for an entry
 - `POST /api/mediaLibrary/{id}/conversions` - Enqueue a conversion for an entry
+    - Body fields:
+        - `mode` - `IMMEDIATE` or `SCHEDULED`
+        - `options` - conversion settings (resolution, fps, CRF, audio bitrate)
+        - `convertAndDeleteOriginal` - when true, mark original for deletion after success
 - `GET /api/mediaLibrary/{id}/hit` - Record a hit for specific entry
 - `GET /api/mediaLibrary/{id}/thumbnails` - Get list of thumbnails
 - `GET /api/mediaLibrary/{id}/randomThumb` - Get a random thumbnail
@@ -30,6 +34,22 @@
         - `frameRate` (frames per second)
         - `fileSize` (bytes)
       - `durationSeconds`
+- `GET /api/mediaLibrary/media-information/search` - Query stored media metadata
+    - Query params:
+        - `sort` - resolution, frameRate, fileSize, bitRate, duration, width, height (default: resolution)
+        - `order` - asc, desc (default: desc)
+        - `limit` - max results (default: 10, max: 100)
+    - Returns array of:
+        - `id`
+        - `title`
+        - `originUrl`
+        - `mimeType`
+        - `width`
+        - `height`
+        - `frameRate`
+        - `fileSize`
+        - `bitRate`
+        - `durationSeconds`
 
 ### Duplicates Management
 
@@ -50,6 +70,9 @@
 - `POST /api/mediaLibrary/debug/regenerate-thumbnail/{id}` - Regenerate thumbnails
 - `POST /api/mediaLibrary/debug/scan-orphans` - Start orphan scan (returns progress snapshot)
 - `GET /api/mediaLibrary/debug/scan-orphans` - Get orphan scan progress
+- `POST /api/mediaLibrary/debug/populate-media-info` - Populate stored media info for all entries (returns progress
+  snapshot)
+- `GET /api/mediaLibrary/debug/populate-media-info` - Get media info population progress
 - `POST /api/mediaLibrary/debug/delete-marked` - Delete videos marked for deletion
     - Returns:
         - `totalMarked`
