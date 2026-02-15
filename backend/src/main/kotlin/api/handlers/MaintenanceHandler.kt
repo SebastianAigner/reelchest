@@ -392,3 +392,7 @@ suspend fun RoutingContext.deleteMarkedMediaHandler(
 suspend fun triggerOrphanScan(metadataStorage: MetadataStorage, application: Application) {
     startOrphanScan(metadataStorage, application)
 }
+
+suspend fun triggerMediaInfoPopulation(metadataStorage: MetadataStorage, application: Application) {
+    startMediaInfoPopulation(metadataStorage, application)
+}

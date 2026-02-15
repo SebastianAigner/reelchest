@@ -5,6 +5,7 @@ import io.ktor.server.http.*
 import io.ktor.server.http.content.*
 import io.ktor.server.routing.*
 import io.sebi.api.api
+import io.sebi.api.handlers.triggerMediaInfoPopulation
 import io.sebi.api.handlers.triggerOrphanScan
 import io.sebi.autoscrape.setupAutoscraper
 import io.sebi.conversion.ConversionManager
@@ -147,6 +148,15 @@ fun Application.module() {
 
     val schedulerLogger = LoggerFactory.getLogger("Scheduler")
     scheduleDailyAt(
+        time = LocalTime.of(1, 0),
+        dispatcher = Dispatchers.IO,
+        onError = { schedulerLogger.warn("Scheduled media info population failed.", it) },
+        task = {
+            schedulerLogger.info("Starting scheduled media info population.")
+            triggerMediaInfoPopulation(metadataStorage, application)
+        }
+    )
+    scheduleDailyAt(
         time = LocalTime.of(2, 0),
         dispatcher = Dispatchers.IO,
         onError = { schedulerLogger.warn("Scheduled thumbnail generation failed.", it) },
@@ -219,7 +229,7 @@ fun Routing.setupStaticPaths() {
 
 /**
  * Generates thumbnails for all media library entries.
- * This function is called periodically (once per hour) and is protected by a mutex
+ * This function is called by the daily scheduler and is protected by a mutex
  * to prevent overlapping invocations, as thumbnail generation can take a long time.
  */
 private suspend fun generateThumbnails(mediaLibrary: MediaLibrary) {

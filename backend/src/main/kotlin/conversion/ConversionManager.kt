@@ -20,6 +20,9 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicReference
@@ -145,7 +148,7 @@ class ConversionManager(
         val state = try {
             json.decodeFromString(PersistedConversionState.serializer(), queueFile.readText())
         } catch (e: Exception) {
-            logger.error("Failed to restore conversions queue.", e)
+            logger.error("Failed to restore conversions queue from ${queueFile.absolutePath}.", e)
             return
         }
 
@@ -181,8 +184,29 @@ class ConversionManager(
             running = running,
             problematic = problematicTasks.toList()
         )
-        queueFile.parentFile?.mkdirs()
-        queueFile.writeText(json.encodeToString(PersistedConversionState.serializer(), state))
+        val payload = json.encodeToString(PersistedConversionState.serializer(), state)
+        writeQueueAtomically(payload)
+    }
+
+    private fun writeQueueAtomically(payload: String) {
+        val parent = queueFile.parentFile
+        parent?.mkdirs()
+        val tempFile = File(parent, "${queueFile.name}.tmp")
+        tempFile.writeText(payload)
+        try {
+            Files.move(
+                tempFile.toPath(),
+                queueFile.toPath(),
+                StandardCopyOption.REPLACE_EXISTING,
+                StandardCopyOption.ATOMIC_MOVE
+            )
+        } catch (e: AtomicMoveNotSupportedException) {
+            Files.move(
+                tempFile.toPath(),
+                queueFile.toPath(),
+                StandardCopyOption.REPLACE_EXISTING
+            )
+        }
     }
 
     private suspend fun processImmediateQueue() {
