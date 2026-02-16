@@ -16,10 +16,7 @@ import io.sebi.downloader.DownloadManagerImpl
 import io.sebi.downloader.IntoMediaLibraryDownloader
 import io.sebi.ffmpeg.generateThumbnails
 import io.sebi.heavymutex.HeavyMutex
-import io.sebi.library.MediaLibrary
-import io.sebi.library.MediaLibraryEntry
-import io.sebi.library.file
-import io.sebi.library.id
+import io.sebi.library.*
 import io.sebi.network.NetworkManager
 import io.sebi.phash.ensureDHashes
 import io.sebi.scheduler.scheduleDailyAt
@@ -235,7 +232,7 @@ fun Routing.setupStaticPaths() {
 private suspend fun generateThumbnails(mediaLibrary: MediaLibrary) {
     val logger = LoggerFactory.getLogger("Thumbnail Generation")
     logger.info("Starting thumbnail generation")
-    mediaLibrary.getEntries().forEach { mediaLibraryEntry: MediaLibraryEntry ->
+    mediaLibrary.getEntries().filter { it.shouldGenerateThumbnails() }.forEach { mediaLibraryEntry: MediaLibraryEntry ->
         createThumbnails(mediaLibraryEntry, logger)
     }
     logger.info("Thumbnail generation completed")

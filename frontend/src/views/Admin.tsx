@@ -6,6 +6,7 @@ import {MainHeading, SectionHeading} from "../components/Typography";
 import {commonStyles} from "../styles/common";
 import {AutoTaggedMediaLibraryEntry} from "../models/AutoTaggedMediaLibraryEntry";
 import {StyledButton} from "../components/StyledButton";
+import {ArrowsRightLeftIcon} from "@heroicons/react/24/solid";
 
 type MediaInformationSummary = {
     id: string;
@@ -18,6 +19,31 @@ type MediaInformationSummary = {
     fileSize?: number | null;
     bitRate?: number | null;
     durationSeconds?: number | null;
+};
+
+type ConversionMode = "IMMEDIATE" | "SCHEDULED";
+type ConversionStatus = "QUEUED" | "RUNNING";
+
+type ConversionQueueEntry = {
+    id: string;
+    sourceId: string;
+    sourceTitle: string;
+    mode: ConversionMode;
+    status: ConversionStatus;
+    createdAt: number;
+};
+
+type ConversionQueueSnapshot = {
+    queued: ConversionQueueEntry[];
+    running?: ConversionQueueEntry | null;
+    problematic?: Array<{ id: string }>;
+};
+
+type ConversionBatchResult = {
+    total: number;
+    enqueued: number;
+    skipped: number;
+    missing: number;
 };
 
 const DEFAULT_MEDIA_QUERY = "sort:resolution desc limit 10";
@@ -263,19 +289,85 @@ export function Admin() {
     const [isShuttingDown, setIsShuttingDown] = React.useState(false);
     const [mediaQuery, setMediaQuery] = React.useState(DEFAULT_MEDIA_QUERY);
     const parsedMediaQuery = React.useMemo(() => parseMediaQuery(mediaQuery), [mediaQuery]);
-    const mediaInfoEndpoint = React.useMemo(() => {
+    const [isDefaultConverting, setIsDefaultConverting] = React.useState(false);
+    const [defaultConvertStatus, setDefaultConvertStatus] = React.useState<string | null>(null);
+    const [defaultConvertError, setDefaultConvertError] = React.useState<string | null>(null);
+    const [isClearingConversions, setIsClearingConversions] = React.useState(false);
+    const [clearConversionsStatus, setClearConversionsStatus] = React.useState<string | null>(null);
+    const [clearConversionsError, setClearConversionsError] = React.useState<string | null>(null);
+    const mediaInfoQueryString = React.useMemo(() => {
         const params = new URLSearchParams({
             sort: parsedMediaQuery.sort,
             order: parsedMediaQuery.order,
             limit: String(parsedMediaQuery.limit)
         });
-        return `/api/mediaLibrary/media-information/search?${params.toString()}`;
+        return params.toString();
     }, [parsedMediaQuery.limit, parsedMediaQuery.order, parsedMediaQuery.sort]);
+    const mediaInfoEndpoint = React.useMemo(() => {
+        return `/api/mediaLibrary/media-information/search?${mediaInfoQueryString}`;
+    }, [mediaInfoQueryString]);
     const {data: mediaInfoResults, error: mediaInfoError} = useAbortableSWR<Array<MediaInformationSummary>>(
         mediaInfoEndpoint,
         fetcher
     );
+    const {data: conversionQueue} = useAbortableSWR<ConversionQueueSnapshot>(
+        "/api/conversions",
+        fetcher,
+        {refreshInterval: 2000}
+    );
     const isMediaInfoLoading = !mediaInfoResults && !mediaInfoError;
+    const conversionBySource = React.useMemo(() => {
+        const items = [
+            ...(conversionQueue?.queued ?? []),
+            ...(conversionQueue?.running ? [conversionQueue.running] : [])
+        ];
+        const map = new Map<string, ConversionQueueEntry>();
+        items.forEach(item => {
+            if (!map.has(item.sourceId)) {
+                map.set(item.sourceId, item);
+            }
+        });
+        return map;
+    }, [conversionQueue]);
+
+    const queuedConversionCount = conversionQueue?.queued?.length ?? 0;
+    const runningConversionCount = conversionQueue?.running ? 1 : 0;
+    const problematicConversionCount = conversionQueue?.problematic?.length ?? 0;
+
+    const clearConversionQueue = async () => {
+        const total = queuedConversionCount + problematicConversionCount + runningConversionCount;
+        if (total === 0) {
+            setClearConversionsStatus("No conversions to clear.");
+            return;
+        }
+        const confirmed = window.confirm(
+            `Clear ${queuedConversionCount} queued conversion${queuedConversionCount === 1 ? "" : "s"} ` +
+            `and ${problematicConversionCount} failed conversion${problematicConversionCount === 1 ? "" : "s"}?` +
+            (runningConversionCount > 0 ? " Running conversions will be cancelled." : "")
+        );
+        if (!confirmed) return;
+
+        setIsClearingConversions(true);
+        setClearConversionsError(null);
+        setClearConversionsStatus(null);
+        try {
+            const response = await fetch("/api/conversions/clear", {method: "POST"});
+            if (!response.ok) {
+                throw new Error(`Request failed with ${response.status}`);
+            }
+            const data = await response.json() as ConversionQueueSnapshot;
+            const runningSuffix = data.running
+                ? " Running conversion still active."
+                : runningConversionCount > 0
+                    ? " Running conversions cancelled."
+                    : "";
+            setClearConversionsStatus(`Cleared conversion queue.${runningSuffix}`);
+        } catch (err) {
+            setClearConversionsError(err instanceof Error ? err.message : "Failed to clear conversion queue.");
+        } finally {
+            setIsClearingConversions(false);
+        }
+    };
     const scanProgressPercent = React.useMemo(() => {
         if (!scanProgress) return 0;
         if (scanProgress.totalTombstones > 0) {
@@ -378,6 +470,45 @@ export function Admin() {
         } catch (err) {
             setIsPopulatingMediaInfo(false);
             setMediaInfoPopulateError(err instanceof Error ? err.message : "Failed to populate media info.");
+        }
+    };
+
+    const runDefaultMediaInfoConversions = async () => {
+        if (parsedMediaQuery.errors.length > 0) {
+            setDefaultConvertError("Fix the media information query before converting.");
+            return;
+        }
+        const total = mediaInfoResults?.length ?? 0;
+        const confirmed = window.confirm(
+            `Convert ${total} video${total === 1 ? "" : "s"} with default settings? ` +
+            "Conversions will be scheduled for the 3:00am batch, and originals will be marked for deletion after conversion."
+        );
+        if (!confirmed) return;
+
+        setIsDefaultConverting(true);
+        setDefaultConvertError(null);
+        setDefaultConvertStatus(null);
+        try {
+            const response = await fetch(
+                `/api/mediaLibrary/media-information/conversions/default?${mediaInfoQueryString}`,
+                {method: "POST"}
+            );
+            if (!response.ok) {
+                throw new Error(`Request failed with ${response.status}`);
+            }
+            const data = await response.json() as ConversionBatchResult;
+            const parts = [`Scheduled ${data.enqueued} of ${data.total} conversion${data.total === 1 ? "" : "s"} for the 3:00am batch.`];
+            if (data.skipped > 0) {
+                parts.push(`${data.skipped} already queued`);
+            }
+            if (data.missing > 0) {
+                parts.push(`${data.missing} missing`);
+            }
+            setDefaultConvertStatus(parts.join(" "));
+        } catch (err) {
+            setDefaultConvertError(err instanceof Error ? err.message : "Failed to queue conversions.");
+        } finally {
+            setIsDefaultConverting(false);
         }
     };
 
@@ -507,6 +638,39 @@ export function Admin() {
             {isError && (
                 <p className={`${commonStyles.errorText} mt-3`}>
                     Failed to load deletion status.
+                </p>
+            )}
+        </div>
+        <div className={`${commonStyles.cardContainer} ${commonStyles.standardMargin}`}>
+            <div className="text-sm uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                Conversion queue
+            </div>
+            <div className="text-3xl font-semibold mt-2">
+                {queuedConversionCount} queued
+            </div>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                {runningConversionCount} running · {problematicConversionCount} failed
+            </p>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                Clear queued and failed conversions. Running conversions will be cancelled.
+            </p>
+            <div className="mt-3">
+                <StyledButton
+                    onClick={clearConversionQueue}
+                    disabled={isClearingConversions}
+                    className="bg-amber-500 hover:bg-amber-600 dark:bg-amber-500 dark:hover:bg-amber-600"
+                >
+                    {isClearingConversions ? "Clearing..." : "Clear Conversion Queue"}
+                </StyledButton>
+            </div>
+            {clearConversionsStatus && (
+                <p className="mt-3 text-sm text-gray-700 dark:text-gray-200">
+                    {clearConversionsStatus}
+                </p>
+            )}
+            {clearConversionsError && (
+                <p className={`${commonStyles.errorText} mt-3`}>
+                    {clearConversionsError}
                 </p>
             )}
         </div>
@@ -679,8 +843,29 @@ export function Admin() {
                     {parsedMediaQuery.errors.join(" · ")}
                 </div>
             )}
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+                <StyledButton
+                    onClick={runDefaultMediaInfoConversions}
+                    disabled={isDefaultConverting || isMediaInfoLoading || parsedMediaQuery.errors.length > 0}
+                >
+                    {isDefaultConverting ? "Queueing..." : "Convert all (default)"}
+                </StyledButton>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                    Matches {mediaInfoResults?.length ?? 0} entr{(mediaInfoResults?.length ?? 0) === 1 ? "y" : "ies"}.
+                </span>
+            </div>
+            {defaultConvertStatus && (
+                <p className="mt-2 text-sm text-gray-700 dark:text-gray-200">
+                    {defaultConvertStatus}
+                </p>
+            )}
+            {defaultConvertError && (
+                <p className={`${commonStyles.errorText} mt-2 text-sm`}>
+                    {defaultConvertError}
+                </p>
+            )}
             <div className="mt-4 overflow-x-auto">
-                <table className="w-full min-w-[700px] text-sm">
+                <table className="w-full min-w-[760px] text-sm">
                     <thead>
                     <tr className="border-b border-gray-200 dark:border-gray-700 text-left text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                         <th className="py-2 pr-3">Title</th>
@@ -689,39 +874,62 @@ export function Admin() {
                         <th className="py-2 pr-3">Bitrate</th>
                         <th className="py-2 pr-3">File size</th>
                         <th className="py-2 pr-3">Duration</th>
+                        <th className="py-2 pr-3">Conversion</th>
                     </tr>
                     </thead>
                     <tbody>
-                    {mediaInfoResults?.map((row) => (
-                        <tr key={row.id} className="border-b border-gray-100 dark:border-gray-700/60">
-                            <td className="py-2 pr-3">
-                                <Link
-                                    to={`/movie/${row.id}`}
-                                    className="text-emerald-600 dark:text-emerald-400 hover:underline"
-                                >
-                                    {row.title}
-                                </Link>
-                                <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                    {row.originUrl}
-                                </div>
-                            </td>
-                            <td className="py-2 pr-3">{formatResolution(row.width, row.height)}</td>
-                            <td className="py-2 pr-3">{formatFrameRate(row.frameRate)}</td>
-                            <td className="py-2 pr-3">{formatBitRate(row.bitRate)}</td>
-                            <td className="py-2 pr-3">{formatOptionalBytes(row.fileSize)}</td>
-                            <td className="py-2 pr-3">{formatDurationSeconds(row.durationSeconds)}</td>
-                        </tr>
-                    ))}
+                    {mediaInfoResults?.map((row) => {
+                        const conversion = conversionBySource.get(row.id);
+                        const isScheduled = conversion?.mode === "SCHEDULED";
+                        const conversionLabel = conversion
+                            ? isScheduled
+                                ? "Scheduled"
+                                : "Queued"
+                            : null;
+                        return (
+                            <tr key={row.id} className="border-b border-gray-100 dark:border-gray-700/60">
+                                <td className="py-2 pr-3">
+                                    <Link
+                                        to={`/movie/${row.id}`}
+                                        className="text-emerald-600 dark:text-emerald-400 hover:underline"
+                                    >
+                                        {row.title}
+                                    </Link>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                        {row.originUrl}
+                                    </div>
+                                </td>
+                                <td className="py-2 pr-3">{formatResolution(row.width, row.height)}</td>
+                                <td className="py-2 pr-3">{formatFrameRate(row.frameRate)}</td>
+                                <td className="py-2 pr-3">{formatBitRate(row.bitRate)}</td>
+                                <td className="py-2 pr-3">{formatOptionalBytes(row.fileSize)}</td>
+                                <td className="py-2 pr-3">{formatDurationSeconds(row.durationSeconds)}</td>
+                                <td className="py-2 pr-3">
+                                    {conversionLabel ? (
+                                        <span
+                                            className="inline-flex items-center gap-1 rounded-full bg-slate-900/10 px-2 py-1 text-xs text-slate-700 dark:bg-slate-200/10 dark:text-slate-100"
+                                            title={`${conversionLabel} for conversion`}
+                                        >
+                                            <ArrowsRightLeftIcon className="h-3.5 w-3.5"/>
+                                            {conversionLabel}
+                                        </span>
+                                    ) : (
+                                        <span className="text-xs text-gray-400 dark:text-gray-500">—</span>
+                                    )}
+                                </td>
+                            </tr>
+                        );
+                    })}
                     {isMediaInfoLoading && (
                         <tr>
-                            <td className="py-4 text-sm text-gray-500 dark:text-gray-400" colSpan={6}>
+                            <td className="py-4 text-sm text-gray-500 dark:text-gray-400" colSpan={7}>
                                 Loading media information...
                             </td>
                         </tr>
                     )}
                     {mediaInfoResults && mediaInfoResults.length === 0 && (
                         <tr>
-                            <td className="py-4 text-sm text-gray-500 dark:text-gray-400" colSpan={6}>
+                            <td className="py-4 text-sm text-gray-500 dark:text-gray-400" colSpan={7}>
                                 No stored media information matches this query yet.
                             </td>
                         </tr>

@@ -18,7 +18,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
-private fun parseSort(sortParam: String?): MediaInfoSort {
+internal fun parseSort(sortParam: String?): MediaInfoSort {
     return when (sortParam?.lowercase()) {
         "resolution", "res" -> MediaInfoSort.RESOLUTION
         "framerate", "frame-rate", "fps", "frame" -> MediaInfoSort.FRAME_RATE
@@ -31,7 +31,7 @@ private fun parseSort(sortParam: String?): MediaInfoSort {
     }
 }
 
-private fun parseOrder(orderParam: String?): SortOrder {
+internal fun parseOrder(orderParam: String?): SortOrder {
     return when (orderParam?.lowercase()) {
         "asc", "ascending" -> SortOrder.ASC
         "desc", "descending" -> SortOrder.DESC
@@ -39,7 +39,7 @@ private fun parseOrder(orderParam: String?): SortOrder {
     }
 }
 
-private fun parseLimit(limitParam: String?): Int {
+internal fun parseLimit(limitParam: String?): Int {
     val parsed = limitParam?.toIntOrNull()
     return parsed?.coerceIn(1, 100) ?: 10
 }

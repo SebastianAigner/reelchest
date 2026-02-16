@@ -84,4 +84,6 @@ If a subproject needs different instructions, add a nested `AGENTS.md` in that f
   this repo.
 - When you change behavior, add or update tests.
 - Prefer `withTimeoutOrNull` over `withTimeout` in coroutine code.
+- Do not use `runCatching` in new code.
+- Always rethrow `CancellationException` (do not swallow or wrap it).
 - Verify new UI/visual changes in both light and dark mode.

@@ -76,7 +76,7 @@ export function Convert() {
     const [crf, setCrf] = useState(21);
     const [audioBitrateKbps, setAudioBitrateKbps] = useState(160);
     const [mode, setMode] = useState<ConversionMode>("IMMEDIATE");
-    const [convertAndDeleteOriginal, setConvertAndDeleteOriginal] = useState(false);
+    const [convertAndDeleteOriginal, setConvertAndDeleteOriginal] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);

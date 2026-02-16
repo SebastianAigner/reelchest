@@ -15,8 +15,20 @@ class SuspendingQueue<T> private constructor(private val queue: ConcurrentLinked
     }
 
     suspend fun remove(): T {
-        notificationChannel.receive()
-        return queue.remove()
+        while (true) {
+            notificationChannel.receive()
+            val item = queue.poll()
+            if (item != null) {
+                return item
+            }
+        }
+    }
+
+    fun clear() {
+        queue.clear()
+        while (notificationChannel.tryReceive().isSuccess) {
+            // Drain any pending notifications.
+        }
     }
 
     override fun iterator(): Iterator<T> {

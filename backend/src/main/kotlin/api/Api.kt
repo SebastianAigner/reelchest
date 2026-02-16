@@ -41,11 +41,15 @@ fun Route.api(
         }
         route("conversions") {
             get { getConversionQueueHandler(conversionManager) }
+            post("clear") { clearConversionQueueHandler(conversionManager) }
         }
         route("mediaLibrary") {
             get { getMediaLibraryEntriesHandler(mediaLibrary, tagger) }
             post("isUrlInLibraryOrProgress") { isUrlInLibraryOrProgressHandler(downloadManager, mediaLibrary) }
             get("media-information/search") { searchMediaInformationHandler(metadataStorage) }
+            post("media-information/conversions/default") {
+                enqueueDefaultMediaInfoConversionsHandler(conversionManager, metadataStorage)
+            }
 
             route("duplicates") {
                 get("{id}") { getDuplicateByIdHandler(metadataStorage) }
@@ -65,6 +69,7 @@ fun Route.api(
                 route("conversions") {
                     get { getConversionSummaryHandler(conversionManager) }
                     post { enqueueConversionHandler(conversionManager, metadataStorage) }
+                    post("default") { enqueueDefaultConversionHandler(conversionManager, metadataStorage) }
                 }
 
                 route("storedDuplicate") {

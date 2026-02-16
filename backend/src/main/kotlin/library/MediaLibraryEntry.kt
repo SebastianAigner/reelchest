@@ -59,6 +59,8 @@ fun MediaLibraryEntry.getThumbnails(): List<File>? {
         ?.filter { it.name.startsWith("thumb") }
 }
 
+fun MediaLibraryEntry.shouldGenerateThumbnails(): Boolean = !markedForDeletion
+
 fun MediaLibraryEntry.withAutoTags(tagger: Tagger): AutoTaggedMediaLibraryEntry {
     return AutoTaggedMediaLibraryEntry(this, tagger.tag(this.name, this.tags).toList())
 }

@@ -84,6 +84,105 @@ class ConversionManagerTest {
             }
         }
     }
+
+    @Test
+    fun enqueueConversionRejectsDuplicateSource() {
+        val tempDir = Files.createTempDirectory("reelchest-conversion-test").toFile()
+        val userConfigDir = File(tempDir, "userConfig")
+        val mediaLibraryDir = File(tempDir, "mediaLibrary")
+        val databaseFile = File(tempDir, "database/db.sqlite")
+        userConfigDir.mkdirs()
+        mediaLibraryDir.mkdirs()
+        databaseFile.parentFile.mkdirs()
+
+        try {
+            AppConfig.withPaths(
+                userConfig = userConfigDir.absolutePath,
+                mediaLibrary = mediaLibraryDir.absolutePath,
+                database = databaseFile.absolutePath
+            ) {
+                runBlocking {
+                    val manager = ConversionManager(NoopMetadataStorage(), NoopVideoStorage(), Events())
+                    val entry = MediaLibraryEntry(
+                        name = "Test Video",
+                        originUrl = "https://example.com/video.mp4",
+                        tags = emptySet(),
+                        creationDate = 0,
+                        uid = "src-1",
+                        hits = 0,
+                        markedForDeletion = false
+                    )
+
+                    manager.enqueueConversion(
+                        sourceEntry = entry,
+                        mode = ConversionMode.SCHEDULED,
+                        options = DEFAULT_CONVERSION_OPTIONS,
+                        convertAndDeleteOriginal = true
+                    )
+
+                    assertFailsWith<ConversionAlreadyQueuedException> {
+                        manager.enqueueConversion(
+                            sourceEntry = entry,
+                            mode = ConversionMode.IMMEDIATE,
+                            options = DEFAULT_CONVERSION_OPTIONS,
+                            convertAndDeleteOriginal = true
+                        )
+                    }
+                }
+            }
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun clearQueueRemovesQueuedTasks() {
+        val tempDir = Files.createTempDirectory("reelchest-conversion-test").toFile()
+        val userConfigDir = File(tempDir, "userConfig")
+        val mediaLibraryDir = File(tempDir, "mediaLibrary")
+        val databaseFile = File(tempDir, "database/db.sqlite")
+        userConfigDir.mkdirs()
+        mediaLibraryDir.mkdirs()
+        databaseFile.parentFile.mkdirs()
+
+        try {
+            AppConfig.withPaths(
+                userConfig = userConfigDir.absolutePath,
+                mediaLibrary = mediaLibraryDir.absolutePath,
+                database = databaseFile.absolutePath
+            ) {
+                runBlocking {
+                    val manager = ConversionManager(NoopMetadataStorage(), NoopVideoStorage(), Events())
+                    val entry = MediaLibraryEntry(
+                        name = "Test Video",
+                        originUrl = "https://example.com/video.mp4",
+                        tags = emptySet(),
+                        creationDate = 0,
+                        uid = "src-1",
+                        hits = 0,
+                        markedForDeletion = false
+                    )
+
+                    manager.enqueueConversion(
+                        sourceEntry = entry,
+                        mode = ConversionMode.SCHEDULED,
+                        options = DEFAULT_CONVERSION_OPTIONS,
+                        convertAndDeleteOriginal = true
+                    )
+
+                    val snapshot = manager.snapshot()
+                    assertEquals(1, snapshot.queued.size)
+
+                    val cleared = manager.clearQueue()
+                    assertEquals(0, cleared.queued.size)
+                    assertEquals(0, cleared.problematic.size)
+                    assertNull(cleared.running)
+                }
+            }
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
 }
 
 private class NoopMetadataStorage : MetadataStorage {

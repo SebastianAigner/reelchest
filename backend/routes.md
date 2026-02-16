@@ -19,7 +19,15 @@
     - Body fields:
         - `mode` - `IMMEDIATE` or `SCHEDULED`
         - `options` - conversion settings (resolution, fps, CRF, audio bitrate)
-        - `convertAndDeleteOriginal` - when true, mark original for deletion after success
+      - `convertAndDeleteOriginal` - when true, mark original for deletion after success (default: true)
+- `POST /api/mediaLibrary/{id}/conversions/default` - Enqueue a conversion with default settings
+    - Defaults:
+        - Resolution: 1080p (1920×1080)
+        - Frame rate: 30 fps
+        - CRF: 21
+        - Audio bitrate: 160 kbps
+        - Mode: IMMEDIATE
+        - Original deletion: enabled
 - `GET /api/mediaLibrary/{id}/hit` - Record a hit for specific entry
 - `GET /api/mediaLibrary/{id}/thumbnails` - Get list of thumbnails
 - `GET /api/mediaLibrary/{id}/randomThumb` - Get a random thumbnail
@@ -50,6 +58,19 @@
         - `fileSize`
         - `bitRate`
         - `durationSeconds`
+- `POST /api/mediaLibrary/media-information/conversions/default` - Enqueue default conversions for the media
+  information query results
+    - Query params:
+        - `sort` - resolution, frameRate, fileSize, bitRate, duration, width, height (default: resolution)
+        - `order` - asc, desc (default: desc)
+        - `limit` - max results (default: 10, max: 100)
+    - Defaults:
+        - Mode: SCHEDULED
+    - Returns:
+        - `total`
+        - `enqueued`
+        - `skipped`
+        - `missing`
 
 ### Duplicates Management
 
@@ -92,6 +113,8 @@
 ## Conversion Routes
 
 - `GET /api/conversions` - Get conversion queue snapshot
+- `POST /api/conversions/clear` - Clear all queued/scheduled conversions and conversion errors (running conversion is
+  cancelled)
 
 ## Search Routes
 

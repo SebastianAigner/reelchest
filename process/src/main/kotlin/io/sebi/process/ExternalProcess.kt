@@ -1,13 +1,11 @@
 package io.sebi.process
 
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runInterruptible
-import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 
 sealed interface StdoutHandler {
     class Lines(val onLine: suspend (String) -> Unit = {}) : StdoutHandler
@@ -19,6 +17,7 @@ suspend fun runExternalProcess(
     stdoutHandler: StdoutHandler = StdoutHandler.Lines(),
     onStderrLine: suspend (String) -> Unit = {},
     directory: File?,
+    processRef: AtomicReference<Process?>? = null,
 ): Int {
     return withContext(Dispatchers.IO) {
         val processBuilder = ProcessBuilder(*command)
@@ -26,6 +25,15 @@ suspend fun runExternalProcess(
             processBuilder.directory(directory)
         }
         val process = processBuilder.start()
+        processRef?.set(process)
+        val completionHandler = currentCoroutineContext().job.invokeOnCompletion { cause ->
+            if (cause is CancellationException && process.isAlive) {
+                process.destroy()
+                if (process.isAlive) {
+                    process.destroyForcibly()
+                }
+            }
+        }
         val stderrFlow = process.errorStream.bufferedReader().lineSequence().asFlow()
         val stdoutJob = when (stdoutHandler) {
             is StdoutHandler.Lines -> {
@@ -44,6 +52,14 @@ suspend fun runExternalProcess(
             }
             stdoutJob.join()
             stderrJob.join()
+        } catch (e: CancellationException) {
+            if (process.isAlive) {
+                process.destroy()
+                if (process.isAlive) {
+                    process.destroyForcibly()
+                }
+            }
+            throw e
         } finally {
             stdoutJob.cancel()
             stderrJob.cancel()
@@ -53,9 +69,22 @@ suspend fun runExternalProcess(
                     process.destroyForcibly()
                 }
             }
-            runCatching { process.inputStream.close() }
-            runCatching { process.errorStream.close() }
-            runCatching { process.outputStream.close() }
+            try {
+                process.inputStream.close()
+            } catch (_: Exception) {
+                // ignore close failures
+            }
+            try {
+                process.errorStream.close()
+            } catch (_: Exception) {
+                // ignore close failures
+            }
+            try {
+                process.outputStream.close()
+            } catch (_: Exception) {
+                // ignore close failures
+            }
+            completionHandler.dispose()
         }
         return@withContext process.exitValue()
     }

@@ -239,6 +239,9 @@ export function Movie() {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [markIn, setMarkIn] = useState<number | null>(null);
     const [markOut, setMarkOut] = useState<number | null>(null);
+    const [isDefaultConverting, setIsDefaultConverting] = useState(false);
+    const [defaultConvertStatus, setDefaultConvertStatus] = useState<string | null>(null);
+    const [defaultConvertError, setDefaultConvertError] = useState<string | null>(null);
     const originTag = entry?.mediaLibraryEntry.tags.find(tag => tag.startsWith(ORIGIN_TAG_PREFIX));
     const originId = originTag ? originTag.slice(ORIGIN_TAG_PREFIX.length) : null;
     const {
@@ -251,6 +254,21 @@ export function Movie() {
     const originExists = originStatus?.exists === true;
     const originDeleted = originStatus?.exists === false;
     const originLoading = Boolean(originId && !originStatus && !originStatusError);
+
+    const handleDefaultConvert = async () => {
+        setIsDefaultConverting(true);
+        setDefaultConvertStatus(null);
+        setDefaultConvertError(null);
+        try {
+            await axios.post(`/api/mediaLibrary/${id}/conversions/default`);
+            setDefaultConvertStatus("Default conversion queued.");
+        } catch (err: any) {
+            const message = err?.response?.data?.error || err?.response?.data || err?.message || "Conversion failed.";
+            setDefaultConvertError(typeof message === "string" ? message : "Conversion failed.");
+        } finally {
+            setIsDefaultConverting(false);
+        }
+    };
     if (!entry) return <>
         <p>loading...</p>
     </>
@@ -349,6 +367,21 @@ export function Movie() {
                     )}
                 </li>
             )}
+            <li>
+                <StyledButton onClick={handleDefaultConvert} disabled={isDefaultConverting}>
+                    {isDefaultConverting ? "Queueing..." : "Convert (default)"}
+                </StyledButton>
+                {defaultConvertStatus && (
+                    <span className="ml-2 text-sm text-emerald-600 dark:text-emerald-300">
+                        {defaultConvertStatus}
+                    </span>
+                )}
+                {defaultConvertError && (
+                    <span className="ml-2 text-sm text-rose-600 dark:text-rose-300">
+                        {defaultConvertError}
+                    </span>
+                )}
+            </li>
             <li>
                 <StyledButton onClick={() => history.push(`/movie/${id}/convert`)}>
                     Convert

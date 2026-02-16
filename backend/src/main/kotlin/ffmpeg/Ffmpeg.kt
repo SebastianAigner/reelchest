@@ -29,6 +29,7 @@ class FfmpegTask(val parameters: List<String>) {
         mutexLabel: String,
         customStdoutHandler: ((String) -> Unit)? = null,
         customStderrHandler: ((String) -> Unit)? = null,
+        processRef: java.util.concurrent.atomic.AtomicReference<Process?>? = null,
     ): FfmpegProcessResult {
         logger.info("Executing ffmpeg (nice -n 19) with parameters: ${parameters.joinToString(" ")}")
         if (directory != null) {
@@ -52,7 +53,8 @@ class FfmpegTask(val parameters: List<String>) {
                         logger.error("[FFMPEG-ERR] $it")
                         customStderrHandler?.invoke(it)
                     },
-                    directory = directory
+                    directory = directory,
+                    processRef = processRef
                 )
                 logger.info("FFmpeg process completed")
                 FfmpegProcessResult(stdout, stderr)

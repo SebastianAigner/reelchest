@@ -25,7 +25,9 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.coroutines.coroutineContext
 
 class ConversionManager(
     private val metadataStorage: MetadataStorage,
@@ -38,6 +40,9 @@ class ConversionManager(
     private val scheduledQueue = ConcurrentLinkedQueue<ConversionTask>()
     private val problematicTasks = mutableListOf<ProblematicConversionTask>()
     private val runningTask = AtomicReference<ConversionTask?>(null)
+    private val runningJob = AtomicReference<Job?>(null)
+    private val clearRequested = AtomicBoolean(false)
+    private val runningProcess = AtomicReference<Process?>(null)
     private val queueMutex = Mutex()
     private val executionMutex = Mutex()
     private val json = Json {
@@ -71,8 +76,21 @@ class ConversionManager(
         sourceEntry: MediaLibraryEntry,
         mode: ConversionMode,
         options: ConversionOptions,
-        convertAndDeleteOriginal: Boolean = false,
+        convertAndDeleteOriginal: Boolean = true,
     ): ConversionTask {
+        return tryEnqueueConversion(sourceEntry, mode, options, convertAndDeleteOriginal)
+            ?: throw ConversionAlreadyQueuedException("Conversion already queued for ${sourceEntry.id}.")
+    }
+
+    suspend fun tryEnqueueConversion(
+        sourceEntry: MediaLibraryEntry,
+        mode: ConversionMode,
+        options: ConversionOptions,
+        convertAndDeleteOriginal: Boolean = true,
+    ): ConversionTask? = queueMutex.withLock {
+        if (isSourceQueuedLocked(sourceEntry.id)) {
+            return@withLock null
+        }
         val task = ConversionTask(
             id = UUID.randomUUID().toString(),
             sourceId = sourceEntry.id,
@@ -82,14 +100,12 @@ class ConversionManager(
             convertAndDeleteOriginal = convertAndDeleteOriginal,
             createdAt = System.currentTimeMillis()
         )
-        queueMutex.withLock {
-            when (mode) {
-                ConversionMode.IMMEDIATE -> immediateQueue.add(task)
-                ConversionMode.SCHEDULED -> scheduledQueue.add(task)
-            }
-            persistQueueLocked()
+        when (mode) {
+            ConversionMode.IMMEDIATE -> immediateQueue.add(task)
+            ConversionMode.SCHEDULED -> scheduledQueue.add(task)
         }
-        return task
+        persistQueueLocked()
+        task
     }
 
     suspend fun snapshot(): ConversionQueueSnapshot = queueMutex.withLock {
@@ -103,6 +119,39 @@ class ConversionManager(
             running = running,
             problematic = problematicTasks.toList()
         )
+    }
+
+    suspend fun clearQueue(): ConversionQueueSnapshot {
+        clearRequested.set(true)
+        try {
+            runningJob.get()?.let { job ->
+                job.cancel(CancellationException("Conversion queue cleared."))
+                job.join()
+            }
+            runningProcess.get()?.let { process ->
+                if (process.isAlive) {
+                    process.destroy()
+                    if (process.isAlive) {
+                        process.destroyForcibly()
+                    }
+                }
+            }
+            runningProcess.set(null)
+            return queueMutex.withLock {
+                immediateQueue.clear()
+                scheduledQueue.clear()
+                problematicTasks.clear()
+                persistQueueLocked()
+                val running = runningTask.get()?.toQueueEntry(ConversionStatus.RUNNING)
+                ConversionQueueSnapshot(
+                    queued = emptyList(),
+                    running = running,
+                    problematic = emptyList()
+                )
+            }
+        } finally {
+            clearRequested.set(false)
+        }
     }
 
     suspend fun summaryForSource(sourceId: String): ConversionSourceSummary {
@@ -133,6 +182,10 @@ class ConversionManager(
         logger.info("Running scheduled conversions.")
         while (true) {
             val task = scheduledQueue.poll() ?: break
+            if (clearRequested.get()) {
+                logger.info("Skipping scheduled conversion ${task.sourceId} due to queue clear.")
+                continue
+            }
             runConversion(task)
             queueMutex.withLock {
                 persistQueueLocked()
@@ -212,6 +265,10 @@ class ConversionManager(
     private suspend fun processImmediateQueue() {
         while (true) {
             val task = immediateQueue.remove()
+            if (clearRequested.get()) {
+                logger.info("Skipping immediate conversion ${task.sourceId} due to queue clear.")
+                continue
+            }
             runConversion(task)
             queueMutex.withLock {
                 persistQueueLocked()
@@ -219,29 +276,41 @@ class ConversionManager(
         }
     }
 
-    private suspend fun runConversion(task: ConversionTask) {
-        executionMutex.withLock {
-            runningTask.set(task)
-            queueMutex.withLock {
-                persistQueueLocked()
-            }
-            try {
-                executeConversion(task)
-            } catch (e: Exception) {
-                logger.error("Conversion failed for ${task.sourceId}", e)
-                queueMutex.withLock {
-                    problematicTasks.add(task.toProblematic(e))
-                }
-            } finally {
-                runningTask.set(null)
+    private suspend fun runConversion(task: ConversionTask) = supervisorScope {
+        val job = launch(start = CoroutineStart.LAZY) {
+            executionMutex.withLock {
+                runningTask.set(task)
                 queueMutex.withLock {
                     persistQueueLocked()
                 }
+                try {
+                    executeConversion(task)
+                } catch (e: CancellationException) {
+                    logger.info("Conversion cancelled for ${task.sourceId}")
+                    throw e
+                } catch (e: Exception) {
+                    logger.error("Conversion failed for ${task.sourceId}", e)
+                    queueMutex.withLock {
+                        problematicTasks.add(task.toProblematic(e))
+                    }
+                } finally {
+                    runningTask.set(null)
+                    runningJob.compareAndSet(coroutineContext.job, null)
+                    runningProcess.set(null)
+                    queueMutex.withLock {
+                        persistQueueLocked()
+                    }
+                }
             }
         }
+        runningJob.set(job)
+        job.start()
+        job.join()
+        runningJob.compareAndSet(job, null)
     }
 
     private suspend fun executeConversion(task: ConversionTask) {
+        coroutineContext.ensureActive()
         val entry = when (val result = metadataStorage.retrieveMetadata(task.sourceId)) {
             is MetadataResult.Just -> result.entry
             MetadataResult.None,
@@ -258,11 +327,14 @@ class ConversionManager(
 
         val outputFile = File.createTempFile("reelchest-convert-", ".mp4")
         try {
+            coroutineContext.ensureActive()
             val parameters = buildFfmpegParameters(sourceFile, outputFile, options)
             FfmpegTask(parameters).execute(
                 directory = sourceFile.parentFile,
-                mutexLabel = "Conversion ${task.sourceId}"
+                mutexLabel = "Conversion ${task.sourceId}",
+                processRef = runningProcess
             )
+            coroutineContext.ensureActive()
             if (!outputFile.exists() || outputFile.length() <= 0) {
                 error("Conversion failed to produce a valid output file.")
             }
@@ -381,6 +453,19 @@ class ConversionManager(
             createdAt = createdAt,
             error = error.stackTraceToString()
         )
+    }
+
+    private fun isSourceQueuedLocked(sourceId: String): Boolean {
+        if (runningTask.get()?.sourceId == sourceId) {
+            return true
+        }
+        if (immediateQueue.any { it.sourceId == sourceId }) {
+            return true
+        }
+        if (scheduledQueue.any { it.sourceId == sourceId }) {
+            return true
+        }
+        return false
     }
 }
 
