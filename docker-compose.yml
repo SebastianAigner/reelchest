@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  reelchest-legacy:
+    image: registry.s17.xyz/reelchest
+    container_name: reelchest-legacy
+    hostname: reelchest-legacy
+    working_dir: /app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - REELCHEST_USER_CONFIG_PATH=/app/userConfig
+      - REELCHEST_DATABASE_PATH=/app/database/db.sqlite
+      - REELCHEST_MEDIA_LIBRARY_PATH=/app/mediaLibrary
+      - REELCHEST_DOWNLOADS_PATH=/app/downloads
+    volumes:
+      - reelchest_legacy_config:/app/userConfig
+      - reelchest_legacy_db:/app/database
+      - /mnt/extdrivesuperset/mediaLibrary:/app/mediaLibrary
+      - /mnt/extdrivesuperset/downloads:/app/downloads
+    networks:
+      - underwater
+
+networks:
+  underwater:
+    external: true
+
+volumes:
+  reelchest_legacy_config:
+    external: true
+  reelchest_legacy_db:
+    external: true
