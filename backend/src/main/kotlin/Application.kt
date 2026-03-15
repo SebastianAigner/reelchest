@@ -165,7 +165,7 @@ fun Application.module() {
         }
     )
     scheduleDailyAt(
-        time = LocalTime.of(3, 0),
+        time = LocalTime.of(5, 0),
         dispatcher = Dispatchers.IO,
         onError = { schedulerLogger.warn("Scheduled dhash generation failed.", it) },
         task = {
