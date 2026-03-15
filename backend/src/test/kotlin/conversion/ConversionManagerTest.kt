@@ -3,6 +3,7 @@ package io.sebi.conversion
 import io.ktor.events.*
 import io.sebi.config.AppConfig
 import io.sebi.library.MediaLibraryEntry
+import io.sebi.library.id
 import io.sebi.storage.*
 import kotlinx.coroutines.runBlocking
 import java.io.File
@@ -10,7 +11,9 @@ import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class ConversionManagerTest {
     @Test
@@ -182,6 +185,55 @@ class ConversionManagerTest {
         } finally {
             tempDir.deleteRecursively()
         }
+    }
+
+    @Test
+    fun createConvertedEntryTransfersViewsWhenReplacingOriginal() {
+        val sourceEntry = MediaLibraryEntry(
+            name = "Test Video",
+            originUrl = "https://example.com/video.mp4",
+            tags = setOf("tag-1"),
+            creationDate = 100,
+            uid = "src-1",
+            hits = 37,
+            markedForDeletion = false
+        )
+
+        val convertedEntry = createConvertedEntry(
+            sourceEntry = sourceEntry,
+            sourceId = sourceEntry.id,
+            createdAtEpochSeconds = 123456,
+            transferHits = true
+        )
+
+        assertEquals(37, convertedEntry.hits)
+        assertEquals(123456, convertedEntry.creationDate)
+        assertTrue(convertedEntry.tags.contains("tag-1"))
+        assertTrue(convertedEntry.tags.contains(CONVERTED_TAG))
+        assertTrue(convertedEntry.tags.contains("$ORIGIN_TAG_PREFIX${sourceEntry.id}"))
+        assertNotEquals(sourceEntry.id, convertedEntry.id)
+    }
+
+    @Test
+    fun createConvertedEntryResetsViewsWhenOriginalRemains() {
+        val sourceEntry = MediaLibraryEntry(
+            name = "Test Video",
+            originUrl = "https://example.com/video.mp4",
+            tags = emptySet(),
+            creationDate = 100,
+            uid = "src-1",
+            hits = 37,
+            markedForDeletion = false
+        )
+
+        val convertedEntry = createConvertedEntry(
+            sourceEntry = sourceEntry,
+            sourceId = sourceEntry.id,
+            createdAtEpochSeconds = 123456,
+            transferHits = false
+        )
+
+        assertEquals(0, convertedEntry.hits)
     }
 }
 

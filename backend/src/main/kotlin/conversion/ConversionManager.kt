@@ -343,20 +343,15 @@ class ConversionManager(
             } catch (e: Exception) {
                 error("Converted file is not a valid video: ${e.message}")
             }
-            val newId = UUID.randomUUID().toString().shaHashed()
-            val newTags = (entry.tags + listOf(CONVERTED_TAG, "$ORIGIN_TAG_PREFIX${task.sourceId}")).toSet()
-            val newEntry = MediaLibraryEntry(
-                name = entry.name,
-                originUrl = entry.originUrl,
-                tags = newTags,
-                uid = newId,
-                creationDate = System.currentTimeMillis() / 1000,
-                hits = 0,
-                markedForDeletion = false,
+            val newEntry = createConvertedEntry(
+                sourceEntry = entry,
+                sourceId = task.sourceId,
+                createdAtEpochSeconds = System.currentTimeMillis() / 1000,
+                transferHits = task.convertAndDeleteOriginal,
             )
-            videoStorage.storeVideo(newId, outputFile.toPath())
+            videoStorage.storeVideo(newEntry.id, outputFile.toPath())
             newEntry.persist(metadataStorage)
-            val persisted = metadataStorage.retrieveMetadata(newId).just()
+            val persisted = metadataStorage.retrieveMetadata(newEntry.id).just()
                 ?: error("Converted entry failed to persist.")
             if (!persisted.file.exists()) {
                 error("Converted video file missing after persistence.")
@@ -467,6 +462,25 @@ class ConversionManager(
         }
         return false
     }
+}
+
+internal fun createConvertedEntry(
+    sourceEntry: MediaLibraryEntry,
+    sourceId: String,
+    createdAtEpochSeconds: Long,
+    transferHits: Boolean,
+): MediaLibraryEntry {
+    val newId = UUID.randomUUID().toString().shaHashed()
+    val newTags = (sourceEntry.tags + listOf(CONVERTED_TAG, "$ORIGIN_TAG_PREFIX$sourceId")).toSet()
+    return MediaLibraryEntry(
+        name = sourceEntry.name,
+        originUrl = sourceEntry.originUrl,
+        tags = newTags,
+        uid = newId,
+        creationDate = createdAtEpochSeconds,
+        hits = if (transferHits) sourceEntry.hits else 0,
+        markedForDeletion = false,
+    )
 }
 
 @kotlinx.serialization.Serializable
