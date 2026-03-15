@@ -102,7 +102,7 @@ export function Search() {
             </StyledButton>
             <span>{pageOffset / pageSize}</span>
             <StyledButton
-                disabled={isLoading || !!searchError || !results || results.length < pageSize}
+                disabled={isLoading || !!searchError || !results}
                 className={`${commonStyles.verticalMargin} ${commonStyles.inlineBlock}`}
                 onClick={() => {
                     submit(term, pageOffset + pageSize)
