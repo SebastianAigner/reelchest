@@ -373,6 +373,7 @@ class JdbcSqliteMetadataStorage(
         sort: MediaInfoSort,
         order: SortOrder,
         limit: Int,
+        excludedTerms: List<String>,
     ): List<MediaInformationSummary> {
         val orderBy = when (sort) {
             MediaInfoSort.RESOLUTION -> "(COALESCE(mi.width, 0) * COALESCE(mi.height, 0))"
@@ -384,9 +385,26 @@ class JdbcSqliteMetadataStorage(
             MediaInfoSort.BIT_RATE -> "COALESCE(mi.bit_rate, 0)"
         }
         val orderDir = if (order == SortOrder.DESC) "DESC" else "ASC"
-        val clampedLimit = limit.coerceIn(1, 100)
+        val clampedLimit = limit.coerceAtLeast(1)
+        val loweredExcludedTerms = excludedTerms.map { it.lowercase() }.filter { it.isNotBlank() }.distinct()
+        val titleFilters = loweredExcludedTerms.map {
+            "LOWER(e.title) NOT LIKE ? ESCAPE '\\'"
+        }
+        val whereClause = buildString {
+            append("mi.probe_status = 'SUCCESS'")
+            if (titleFilters.isNotEmpty()) {
+                append(" AND ")
+                append(titleFilters.joinToString(" AND "))
+            }
+        }
         return withContext(Dispatchers.IO) {
             readerWriterLock.withReaderLock {
+                fun escapeLike(term: String): String {
+                    return term
+                        .replace("\\", "\\\\")
+                        .replace("%", "\\%")
+                        .replace("_", "\\_")
+                }
                 connection.prepareStatement(
                     """
                     SELECT
@@ -402,12 +420,16 @@ class JdbcSqliteMetadataStorage(
                         mi.duration_seconds
                     FROM media_information mi
                     INNER JOIN media_library_entries e ON e.unique_id = mi.library_entry_uuid
-                    WHERE mi.probe_status = 'SUCCESS'
+                    WHERE $whereClause
                     ORDER BY $orderBy $orderDir, e.unique_id ASC
                     LIMIT ?
                 """
                 ).use { stmt ->
-                    stmt.setInt(1, clampedLimit)
+                    var index = 1
+                    loweredExcludedTerms.forEach { term ->
+                        stmt.setString(index++, "%${escapeLike(term)}%")
+                    }
+                    stmt.setInt(index, clampedLimit)
                     stmt.executeQuery().use { rs ->
                         val results = mutableListOf<MediaInformationSummary>()
                         while (rs.next()) {

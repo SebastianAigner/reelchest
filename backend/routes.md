@@ -46,7 +46,8 @@
     - Query params:
         - `sort` - resolution, frameRate, fileSize, bitRate, duration, width, height (default: resolution)
         - `order` - asc, desc (default: desc)
-        - `limit` - max results (default: 10, max: 100)
+        - `limit` - max results (default: 10)
+        - `exclude` - title substring to exclude (repeatable, case-insensitive)
     - Returns array of:
         - `id`
         - `title`
@@ -63,7 +64,8 @@
     - Query params:
         - `sort` - resolution, frameRate, fileSize, bitRate, duration, width, height (default: resolution)
         - `order` - asc, desc (default: desc)
-        - `limit` - max results (default: 10, max: 100)
+        - `limit` - max results (default: 10)
+        - `exclude` - title substring to exclude (repeatable, case-insensitive)
     - Defaults:
         - Mode: SCHEDULED
     - Returns:

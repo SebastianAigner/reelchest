@@ -73,6 +73,7 @@ type ParsedMediaQuery = {
     sort: string;
     order: string;
     limit: number;
+    excludedTerms: string[];
     errors: string[];
 };
 
@@ -81,10 +82,19 @@ function parseMediaQuery(input: string): ParsedMediaQuery {
     let sort = "resolution";
     let order = "desc";
     let limit = 10;
+    const excludedTerms: string[] = [];
 
     const tokens = input.trim().split(/\s+/).filter(Boolean);
     for (let i = 0; i < tokens.length; i++) {
-        const token = tokens[i].toLowerCase();
+        const rawToken = tokens[i];
+        const token = rawToken.toLowerCase();
+        if (token.startsWith("-") && token.length > 1) {
+            const term = token.slice(1).trim();
+            if (term.length > 0) {
+                excludedTerms.push(term);
+            }
+            continue;
+        }
         if (token.startsWith("sort:") || token.startsWith("sort=")) {
             const value = token.split(/[:=]/)[1];
             const normalized = SORT_ALIASES[value];
@@ -110,7 +120,7 @@ function parseMediaQuery(input: string): ParsedMediaQuery {
             const value = token.split(/[:=]/)[1];
             const parsed = Number.parseInt(value, 10);
             if (Number.isFinite(parsed) && parsed > 0) {
-                limit = Math.min(parsed, 100);
+                limit = parsed;
             } else {
                 errors.push(`Invalid limit: ${value}`);
             }
@@ -120,7 +130,7 @@ function parseMediaQuery(input: string): ParsedMediaQuery {
             const value = tokens[i + 1];
             const parsed = Number.parseInt(value, 10);
             if (Number.isFinite(parsed) && parsed > 0) {
-                limit = Math.min(parsed, 100);
+                limit = parsed;
                 i++;
             } else {
                 errors.push(`Invalid limit: ${value}`);
@@ -142,7 +152,13 @@ function parseMediaQuery(input: string): ParsedMediaQuery {
         }
     }
 
-    return {sort, order, limit, errors};
+    return {
+        sort,
+        order,
+        limit,
+        excludedTerms: Array.from(new Set(excludedTerms)),
+        errors
+    };
 }
 
 function useMediaLibraryEntries() {
@@ -301,8 +317,11 @@ export function Admin() {
             order: parsedMediaQuery.order,
             limit: String(parsedMediaQuery.limit)
         });
+        parsedMediaQuery.excludedTerms.forEach((term) => {
+            params.append("exclude", term);
+        });
         return params.toString();
-    }, [parsedMediaQuery.limit, parsedMediaQuery.order, parsedMediaQuery.sort]);
+    }, [parsedMediaQuery.excludedTerms, parsedMediaQuery.limit, parsedMediaQuery.order, parsedMediaQuery.sort]);
     const mediaInfoEndpoint = React.useMemo(() => {
         return `/api/mediaLibrary/media-information/search?${mediaInfoQueryString}`;
     }, [mediaInfoQueryString]);
@@ -830,6 +849,9 @@ export function Admin() {
             <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                 Sort fields: <span className={commonStyles.monospace}>{MEDIA_QUERY_FIELDS}</span>
             </p>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Exclude terms with <span className={commonStyles.monospace}>-term</span> (matches title substring).
+            </p>
             <div className="mt-3">
                 <input
                     value={mediaQuery}
@@ -851,7 +873,9 @@ export function Admin() {
                     {isDefaultConverting ? "Queueing..." : "Convert all (default)"}
                 </StyledButton>
                 <span className="text-xs text-gray-500 dark:text-gray-400">
-                    Matches {mediaInfoResults?.length ?? 0} entr{(mediaInfoResults?.length ?? 0) === 1 ? "y" : "ies"}.
+                    {isMediaInfoLoading
+                        ? "Loading matches..."
+                        : `Matches ${mediaInfoResults?.length ?? 0} entr${(mediaInfoResults?.length ?? 0) === 1 ? "y" : "ies"}.`}
                 </span>
             </div>
             {defaultConvertStatus && (

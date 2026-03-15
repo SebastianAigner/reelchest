@@ -71,8 +71,9 @@ class MultiplexingMetadataStorage(val metadataStorages: List<MetadataStorage>, v
         sort: MediaInfoSort,
         order: SortOrder,
         limit: Int,
+        excludedTerms: List<String>,
     ): List<MediaInformationSummary> {
-        val allResults = metadataStorages.map { it.searchMediaInformation(sort, order, limit) }
+        val allResults = metadataStorages.map { it.searchMediaInformation(sort, order, limit, excludedTerms) }
         require(allEqual(allResults)) {
             "All metadata storages should be in sync for media information queries (${allResults.zip(storageNames)})."
         }

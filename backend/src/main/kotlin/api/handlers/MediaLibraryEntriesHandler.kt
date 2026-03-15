@@ -41,7 +41,15 @@ internal fun parseOrder(orderParam: String?): SortOrder {
 
 internal fun parseLimit(limitParam: String?): Int {
     val parsed = limitParam?.toIntOrNull()
-    return parsed?.coerceIn(1, 100) ?: 10
+    return parsed?.coerceAtLeast(1) ?: 10
+}
+
+internal fun parseExcludedTerms(rawTerms: List<String>?): List<String> {
+    return rawTerms
+        .orEmpty()
+        .map { it.trim().lowercase() }
+        .filter { it.isNotEmpty() }
+        .distinct()
 }
 
 /**
@@ -68,7 +76,8 @@ suspend fun RoutingContext.searchMediaInformationHandler(metadataStorage: Metada
     val sort = parseSort(call.request.queryParameters["sort"])
     val order = parseOrder(call.request.queryParameters["order"])
     val limit = parseLimit(call.request.queryParameters["limit"])
-    val results = metadataStorage.searchMediaInformation(sort, order, limit)
+    val excludedTerms = parseExcludedTerms(call.request.queryParameters.getAll("exclude"))
+    val results = metadataStorage.searchMediaInformation(sort, order, limit, excludedTerms)
     call.respond(results)
 }
 
