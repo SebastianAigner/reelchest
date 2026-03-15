@@ -250,6 +250,7 @@ private class NoopMetadataStorage : MetadataStorage {
         order: SortOrder,
         limit: Int,
         excludedTerms: List<String>,
+        codecFilters: List<String>,
     ): List<MediaInformationSummary> = emptyList()
     override suspend fun addDuplicate(id: String, dup: String, dist: Int) = Unit
     override suspend fun getDuplicate(id: String): Duplicates? = null

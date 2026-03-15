@@ -31,6 +31,7 @@ interface MetadataStorage {
         order: SortOrder,
         limit: Int,
         excludedTerms: List<String>,
+        codecFilters: List<String>,
     ): List<MediaInformationSummary>
     suspend fun addDuplicate(id: String, dup: String, dist: Int)
     suspend fun getDuplicate(id: String): Duplicates?

@@ -374,6 +374,7 @@ class JdbcSqliteMetadataStorage(
         order: SortOrder,
         limit: Int,
         excludedTerms: List<String>,
+        codecFilters: List<String>,
     ): List<MediaInformationSummary> {
         val orderBy = when (sort) {
             MediaInfoSort.RESOLUTION -> "(COALESCE(mi.width, 0) * COALESCE(mi.height, 0))"
@@ -387,14 +388,21 @@ class JdbcSqliteMetadataStorage(
         val orderDir = if (order == SortOrder.DESC) "DESC" else "ASC"
         val clampedLimit = limit.coerceAtLeast(1)
         val loweredExcludedTerms = excludedTerms.map { it.lowercase() }.filter { it.isNotBlank() }.distinct()
+        val loweredCodecFilters = codecFilters.map { it.lowercase() }.filter { it.isNotBlank() }.distinct()
         val titleFilters = loweredExcludedTerms.map {
             "LOWER(e.title) NOT LIKE ? ESCAPE '\\'"
         }
+        val codecClauses = if (loweredCodecFilters.isNotEmpty()) {
+            listOf("LOWER(mi.mime_type) IN (${loweredCodecFilters.joinToString(",") { "?" }})")
+        } else {
+            emptyList()
+        }
         val whereClause = buildString {
             append("mi.probe_status = 'SUCCESS'")
-            if (titleFilters.isNotEmpty()) {
+            val additionalFilters = titleFilters + codecClauses
+            if (additionalFilters.isNotEmpty()) {
                 append(" AND ")
-                append(titleFilters.joinToString(" AND "))
+                append(additionalFilters.joinToString(" AND "))
             }
         }
         return withContext(Dispatchers.IO) {
@@ -428,6 +436,9 @@ class JdbcSqliteMetadataStorage(
                     var index = 1
                     loweredExcludedTerms.forEach { term ->
                         stmt.setString(index++, "%${escapeLike(term)}%")
+                    }
+                    loweredCodecFilters.forEach { codecFilter ->
+                        stmt.setString(index++, codecFilter)
                     }
                     stmt.setInt(index, clampedLimit)
                     stmt.executeQuery().use { rs ->

@@ -48,11 +48,12 @@
         - `order` - asc, desc (default: desc)
         - `limit` - max results (default: 10)
         - `exclude` - title substring to exclude (repeatable, case-insensitive)
+        - `codec` - exact codec filter such as `video/h264` (repeatable, case-insensitive)
     - Returns array of:
         - `id`
         - `title`
         - `originUrl`
-        - `mimeType`
+        - `mimeType` - codec string such as `video/h264`
         - `width`
         - `height`
         - `frameRate`
@@ -66,6 +67,7 @@
         - `order` - asc, desc (default: desc)
         - `limit` - max results (default: 10)
         - `exclude` - title substring to exclude (repeatable, case-insensitive)
+        - `codec` - exact codec filter such as `video/h264` (repeatable, case-insensitive)
     - Defaults:
         - Mode: SCHEDULED
     - Returns:

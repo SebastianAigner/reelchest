@@ -75,7 +75,8 @@ suspend fun RoutingContext.enqueueDefaultMediaInfoConversionsHandler(
     val order = parseOrder(call.request.queryParameters["order"])
     val limit = parseLimit(call.request.queryParameters["limit"])
     val excludedTerms = parseExcludedTerms(call.request.queryParameters.getAll("exclude"))
-    val results = metadataStorage.searchMediaInformation(sort, order, limit, excludedTerms)
+    val codecFilters = parseCodecFilters(call.request.queryParameters.getAll("codec"))
+    val results = metadataStorage.searchMediaInformation(sort, order, limit, excludedTerms, codecFilters)
 
     var enqueued = 0
     var skipped = 0

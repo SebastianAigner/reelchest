@@ -16,6 +16,7 @@ import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class MediaInformationSearchTest : MediaLibraryTestBase() {
@@ -100,6 +101,69 @@ class MediaInformationSearchTest : MediaLibraryTestBase() {
                 createdIds.forEach { id ->
                     metadataStorage.deleteMetadata(id)
                 }
+            }
+        }
+    }
+
+    @Test
+    fun testMediaInformationSearchEndpointFiltersByCodec() {
+        withTestServer { _, client, port ->
+            val metadataStorage = JdbcSqliteMetadataStorage(ReaderWriterLock())
+            val codecSuffix = UUID.randomUUID().toString().replace("-", "")
+            val targetCodec = "video/test$codecSuffix"
+            val otherCodec = "audio/test$codecSuffix"
+            val targetId = "codec-target-$codecSuffix"
+            val otherId = "codec-other-$codecSuffix"
+
+            suspend fun storeEntry(id: String, title: String, codec: String) {
+                metadataStorage.storeMetadata(
+                    id,
+                    MediaLibraryEntry(
+                        name = title,
+                        originUrl = "https://example.com/$id",
+                        tags = emptySet(),
+                        creationDate = System.currentTimeMillis() / 1000,
+                        uid = id,
+                    )
+                )
+                val codecType = codec.substringBefore("/")
+                val codecName = codec.substringAfter("/")
+                metadataStorage.upsertMediaInformation(
+                    MediaInformation(
+                        libraryEntryId = id,
+                        mimeType = codec,
+                        codecType = codecType,
+                        codecName = codecName,
+                        width = 1920,
+                        height = 1080,
+                        bitRate = 5_000_000,
+                        frameRate = 30.0,
+                        fileSize = 50_000_000,
+                        durationSeconds = 120.0,
+                        probeStatus = MediaProbeStatus.SUCCESS,
+                        probeError = null,
+                        lastProbeAt = System.currentTimeMillis(),
+                    )
+                )
+            }
+
+            storeEntry(targetId, "Codec target", targetCodec)
+            storeEntry(otherId, "Codec other", otherCodec)
+
+            try {
+                val searchResponse = client.get(
+                    "http://localhost:$port/api/mediaLibrary/media-information/search?codec=$targetCodec&limit=10"
+                )
+                assertEquals(HttpStatusCode.OK, searchResponse.status)
+                val searchJson = Json.parseToJsonElement(searchResponse.bodyAsText()).jsonArray
+                assertEquals(1, searchJson.size)
+                val result = searchJson.single().jsonObject
+                assertEquals(targetId, result["id"]?.jsonPrimitive?.content)
+                assertEquals(targetCodec, result["mimeType"]?.jsonPrimitive?.content)
+                assertNull(result["codec"])
+            } finally {
+                metadataStorage.deleteMetadata(targetId)
+                metadataStorage.deleteMetadata(otherId)
             }
         }
     }

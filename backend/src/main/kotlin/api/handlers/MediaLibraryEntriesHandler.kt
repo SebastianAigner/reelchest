@@ -52,6 +52,14 @@ internal fun parseExcludedTerms(rawTerms: List<String>?): List<String> {
         .distinct()
 }
 
+internal fun parseCodecFilters(rawCodecs: List<String>?): List<String> {
+    return rawCodecs
+        .orEmpty()
+        .map { it.trim().lowercase() }
+        .filter { it.isNotEmpty() }
+        .distinct()
+}
+
 /**
  * Handler for getting all media library entries.
  */
@@ -77,7 +85,8 @@ suspend fun RoutingContext.searchMediaInformationHandler(metadataStorage: Metada
     val order = parseOrder(call.request.queryParameters["order"])
     val limit = parseLimit(call.request.queryParameters["limit"])
     val excludedTerms = parseExcludedTerms(call.request.queryParameters.getAll("exclude"))
-    val results = metadataStorage.searchMediaInformation(sort, order, limit, excludedTerms)
+    val codecFilters = parseCodecFilters(call.request.queryParameters.getAll("codec"))
+    val results = metadataStorage.searchMediaInformation(sort, order, limit, excludedTerms, codecFilters)
     call.respond(results)
 }
 

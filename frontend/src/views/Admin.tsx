@@ -74,8 +74,18 @@ type ParsedMediaQuery = {
     order: string;
     limit: number;
     excludedTerms: string[];
+    codecs: string[];
     errors: string[];
 };
+
+function extractQueryTokenValue(token: string): string {
+    const separatorIndex = token.search(/[:=]/);
+    return separatorIndex >= 0 ? token.slice(separatorIndex + 1) : "";
+}
+
+function normalizeCodecFilter(codec: string): string {
+    return codec.trim().toLowerCase();
+}
 
 function parseMediaQuery(input: string): ParsedMediaQuery {
     const errors: string[] = [];
@@ -83,6 +93,7 @@ function parseMediaQuery(input: string): ParsedMediaQuery {
     let order = "desc";
     let limit = 10;
     const excludedTerms: string[] = [];
+    const codecs: string[] = [];
 
     const tokens = input.trim().split(/\s+/).filter(Boolean);
     for (let i = 0; i < tokens.length; i++) {
@@ -95,8 +106,27 @@ function parseMediaQuery(input: string): ParsedMediaQuery {
             }
             continue;
         }
+        if (token.startsWith("codec:") || token.startsWith("codec=")) {
+            const value = normalizeCodecFilter(extractQueryTokenValue(token));
+            if (value.length > 0) {
+                codecs.push(value);
+            } else {
+                errors.push("Invalid codec filter. Use codec:video/h264");
+            }
+            continue;
+        }
+        if (token === "codec") {
+            const value = normalizeCodecFilter(tokens[i + 1] ?? "");
+            if (value.length > 0) {
+                codecs.push(value);
+                i++;
+            } else {
+                errors.push("Invalid codec filter. Use codec video/h264");
+            }
+            continue;
+        }
         if (token.startsWith("sort:") || token.startsWith("sort=")) {
-            const value = token.split(/[:=]/)[1];
+            const value = extractQueryTokenValue(token);
             const normalized = SORT_ALIASES[value];
             if (normalized) {
                 sort = normalized;
@@ -117,7 +147,7 @@ function parseMediaQuery(input: string): ParsedMediaQuery {
             continue;
         }
         if (token.startsWith("limit:") || token.startsWith("limit=")) {
-            const value = token.split(/[:=]/)[1];
+            const value = extractQueryTokenValue(token);
             const parsed = Number.parseInt(value, 10);
             if (Number.isFinite(parsed) && parsed > 0) {
                 limit = parsed;
@@ -138,7 +168,7 @@ function parseMediaQuery(input: string): ParsedMediaQuery {
             continue;
         }
         if (token.startsWith("order:") || token.startsWith("order=")) {
-            const value = token.split(/[:=]/)[1];
+            const value = extractQueryTokenValue(token);
             if (value === "asc" || value === "desc") {
                 order = value;
             } else {
@@ -157,6 +187,7 @@ function parseMediaQuery(input: string): ParsedMediaQuery {
         order,
         limit,
         excludedTerms: Array.from(new Set(excludedTerms)),
+        codecs: Array.from(new Set(codecs)),
         errors
     };
 }
@@ -279,6 +310,11 @@ function formatOptionalBytes(bytes?: number | null): string {
     return formatBytes(bytes);
 }
 
+function formatCodec(codec?: string | null): string {
+    if (!codec) return "—";
+    return codec;
+}
+
 function formatTimestamp(timestamp?: number): string {
     if (!timestamp) return "unknown";
     return new Date(timestamp).toLocaleString();
@@ -320,8 +356,11 @@ export function Admin() {
         parsedMediaQuery.excludedTerms.forEach((term) => {
             params.append("exclude", term);
         });
+        parsedMediaQuery.codecs.forEach((codec) => {
+            params.append("codec", codec);
+        });
         return params.toString();
-    }, [parsedMediaQuery.excludedTerms, parsedMediaQuery.limit, parsedMediaQuery.order, parsedMediaQuery.sort]);
+    }, [parsedMediaQuery.codecs, parsedMediaQuery.excludedTerms, parsedMediaQuery.limit, parsedMediaQuery.order, parsedMediaQuery.sort]);
     const mediaInfoEndpoint = React.useMemo(() => {
         return `/api/mediaLibrary/media-information/search?${mediaInfoQueryString}`;
     }, [mediaInfoQueryString]);
@@ -852,6 +891,9 @@ export function Admin() {
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 Exclude terms with <span className={commonStyles.monospace}>-term</span> (matches title substring).
             </p>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Filter codec with <span className={commonStyles.monospace}>codec:video/h264</span>.
+            </p>
             <div className="mt-3">
                 <input
                     value={mediaQuery}
@@ -889,10 +931,11 @@ export function Admin() {
                 </p>
             )}
             <div className="mt-4 overflow-x-auto">
-                <table className="w-full min-w-[760px] text-sm">
+                <table className="w-full min-w-[860px] text-sm">
                     <thead>
                     <tr className="border-b border-gray-200 dark:border-gray-700 text-left text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                         <th className="py-2 pr-3">Title</th>
+                        <th className="py-2 pr-3">Codec</th>
                         <th className="py-2 pr-3">Resolution</th>
                         <th className="py-2 pr-3">Frame rate</th>
                         <th className="py-2 pr-3">Bitrate</th>
@@ -923,6 +966,7 @@ export function Admin() {
                                         {row.originUrl}
                                     </div>
                                 </td>
+                                <td className={`py-2 pr-3 ${commonStyles.monospace}`}>{formatCodec(row.mimeType)}</td>
                                 <td className="py-2 pr-3">{formatResolution(row.width, row.height)}</td>
                                 <td className="py-2 pr-3">{formatFrameRate(row.frameRate)}</td>
                                 <td className="py-2 pr-3">{formatBitRate(row.bitRate)}</td>
@@ -946,14 +990,14 @@ export function Admin() {
                     })}
                     {isMediaInfoLoading && (
                         <tr>
-                            <td className="py-4 text-sm text-gray-500 dark:text-gray-400" colSpan={7}>
+                            <td className="py-4 text-sm text-gray-500 dark:text-gray-400" colSpan={8}>
                                 Loading media information...
                             </td>
                         </tr>
                     )}
                     {mediaInfoResults && mediaInfoResults.length === 0 && (
                         <tr>
-                            <td className="py-4 text-sm text-gray-500 dark:text-gray-400" colSpan={7}>
+                            <td className="py-4 text-sm text-gray-500 dark:text-gray-400" colSpan={8}>
                                 No stored media information matches this query yet.
                             </td>
                         </tr>

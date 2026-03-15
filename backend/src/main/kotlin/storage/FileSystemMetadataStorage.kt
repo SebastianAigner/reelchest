@@ -70,13 +70,17 @@ class FileSystemMetadataStorage : MetadataStorage {
         order: SortOrder,
         limit: Int,
         excludedTerms: List<String>,
+        codecFilters: List<String>,
     ): List<MediaInformationSummary> {
         val loweredExcludedTerms = excludedTerms.map { it.lowercase() }
+        val loweredCodecFilters = codecFilters.map { it.lowercase() }
         val results = listAllMetadata().mapNotNull { entry ->
             val info = getMediaInformation(entry.id) ?: return@mapNotNull null
             if (info.probeStatus != MediaProbeStatus.SUCCESS) return@mapNotNull null
             val loweredTitle = entry.name.lowercase()
             if (loweredExcludedTerms.any { loweredTitle.contains(it) }) return@mapNotNull null
+            val loweredMimeType = info.mimeType?.lowercase()
+            if (loweredCodecFilters.isNotEmpty() && loweredMimeType !in loweredCodecFilters) return@mapNotNull null
             MediaInformationSummary(
                 id = entry.id,
                 title = entry.name,
